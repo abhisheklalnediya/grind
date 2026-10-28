@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "GRIND",
+    "slug": "grind",
+    "version": "0.1.0",
+    "scheme": "grind",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": { "supportsTablet": false, "bundleIdentifier": "com.grind.dev" },
+    "android": { "package": "com.grind.dev" },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": { "typedRoutes": true }
+  }
+}

@@ -1,0 +1,8 @@
+
+> grind@0.1.0 typecheck
+> tsc --noEmit
+
+src/features/exercises/CustomExerciseScreen.tsx(28,6): error TS2375: Type '{ key: string; id: string | undefined; existing: { name: string; primary_muscle: string; equipment: string; category: string; load_convention: string; load_mode: "external" | "bodyweight" | "assisted" | "weighted_bodyweight"; ... 4 more ...; created_at: string; } | undefined; catalog: { ...; }[]; }' is not assignable to type '{ id?: string; existing?: { name: string; primary_muscle: string; equipment: string; category: string; load_convention: string; load_mode: "external" | "bodyweight" | "assisted" | "weighted_bodyweight"; ... 4 more ...; created_at: string; }; catalog: { ...; }[]; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'id' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.

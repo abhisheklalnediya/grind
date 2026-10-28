@@ -1,0 +1,7 @@
+28 October 2026 local verification
+Canonical final Previous-convention migration replay: PASS via guarded local.py refresh/start.
+local.py test-grind: PASS grind_foundation.sql and grind_training.sql.
+training_smoke.py: PASS real local Auth/API concurrent starts, atomic replay, stale revisions, owner isolation and lost responses.
+Generated matching Grind public schema types integrated.
+Disposable native-test identity cleaned up after checks. No hosted operations.
+Full BabyBoo baseline SQL engine regression remains blocked and was not claimed passed.

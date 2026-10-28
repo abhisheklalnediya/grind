@@ -1,0 +1,64 @@
+import { StyleSheet, Text, View } from "react-native";
+import { toCanonicalKg, type TrainingSession } from "@/domain/training";
+import { useTheme } from "@/theme/useTheme";
+export function SessionDetails({ session }: { session: TrainingSession }) {
+  const { colors } = useTheme();
+  const completed = session.exercises.flatMap((exercise) =>
+    exercise.sets
+      .filter((set) => set.completed_at && set.set_type === "working")
+      .map((set) => ({ exercise, set })),
+  );
+  const volume = completed.reduce(
+    (sum, { exercise, set }) =>
+      sum +
+      ((exercise.load_mode === "external" ||
+        exercise.load_mode === "weighted_bodyweight") &&
+      set.entered_load !== null
+        ? Number(toCanonicalKg(set.entered_load, set.entered_unit)) *
+          (set.reps ?? 0)
+        : 0),
+    0,
+  );
+  const minutes = session.finished_at
+    ? Math.max(
+        0,
+        Math.round(
+          (Date.parse(session.finished_at) - Date.parse(session.started_at)) /
+            60000,
+        ),
+      )
+    : 0;
+  return (
+    <View style={styles.group}>
+      <Text style={{ color: colors.text }}>
+        {completed.length} working sets · {minutes} minutes
+      </Text>
+      <Text style={{ color: colors.secondary }}>
+        {Number(volume.toFixed(3))} kg eligible volume (external and added load)
+      </Text>
+      {session.exercises.map((exercise) => (
+        <View key={exercise.id} style={styles.row}>
+          <Text style={{ color: colors.text, fontSize: 20 }}>
+            {exercise.name} · {exercise.load_mode}
+          </Text>
+          <Text style={{ color: colors.secondary }}>
+            {exercise.load_convention}
+            {exercise.notes ? ` · ${exercise.notes}` : ""}
+          </Text>
+          {exercise.sets.map((set) => (
+            <Text key={set.id} style={{ color: colors.text }}>
+              {set.set_type}:{" "}
+              {set.entered_load === null
+                ? "Bodyweight"
+                : `${set.entered_load} ${set.entered_unit}`}{" "}
+              × {set.reps ?? "—"}
+              {set.completed_at ? " ✓" : ""}
+            </Text>
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({ group: { gap: 12 }, row: { gap: 8 } });

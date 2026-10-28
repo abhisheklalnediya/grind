@@ -1,0 +1,10 @@
+
+> grind@0.1.0 lint
+> eslint app src tests
+
+
+/Users/abhisheklal/works/Grind/tests/setup.ts
+  4:1  warning  Import in body of module; reorder to top  import/first
+
+✖ 1 problem (0 errors, 1 warning)
+  0 errors and 1 warning potentially fixable with the `--fix` option.

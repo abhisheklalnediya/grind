@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>GRIND · MVP design studio</title>
+<link rel="stylesheet" href="mvp.css">
+</head>
+<body>
+<div class="studio">
+<aside class="review">
+<a class="wordmark" href="mvp.html">GRIND<span> / DESIGN 02</span>
+</a>
+<h1>Show up.<br>Log the work.</h1>
+<p class="intro">A quiet place for the hard work. A complete mobile flow, designed around the next set.</p>
+<label class="review-label" for="screenSelect">Explore a page</label>
+<select id="screenSelect">
+</select>
+<fieldset>
+<legend>Prototype state</legend>
+<div class="state-controls">
+<button data-state="normal" aria-pressed="true">Default</button>
+<button data-state="empty">Empty</button>
+<button data-state="loading">Loading</button>
+<button data-state="error">Error</button>
+<button data-state="offline">Not saved</button>
+<button data-state="conflict">Conflict</button>
+<button data-state="expired">Expired</button>
+</div>
+</fieldset>
+<p class="review-note" id="pageNote">
+</p>
+<button class="reset" id="reset">Reset prototype</button>
+<p class="disclaimer">INTERACTIVE DESIGN PROTOTYPE<br>Sample data · nothing is sent or saved.<br>All changes reset on reload.</p>
+<a class="notes-link" href="DESIGN_NOTES.md">Design notes & coverage ↗</a>
+</aside>
+<main class="stage">
+<section class="phone" aria-label="GRIND mobile prototype">
+<div class="statusbar" aria-hidden="true">
+<strong>9:41</strong>
+<span>●●● ▰</span>
+</div>
+<div id="screen">
+</div>
+<div class="home-indicator" aria-hidden="true">
+</div>
+</section>
+<p class="stage-caption">GRIND / VOLT LIME <span>iOS + Android · MVP</span>
+</p>
+</main>
+</div>
+<dialog id="sheet" aria-label="Grind action confirmation">
+<div id="sheetContent">
+</div>
+<button class="secondary full" id="closeSheet">Close</button>
+</dialog>
+<div id="announcement" class="sr-only" role="status" aria-live="polite">
+</div>
+<script src="mvp.js">
+</script>
+</body>
+</html>
