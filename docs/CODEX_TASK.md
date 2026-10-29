@@ -6,7 +6,7 @@ Build an Expo / React Native / strict TypeScript application for both iOS and An
 
 Features:
 1. Home: start empty workout, saved routines, recent workouts.
-2. Exercise library: search/filter, custom exercises and on-demand MuscleWiki demonstrations. Follow docs/EXERCISE_MEDIA_MODULE.md for supplied API contracts, shared text caching, server-only credentials, streaming costs and verification gates.
+2. Exercise library: search/filter, custom exercises and self-hosted static demonstrations. Follow docs/EXERCISE_CATALOG_PLAN.md for RepDB Free as primary, rights-gated supplementary content, ingestion/storage/search, attribution and acceptance.
 3. Routine builder: exercises, ordering, template sets.
 4. Active workout: warm-up/working sets, weight/reps, set completion, previous performance, durable API persistence, visible save state, bounded unsent device drafts and resume after process termination. Use transactional, idempotent commands and revision conflict checks.
 5. Rest timer with background/locked-screen end alerts and ongoing countdown surfaces on supported iOS/Android versions; kg/lb conversion; configurable rest defaults. Native development builds are required for the full experience.
@@ -22,6 +22,10 @@ Do **not** implement gym directory, equipment registry, leaderboards, owner dash
 
 First write a short implementation plan, then implement incrementally, keeping the project runnable. Report what works, what is pending, and exact commands to launch on both platforms.
 
+## 29 October 2026 amendment — self-hosted catalog
+
+RepDB Free is the primary MVP exercise catalog and static-image source. Free Exercise DB is supplementary only after source-specific review; its images remain blocked until rights are documented. Follow the [self-hosted catalog implementation plan](EXERCISE_CATALOG_PLAN.md) for immutable snapshots, licenses/credits, additive schema/import, deduplication, private media storage, member-only APIs, caching, workout/custom integration and acceptance. This supersedes MuscleWiki selection, streaming/player/token/cache requirements for MVP; historical MuscleWiki material below is retained as context only. Existing shared-Auth/isolation, canonical migration and M8 cutover rules remain in force. Planning only: no data import, hosted change or code implementation is claimed.
+
 ## Exercise/provider and backend amendment — 25 October 2026
 
-MuscleWiki is selected; the supplied list/detail/video samples are sufficient for architecture, not proof of live integration. Use BabyBoo's existing Supabase project/Auth with separate Grind schemas, membership, onboarding and local session storage. Coordinate its migration history before deployment. Keep Grind-only data deletion separate from shared Auth identity deletion. These decisions supersede any separate-backend or single-app account-deletion assumption above. Read docs/EXERCISE_MEDIA_MODULE.md and docs/MVP_PAGES.md before exercise implementation. Local secrets exist in ignored env files; never copy their values into source, documentation or client code.
+Historical provider choice (superseded for MVP above): MuscleWiki was selected; the supplied list/detail/video samples are sufficient for architecture, not proof of live integration. Use BabyBoo's existing Supabase project/Auth with separate Grind schemas, membership, onboarding and local session storage. Coordinate its migration history before deployment. Keep Grind-only data deletion separate from shared Auth identity deletion. These decisions supersede any separate-backend or single-app account-deletion assumption above. Read docs/EXERCISE_MEDIA_MODULE.md and docs/MVP_PAGES.md before exercise implementation. Local secrets exist in ignored env files; never copy their values into source, documentation or client code.

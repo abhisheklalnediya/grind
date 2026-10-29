@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Linking, StyleSheet, Text, View } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Screen } from "@/components/Screen";
 import { Heading } from "@/components/Heading";
@@ -164,6 +164,17 @@ function SettingsContent({
           {error}
         </Text>
       ) : null}
+      <Text style={styles.label}>About</Text>
+      <Text
+        accessibilityRole="link"
+        accessibilityLabel="Exercise data by RepDB, opens website"
+        onPress={() => {
+          void Linking.openURL("https://repdb.co").catch(() => {});
+        }}
+        style={styles.credit}
+      >
+        Exercise data by RepDB (repdb.co)
+      </Text>
       <Text style={styles.label}>
         Signing out here affects Grind only. Your BabyBoo account and data stay
         intact.
@@ -182,6 +193,7 @@ function SettingsContent({
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     label: { color: colors.secondary, fontSize: 16, lineHeight: 24 },
+    credit: { color: colors.accentText, minHeight: 48, textDecorationLine: "underline" },
     error: { color: colors.error, fontSize: 16 },
     row: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     option: { flexGrow: 1, minWidth: 72 },

@@ -1,4 +1,8 @@
-# Exercise catalog and MuscleWiki media module
+# Exercise catalog and media module
+
+## 29 October 2026 amendment — self-hosted catalog
+
+RepDB Free is the primary MVP exercise catalog and static-image source. Free Exercise DB is supplementary only after source-specific review; its images remain blocked until rights are documented. Follow the [self-hosted catalog implementation plan](EXERCISE_CATALOG_PLAN.md) for immutable snapshots, licenses/credits, additive schema/import, deduplication, private media storage, member-only APIs, caching, workout/custom integration and acceptance. This supersedes MuscleWiki selection, streaming/player/token/cache requirements for MVP; historical MuscleWiki material below is retained as context only. Existing shared-Auth/isolation, canonical migration and M8 cutover rules remain in force. Planning only: no data import, hosted change or code implementation is claimed.
 
 Decision date: 25 October 2026. Status: architecture proposal; secret/configuration files prepared locally. No backend, migration, provider request, hosted secret or native player has been deployed or verified by this work.
 

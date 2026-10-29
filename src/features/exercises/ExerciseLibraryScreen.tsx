@@ -1,74 +1,340 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { router } from "expo-router";
-import { Screen } from "@/components/Screen";
-import { Heading } from "@/components/Heading";
-import { Button } from "@/components/Button";
-import { Copy, Field } from "./fields";
-import { filterCatalog, loadModes, useCatalog } from "./catalog";
+import {
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "@/theme/useTheme";
+import {
+  bundledExercises,
+  catalogAvailable,
+  exerciseImage,
+  searchBundledExercises,
+} from "@/services/exercises";
+import { filterCatalog, useCatalog } from "./catalog";
+import { ExerciseListRow } from "./ExerciseListRow";
+import { ExerciseFilter } from "./ExerciseFilter";
+import { RepdbExerciseDetail } from "./RepdbExerciseDetail";
+
+type LocalExercise = (typeof bundledExercises)[number];
+type ListItem =
+  | { kind: "repdb"; exercise: LocalExercise }
+  | {
+      kind: "server";
+      exercise: NonNullable<ReturnType<typeof useCatalog>["data"]>[number];
+    };
+
 export function ExerciseLibraryScreen() {
+  const { colors } = useTheme();
   const query = useCatalog();
   const [search, setSearch] = useState("");
   const [muscle, setMuscle] = useState("");
   const [equipment, setEquipment] = useState("");
-  const [custom, setCustom] = useState(false);
-  const items = filterCatalog(
-    query.data ?? [],
-    search,
-    muscle,
-    equipment,
-    custom,
+  const [mine, setMine] = useState(false);
+  const [selected, setSelected] = useState<LocalExercise | null>(null);
+  const muscles = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...bundledExercises.flatMap((item) => [
+            ...item.primaryMuscles,
+            ...item.secondaryMuscles,
+          ]),
+          ...(query.data ?? []).map((item) => item.primary_muscle),
+        ]),
+      )
+        .filter(Boolean)
+        .sort(),
+    [query.data],
   );
+  const equipmentOptions = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...bundledExercises.map((item) => item.equipment),
+          ...(query.data ?? []).map((item) => item.equipment),
+        ]),
+      )
+        .filter(Boolean)
+        .sort(),
+    [query.data],
+  );
+  const items = useMemo<ListItem[]>(() => {
+    const local: ListItem[] = mine
+      ? []
+      : searchBundledExercises(bundledExercises, {
+          query: search,
+          muscle,
+          equipment,
+        }).map((exercise) => ({ kind: "repdb", exercise }));
+    const server: ListItem[] = filterCatalog(
+      query.data ?? [],
+      search,
+      muscle,
+      equipment,
+      mine,
+    ).map((exercise) => ({ kind: "server", exercise }));
+    return [...local, ...server].sort((a, b) =>
+      a.exercise.name.localeCompare(b.exercise.name),
+    );
+  }, [search, muscle, equipment, mine, query.data]);
+  if (selected)
+    return (
+      <RepdbExerciseDetail
+        exercise={selected}
+        onBack={() => setSelected(null)}
+      />
+    );
   return (
-    <Screen>
-      <Heading
-        title="Exercises"
-        subtitle="Find an exercise or create your own."
-      />
-      <Field label="Search exercises" value={search} onChange={setSearch} />
-      <Field label="Muscle filter" value={muscle} onChange={setMuscle} />
-      <Field
-        label="Equipment filter"
-        value={equipment}
-        onChange={setEquipment}
-      />
-      <Button
-        secondary
-        selected={custom}
-        label={custom ? "Custom only · on" : "Custom only · off"}
-        onPress={() => setCustom(!custom)}
-      />
-      <Button
-        label="Create exercise"
-        onPress={() => router.push("/custom-exercise")}
-      />
-      {query.isPending ? <Copy>Loading exercises…</Copy> : null}
-      {query.isError ? (
-        <>
-          <Copy>Couldn’t load exercises.</Copy>
-          <Button
-            label="Retry exercises"
-            onPress={() => {
-              void query.refetch();
-            }}
-          />
-        </>
-      ) : null}
-      {query.isSuccess && !items.length ? (
-        <Copy>No matching exercises.</Copy>
-      ) : null}
-      {items.map((item) => (
-        <Button
-          key={item.id}
-          secondary
-          label={`${item.name} · ${loadModes[item.load_mode]}`}
-          onPress={() =>
-            router.push({
-              pathname: "/exercise-detail",
-              params: { id: item.id },
-            })
+    <SafeAreaView
+      edges={["top", "left", "right"]}
+      style={[styles.safe, { backgroundColor: colors.background }]}
+    >
+      <KeyboardAvoidingView
+        style={styles.safe}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <FlatList
+          data={items}
+          keyboardShouldPersistTaps="handled"
+          keyExtractor={(item) => `${item.kind}:${item.exercise.id}`}
+          contentContainerStyle={styles.content}
+          renderItem={({ item }) =>
+            item.kind === "repdb" ? (
+              <ExerciseListRow
+                name={item.exercise.name}
+                subtitle={`${item.exercise.primaryMuscles.map(label).join(", ")} · ${label(item.exercise.equipment)}`}
+                image={exerciseImage(item.exercise.id)}
+                onPress={() => setSelected(item.exercise)}
+              />
+            ) : (
+              <ExerciseListRow
+                name={item.exercise.name}
+                subtitle={`${item.exercise.primary_muscle} · ${item.exercise.equipment}`}
+                custom={item.exercise.origin === "custom"}
+                existingCatalog={
+                  catalogAvailable && item.exercise.origin !== "custom"
+                }
+                onPress={() =>
+                  router.push({
+                    pathname: "/exercise-detail",
+                    params: { id: item.exercise.id },
+                  })
+                }
+              />
+            )
+          }
+          ListHeaderComponent={
+            <>
+              <View style={styles.heading}>
+                <Text
+                  accessibilityRole="header"
+                  style={[styles.title, { color: colors.text }]}
+                >
+                  Exercises
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Create exercise"
+                  onPress={() => router.push("/custom-exercise")}
+                  style={[styles.create, { borderColor: colors.border }]}
+                >
+                  <Text style={{ color: colors.accentText, fontWeight: "700" }}>
+                    ＋ Custom
+                  </Text>
+                </Pressable>
+              </View>
+              <View
+                style={[
+                  styles.search,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <Text
+                  accessible={false}
+                  importantForAccessibility="no"
+                  style={[styles.searchIcon, { color: colors.secondary }]}
+                >
+                  ⌕
+                </Text>
+                <TextInput
+                  accessibilityLabel="Search exercises"
+                  placeholder="Search exercises"
+                  placeholderTextColor={colors.secondary}
+                  value={search}
+                  onChangeText={setSearch}
+                  style={[styles.searchInput, { color: colors.text }]}
+                />
+              </View>
+              <View style={styles.filters}>
+                <ExerciseFilter
+                  label="Muscle"
+                  value={muscle}
+                  options={muscles}
+                  onChange={setMuscle}
+                />
+                <ExerciseFilter
+                  label="Equipment"
+                  value={equipment}
+                  options={equipmentOptions}
+                  onChange={setEquipment}
+                />
+              </View>
+              <View style={[styles.scopes, { borderColor: colors.border }]}>
+                {([false, true] as const).map((value) => (
+                  <Pressable
+                    key={String(value)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: mine === value }}
+                    onPress={() => setMine(value)}
+                    style={[
+                      styles.scope,
+                      mine === value && {
+                        borderBottomColor: colors.accentText,
+                        borderBottomWidth: 2,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={{
+                        color:
+                          mine === value ? colors.accentText : colors.secondary,
+                        fontWeight: "600",
+                      }}
+                    >
+                      {value ? "My exercises" : "All exercises"}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+              <View style={styles.count}>
+                <Text
+                  accessibilityLiveRegion="polite"
+                  style={{ color: colors.secondary }}
+                >
+                  {items.length} {items.length === 1 ? "exercise" : "exercises"}{" "}
+                  · A–Z
+                </Text>
+                {search || muscle || equipment ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => {
+                      setSearch("");
+                      setMuscle("");
+                      setEquipment("");
+                    }}
+                    style={styles.clear}
+                  >
+                    <Text style={{ color: colors.accentText }}>
+                      Clear filters
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              {!catalogAvailable && !mine ? (
+                <Text style={{ color: colors.secondary }}>
+                  Bundled RepDB catalog is unavailable in this build.
+                </Text>
+              ) : null}
+              {query.isPending ? (
+                <Text style={{ color: colors.secondary }}>
+                  Loading your exercises…
+                </Text>
+              ) : null}
+              {query.isError ? (
+                <View>
+                  <Text style={{ color: colors.error }}>
+                    Couldn’t load your saved exercises.
+                  </Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => {
+                      void query.refetch();
+                    }}
+                    style={styles.clear}
+                  >
+                    <Text style={{ color: colors.accentText }}>
+                      Retry exercises
+                    </Text>
+                  </Pressable>
+                </View>
+              ) : null}
+            </>
+          }
+          ListEmptyComponent={
+            !query.isPending ? (
+              <View style={styles.empty}>
+                <Text style={{ color: colors.text, fontWeight: "700" }}>
+                  No exercises found
+                </Text>
+                <Text style={{ color: colors.secondary }}>
+                  Try another search or clear your filters.
+                </Text>
+              </View>
+            ) : null
           }
         />
-      ))}
-    </Screen>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
+function label(value: string) {
+  return value.replaceAll("_", " ");
+}
+const styles = StyleSheet.create({
+  safe: { flex: 1 },
+  content: { paddingHorizontal: 20, paddingBottom: 32 },
+  heading: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginTop: 16,
+  },
+  title: { fontSize: 30, fontWeight: "700", flexShrink: 1 },
+  create: {
+    minHeight: 48,
+    justifyContent: "center",
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+  },
+  search: {
+    minHeight: 50,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    marginTop: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  searchIcon: { fontSize: 22 },
+  searchInput: { flex: 1, minHeight: 48, padding: 0 },
+  filters: { flexDirection: "row", gap: 8, marginTop: 12 },
+  scopes: {
+    flexDirection: "row",
+    gap: 24,
+    borderBottomWidth: 1,
+    marginTop: 12,
+  },
+  scope: { minHeight: 48, justifyContent: "center" },
+  count: {
+    minHeight: 52,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  clear: { minHeight: 48, justifyContent: "center" },
+  empty: { alignItems: "center", gap: 8, paddingVertical: 48 },
+});

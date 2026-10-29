@@ -16,6 +16,10 @@ Read [build status](BUILD_STATUS.md) for current checks and blockers, [agent sta
 
 Keep each fact in its owning document and link elsewhere. Update affected specifications with code; do not duplicate state trackers or treat a proposed task as authorization.
 
+## Current catalog decision
+
+29 October: [self-hosted catalog implementation plan](EXERCISE_CATALOG_PLAN.md) owns RepDB Free adoption and rights-gated supplementary Free Exercise DB usage. It supersedes earlier MuscleWiki MVP selection and streaming requirements; shared-backend rules remain.
+
 ## Specification reading order
 
 1. [Architecture](ARCHITECTURE.md): system boundaries, data model, commands, recovery, timers and acceptance.

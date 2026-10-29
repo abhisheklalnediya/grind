@@ -9,10 +9,12 @@ import {
 import { useTheme } from "@/theme/useTheme";
 export function LoadUnitControl({
   load,
+  accessibilityContext,
   unit,
   onChangeUnit,
 }: {
   load: string | null;
+  accessibilityContext?: string;
   unit: WeightUnit;
   onChangeUnit: (unit: WeightUnit) => void;
 }) {
@@ -26,6 +28,13 @@ export function LoadUnitControl({
       <Button
         secondary
         label={empty ? `Use ${other}` : `View in ${other}`}
+        accessibilityLabel={
+          accessibilityContext
+            ? `${accessibilityContext}: ${empty ? "Use" : "View in"} ${other}`
+            : empty
+              ? `Use ${other}`
+              : `View in ${other}`
+        }
         disabled={!empty && !valid}
         onPress={() => {
           if (empty) onChangeUnit(other);

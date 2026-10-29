@@ -1,4 +1,6 @@
-import { Alert } from "react-native";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { Alert, Linking } from "react-native";
 import {
   render,
   fireEvent,
@@ -103,35 +105,45 @@ it("combines text, muscle, equipment and ownership filters while excluding archi
   ).toEqual([custom]);
   expect(filterCatalog([exercise], "pull", "", "", false)).toEqual([]);
 });
-it("browses combined filters, handles empty results, creation and detail navigation", async () => {
+it("browses custom exercises with filters and opens their details", async () => {
   setup();
   await mount(<ExerciseLibraryScreen />);
-  await screen.findByText("Bench press · Regular weights");
-  await fireEvent.press(screen.getByText("Bench press · Regular weights"));
+  await fireEvent.changeText(screen.getByLabelText("Search exercises"), "pull");
+  await fireEvent.press(screen.getByText("My exercises"));
+  await fireEvent.press(screen.getByLabelText("Muscle filter"));
+  await fireEvent.press(screen.getByText("Back"));
+  await fireEvent.press(screen.getByLabelText("Equipment filter"));
+  await fireEvent.press(screen.getByText("Belt"));
+  const customRow = await screen.findByRole("button", {
+    name: "Custom pull-up, Back · Belt, my exercise",
+  });
+  await fireEvent.press(customRow);
   expect(router.push).toHaveBeenCalledWith({
     pathname: "/exercise-detail",
-    params: { id: exercise.id },
+    params: { id: custom.id },
   });
-  await fireEvent.changeText(screen.getByLabelText("Search exercises"), "pull");
-  await fireEvent.changeText(screen.getByLabelText("Muscle filter"), "back");
-  await fireEvent.changeText(screen.getByLabelText("Equipment filter"), "belt");
-  await fireEvent.press(screen.getByText("Custom only · off"));
-  expect(screen.getByText("Custom pull-up · Weighted bodyweight")).toBeTruthy();
   await fireEvent.changeText(
     screen.getByLabelText("Search exercises"),
     "missing",
   );
-  expect(screen.getByText("No matching exercises.")).toBeTruthy();
-  await fireEvent.press(screen.getByText("Create exercise"));
+  expect(screen.getByText("No exercises found")).toBeTruthy();
+  await fireEvent.press(screen.getByText("Clear filters"));
+  await fireEvent.press(screen.getByLabelText("Create exercise"));
   expect(router.push).toHaveBeenCalledWith("/custom-exercise");
 });
 it("retries catalog failures", async () => {
   const { catalog } = setup({ catalogError: true });
   await mount(<ExerciseLibraryScreen />);
-  await screen.findByText("Couldn’t load exercises.");
-  catalog.mockResolvedValue([exercise]);
+  await screen.findByText("Couldn’t load your saved exercises.");
+  catalog.mockResolvedValue([custom]);
   await fireEvent.press(screen.getByText("Retry exercises"));
-  await screen.findByText("Bench press · Regular weights");
+  await fireEvent.changeText(
+    screen.getByLabelText("Search exercises"),
+    "Custom pull-up",
+  );
+  await screen.findByRole("button", {
+    name: "Custom pull-up, Back · Belt, my exercise",
+  });
 });
 it("renders real previous sets without claiming records or playback and permits custom editing", async () => {
   const { api } = setup();
@@ -157,6 +169,18 @@ it("renders real previous sets without claiming records or playback and permits 
   });
   await mount(<ExerciseDetailScreen id={custom.id} />);
   await screen.findByText("Working 1: 20 kg × 8 reps");
+  expect(
+    screen.getByText(
+      "Exercise illustrations and detailed instructions are not available yet.",
+    ),
+  ).toBeTruthy();
+  const link = screen.getByRole("link", {
+    name: "Exercise data by RepDB, opens website",
+  });
+  const open = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
+  await fireEvent.press(link);
+  expect(open).toHaveBeenCalledWith("https://repdb.co");
+  open.mockRestore();
   expect(screen.getByText("Warm-up 1: Bodyweight × 5 reps")).toBeTruthy();
   await fireEvent.press(screen.getByText("Edit exercise"));
   expect(router.push).toHaveBeenCalledWith({
@@ -310,12 +334,11 @@ it("retries picker catalog, deselects an item, retains filters and navigates to 
   await screen.findByText("Bench press");
   await fireEvent.press(screen.getByText("Bench press"));
   await fireEvent.press(screen.getByText("Selected · Bench press"));
-  await fireEvent.changeText(screen.getByLabelText("Muscle filter"), "Chest");
-  await fireEvent.changeText(
-    screen.getByLabelText("Equipment filter"),
-    "Barbell",
-  );
-  await fireEvent.press(screen.getByText("Create exercise"));
+  await fireEvent.press(screen.getByLabelText("Muscle filter"));
+  await fireEvent.press(screen.getByText("Chest"));
+  await fireEvent.press(screen.getByLabelText("Equipment filter"));
+  await fireEvent.press(screen.getByText("Barbell"));
+  await fireEvent.press(screen.getByLabelText("Create exercise"));
   expect(router.push).toHaveBeenCalledWith("/custom-exercise");
 });
 it("refuses routine selection without a matching account draft and preserves selection on command failure", async () => {
@@ -361,3 +384,86 @@ it("warns about duplicate names and guards native back without erasing the form"
   });
   expect(mockDispatch).toHaveBeenCalledWith({ type: "GO_BACK" });
 });
+it("retains picker selections across searches of a large catalog", async () => {
+  const items = Array.from({ length: 45 }, (_, index) => ({
+    ...exercise,
+    id: trainingId(index + 200),
+    name: `Exercise ${String(index).padStart(2, "0")}`,
+  }));
+  const { command } = setup({ items, session: true });
+  await mount(<ExercisePickerScreen target="workout" />);
+  await screen.findByText("Exercise 00");
+  await fireEvent.press(screen.getByText("Exercise 00"));
+  await fireEvent.changeText(screen.getByLabelText("Search exercises"), "44");
+  await fireEvent.press(screen.getByText("Exercise 44"));
+  await fireEvent.changeText(screen.getByLabelText("Search exercises"), "00");
+  await fireEvent.press(screen.getByText("Add 2 exercises"));
+  await waitFor(() => expect(command).toHaveBeenCalledTimes(2));
+  expect(command).toHaveBeenCalledWith(
+    expect.objectContaining({ exercise_id: items[44]?.id }),
+    items[44],
+  );
+});
+(existsSync(join(process.cwd(), "assets/exercises/repdb/free.en.json"))
+  ? it
+  : it.skip)(
+  "browses RepDB entries in the list with honest local detail",
+  async () => {
+    setup();
+    await mount(<ExerciseLibraryScreen />);
+    await fireEvent.changeText(
+      screen.getByLabelText("Search exercises"),
+      "barbell ab rollout",
+    );
+    await screen.findByText("Barbell Ab Rollout");
+    await fireEvent.press(screen.getByText("Barbell Ab Rollout"));
+    expect(
+      screen.getByText(/Import is required before adding this exercise/),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/A kneeling ab rollout using a loaded barbell/),
+    ).toBeTruthy();
+    const open = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
+    await fireEvent.press(
+      screen.getByRole("link", {
+        name: "Exercise data by RepDB, opens website",
+      }),
+    );
+    expect(open).toHaveBeenCalledWith("https://repdb.co");
+    open.mockRestore();
+    await fireEvent.press(screen.getByText("‹ Back to exercises"));
+    expect(screen.getByText("Barbell Ab Rollout")).toBeTruthy();
+  },
+);
+(existsSync(join(process.cwd(), "assets/exercises/repdb/free.en.json"))
+  ? it
+  : it.skip)(
+  "preserves existing server exercises alongside the bundled catalog and custom exercises",
+  async () => {
+    setup({
+      items: [{ ...exercise, name: "Server only seed marker" }, custom],
+    });
+    await mount(<ExerciseLibraryScreen />);
+    await fireEvent.changeText(
+      screen.getByLabelText("Search exercises"),
+      "Server only seed marker",
+    );
+    const existing = await screen.findByRole("button", {
+      name: "Server only seed marker, Chest · Barbell, existing catalog exercise",
+    });
+    await fireEvent.press(existing);
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: "/exercise-detail",
+      params: { id: exercise.id },
+    });
+    await fireEvent.changeText(
+      screen.getByLabelText("Search exercises"),
+      "Custom pull-up",
+    );
+    expect(
+      await screen.findByRole("button", {
+        name: "Custom pull-up, Back · Belt, my exercise",
+      }),
+    ).toBeTruthy();
+  },
+);

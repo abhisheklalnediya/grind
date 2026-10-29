@@ -3,11 +3,15 @@
 Decision date: 2026-10-17. Original architecture proposal following the revised product requirements, written before implementation. Current M0/M1 progress and executed checks are recorded in [agent status](AGENT_STATUS.md).
 
 
+## 29 October 2026 amendment — self-hosted catalog
+
+RepDB Free is the primary MVP exercise catalog and static-image source. Free Exercise DB is supplementary only after source-specific review; its images remain blocked until rights are documented. Follow the [self-hosted catalog implementation plan](EXERCISE_CATALOG_PLAN.md) for immutable snapshots, licenses/credits, additive schema/import, deduplication, private media storage, member-only APIs, caching, workout/custom integration and acceptance. This supersedes MuscleWiki selection, streaming/player/token/cache requirements for MVP; historical MuscleWiki material below is retained as context only. Existing shared-Auth/isolation, canonical migration and M8 cutover rules remain in force. Planning only: no data import, hosted change or code implementation is claimed.
+
 ## 25 October 2026 amendment: shared backend and exercise media
 
 Use BabyBoo's existing Supabase project and Auth identities for Grind, with separate Grind schema/data, native sessions, onboarding and app membership. Coordinate one migration history. Shared identity deletion must not be used for a Grind-only data deletion action. This supersedes the separate-project assumption and the single-app deletion wording below.
 
-MuscleWiki is the selected demonstration provider. Cache permitted exercise text across users with bounded retention; stream videos on demand. Caching a URL does not avoid per-stream/range-request billing. The free tier is currently Playground-only. See [Exercise media module](EXERCISE_MEDIA_MODULE.md) for cache boundaries, proposed contracts, failure handling, shared-auth consequences and verification gates. Configuration is saved locally; no backend changes are deployed.
+Historical 25 October decision (superseded for MVP by the 29 October amendment): MuscleWiki was the selected demonstration provider. Cache permitted exercise text across users with bounded retention; stream videos on demand. Caching a URL does not avoid per-stream/range-request billing. The free tier is currently Playground-only. See [Exercise media module](EXERCISE_MEDIA_MODULE.md) for cache boundaries, proposed contracts, failure handling, shared-auth consequences and verification gates. Configuration is saved locally; no backend changes are deployed.
 
 ## 27 October 2026 roadmap amendment: standalone backend
 

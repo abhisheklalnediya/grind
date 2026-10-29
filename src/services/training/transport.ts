@@ -3,6 +3,7 @@ import { readEnvironment, type PublicEnvironment } from "../environment";
 import { getSupabase } from "../supabase";
 import { TrainingError, trainingFailure } from "./errors";
 export type RpcName =
+  | "search_catalog"
   | "save_grind_settings"
   | "start_workout"
   | "apply_workout_command"

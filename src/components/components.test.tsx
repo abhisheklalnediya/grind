@@ -98,3 +98,18 @@ it("keeps content in safe areas, uses keyboard avoidance on both platforms and u
   property.replaceValue(original);
   property.restore();
 });
+it("allows concise button text with a contextual accessible name", async () => {
+  const press = jest.fn();
+  await render(
+    <Button
+      label="Complete set"
+      accessibilityLabel="Bench set 2: Complete set"
+      onPress={press}
+    />,
+  );
+  expect(screen.getByText("Complete set")).toBeTruthy();
+  await fireEvent.press(
+    screen.getByRole("button", { name: "Bench set 2: Complete set" }),
+  );
+  expect(press).toHaveBeenCalledTimes(1);
+});

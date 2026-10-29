@@ -1,6 +1,28 @@
 # GRIND agent status
 
+## 29 October — list cleanup and application assets
+
+User identified an old exercise screen. Audit found the workout picker still used its old layout, and the recorded Android APK predated the new list; the displayed device screen was not inspected. The coordinator and UI specialists aligned both list and picker, removed the orphan archive browser, staged the supplied free JSON and images in Git, and changed Metro to use application assets. Independent review found that hiding existing server catalog rows would lose history access; this was corrected, retaining separate labeled records until identity mapping is reviewed. The picker remains server-backed and RepDB records are browse-only. No hosted data changes. See BUILD_STATUS.md for current checks and device limitations.
+
+## 29 October — bundled exercise list
+
+Coordinator integrated a local RepDB engine and virtualized compact list, with search, filters, local static images, custom exercise scope, image fallback and Settings attribution. RepDB records remain browse-only until reviewed GRIND UUID/server mappings exist; server seeds can duplicate local entries and taxonomy is not unified. Independent reviewer identified and informed these limitations and image/back-navigation fixes. See [build status](BUILD_STATUS.md) for checks and [implementation plan](exercise-engine/IMPLEMENTATION.md) for remaining gates. No hosted changes or native/device acceptance.
+
+## 29 October 2026 — catalog planning decision
+
+User requested RepDB Free as primary self-hosted catalog/static media and Free Exercise DB as rights-gated supplement. Added EXERCISE_CATALOG_PLAN.md and aligned milestone/task/architecture/media/readme documents. C1–C6 remain Todo; implementation and source revisions are not verified/pinned. RepDB v1.0 license/attribution and Free Exercise DB repository/Unlicense were read from upstream; supplemental image ownership remains unresolved. Existing workout/UI changes preserved. Documentation checks only; no runtime tests, migrations, imports, vendor calls, deployments or native acceptance performed in this task. Historical MuscleWiki plan is superseded for MVP, while shared-backend and M8 boundaries remain.
+
+## 29 October — exercise engine groundwork
+
+The user authorized implementation. A local snapshot validator, additive canonical BabyBoo catalog metadata migration and membership-scoped paginated search RPC, typed API and exercise detail credit/fallback were developed. The library continues using its prior path until migration rollout. No RepDB release is pinned, ingested or published; approved instruction/media delivery, source mapping/dedup, storage, versioned cursors/facets and migration of picker/detail remain outstanding. The migration needs coordinated application before enabling its dependent search UI. Supplementary image rights remain unresolved. No hosted changes or native acceptance are claimed. Full test evidence and final integration details are recorded in BUILD_STATUS.md; task states belong to planning/TASKS.md.
+
+## 29 October — downloaded RepDB archive
+
+User supplied `Data/repdb-free.zip` and its extracted directory. Archive inspection found schema 3, generated 27 October, 701 records and 1,217 flat images; SHA-256 `afa162bf10bb23cadd9c3588be6ab84e56691fa328abcefabb4371cdeb47cb16`. License and attribution were inspected; archive and extracted English JSON/license/attribution matched. The app provides a read-only archive browser with search, filters and text details; archive entries are not workout-selectable until reviewed server import. No image delivery or hosted data changes. Data directory is ignored; optional resolver uses an empty fallback when absent. Backend import foundations and archive-hash identities were locally tested in rolled-back disposable transactions; no archive data was published. See BUILD_STATUS.md for checks and planning/TASKS.md for remaining work.
+
 ## Current milestone
+
+**28 October — committed checkpoint and UI follow-up:** Local GRIND baseline `6be0532`; canonical BabyBoo GRIND migration/tests `2021d0f` (unrelated BabyBoo changes excluded). GRIND has no configured remote. Independent native subagents are assigned workout-screen alignment, Train recent sessions, and a read-only designer handoff. Existing scope and device gates remain unchanged.
 
 **28 October 2026 — M0–M3 core software checkpoint implemented and checked; design alignment remains open.** Current evidence is maintained in [BUILD_STATUS.md](BUILD_STATUS.md): typecheck, zero-warning lint, all250tests/52suites, explicit coverage gates, Android/iOS JS exports, dedicated local SQL/real Auth/API and a fresh Android native compile/install pass. Independent backend and final UI/recovery/runtime reviews returned no remaining blocking software finding.
 

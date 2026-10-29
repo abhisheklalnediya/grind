@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from "react";
 import { Text as MockText } from "react-native";
-import { screen } from "@testing-library/react-native";
+import { screen, within } from "@testing-library/react-native";
 import { renderRouter } from "expo-router/testing-library";
 import TabsLayout from "../app/(tabs)/_layout";
 import Train from "../app/(tabs)/index";
@@ -170,7 +170,11 @@ it.each([
 );
 it("places Resume outside the four-tab navigator and keeps protected destination screens gated", async () => {
   const view = await renderRouter(routes, { initialUrl: "/history" });
-  expect(screen.getByText("Resume placement")).toBeVisible();
+  const tabBar = screen.getByTestId("bottom-tabs-shell");
+  expect(within(tabBar).getByText("Resume placement")).toBeVisible();
+  expect(
+    within(tabBar).getByRole("button", { name: /^History, tab/ }),
+  ).toBeVisible();
   expect(screen.getByRole("button", { name: /^Train, tab/ })).toBeVisible();
   expect(screen.getByRole("button", { name: /^History, tab/ })).toBeVisible();
   expect(screen.getByRole("button", { name: /^Exercises, tab/ })).toBeVisible();
@@ -180,4 +184,6 @@ it("places Resume outside the four-tab navigator and keeps protected destination
   await renderRouter(routes, { initialUrl: "/workout/finish" });
   expect(screen.getByText("Protected content withheld")).toBeVisible();
   expect(screen.queryByText("Finish:{}")).toBeNull();
+  expect(screen.queryByTestId("bottom-tabs-shell")).toBeNull();
+  expect(screen.queryByText("Resume placement")).toBeNull();
 });

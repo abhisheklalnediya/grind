@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text } from "react-native";
 import { useTheme } from "@/theme/useTheme";
 type Props = {
   label: string;
+  accessibilityLabel?: string;
   onPress: () => void;
   disabled?: boolean;
   secondary?: boolean;
@@ -9,6 +10,7 @@ type Props = {
 };
 export function Button({
   label,
+  accessibilityLabel = label,
   onPress,
   disabled = false,
   secondary = false,
@@ -28,6 +30,7 @@ export function Button({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled, selected }}
       disabled={disabled}
       onPress={onPress}

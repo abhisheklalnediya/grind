@@ -48,4 +48,6 @@ Then open `http://127.0.0.1:8765/mvp.html`. This serves only the design folder, 
 
 ## Shared backend and exercise demonstrations
 
-Grind uses the planned shared BabyBoo Auth model with separate app data and sessions. MuscleWiki is selected for streamed demonstrations. Read [the module architecture](docs/EXERCISE_MEDIA_MODULE.md) before implementation; local secrets are ignored and no integration is deployed yet.
+Grind uses the planned shared BabyBoo Auth model with separate app data and sessions. RepDB Free is selected for the self-hosted catalog and static demonstrations; Free Exercise DB is supplementary with images blocked pending rights verification. Read [the implementation plan](docs/EXERCISE_CATALOG_PLAN.md) and [shared-backend rules](docs/EXERCISE_MEDIA_MODULE.md). This adoption is planned, not imported/deployed.
+
+Planned catalog credit: Exercise data by [RepDB](https://repdb.co). The implementation must also display the credit in app Settings/About.

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
-import { LoadUnitControl } from "@/components/LoadUnitControl";
+import { Keyboard, Text, TextInput, View } from "react-native";
+import { SetOptions } from "./SetOptions";
 import { Button } from "@/components/Button";
 import {
   isSetCompleteable,
@@ -11,18 +11,24 @@ import {
 import { useTraining } from "@/features/training";
 import { rawFieldKey } from "@/services/training/outboxState";
 import { useTheme } from "@/theme/useTheme";
-import { editedSet, moved } from "./fields";
+import { styles } from "./setEditorStyles";
+import { editedSet } from "./fields";
 type Exercise = TrainingSession["exercises"][number];
 export function SetEditor({
   exercise,
   set,
+  previous = "—",
 }: {
   exercise: Exercise;
   set: TrainingSet;
+  previous?: string;
 }) {
   const training = useTraining();
   const { colors } = useTheme();
   const [message, setMessage] = useState("");
+  const [options, setOptions] = useState(false);
+  const repsInput = useRef<TextInput>(null);
+  const [focused, setFocused] = useState<"load" | "reps" | null>(null);
   const send = (command: Parameters<typeof training.command>[0]) =>
     training
       .command(command)
@@ -82,111 +88,120 @@ export function SetEditor({
     }
   };
   const index = exercise.sets.findIndex((item) => item.id === set.id);
+  const context = `${exercise.name} set ${index + 1}`;
   const inputStyle = [
     styles.input,
     { color: colors.text, borderColor: colors.border },
   ];
   return (
     <View style={[styles.row, { borderColor: colors.border }]}>
-      <Text style={{ color: colors.text }}>
-        Set {index + 1} · {set.set_type}
-      </Text>
-      {exercise.load_mode !== "bodyweight" && (
-        <TextInput
-          accessibilityLabel={`${exercise.name} set ${index + 1} ${loadFieldLabel(exercise.load_mode, set.entered_unit)}`}
-          style={inputStyle}
-          value={load}
-          keyboardType="decimal-pad"
-          onChangeText={(value) => update("load", value)}
-          onBlur={() => {
-            void save();
-          }}
-        />
+      <View style={styles.loggingRow}>
+        <View style={styles.setColumn}>
+          <Text style={{ color: colors.secondary }}>Set</Text>
+          <Text
+            accessibilityLabel={`Set ${index + 1} · ${set.set_type}`}
+            style={{ color: colors.text, fontSize: 20 }}
+          >
+            {set.set_type === "warmup"
+              ? "W"
+              : exercise.sets
+                  .slice(0, index + 1)
+                  .filter((row) => row.set_type === "working").length}
+          </Text>
+        </View>
+        <View style={styles.previousColumn}>
+          <Text style={{ color: colors.secondary }}>Previous: {previous}</Text>
+        </View>
+        {exercise.load_mode !== "bodyweight" && (
+          <View style={styles.inputColumn}>
+            <Text style={{ color: colors.secondary }}>
+              {loadFieldLabel(exercise.load_mode, set.entered_unit)}
+            </Text>
+            <TextInput
+              accessibilityLabel={`${exercise.name} set ${index + 1} ${loadFieldLabel(exercise.load_mode, set.entered_unit)}`}
+              style={inputStyle}
+              value={load}
+              keyboardType="decimal-pad"
+              returnKeyType="next"
+              onFocus={() => setFocused("load")}
+              onSubmitEditing={() => repsInput.current?.focus()}
+              onChangeText={(value) => update("load", value)}
+              onBlur={() => {
+                setFocused((current) => (current === "load" ? null : current));
+                void save();
+              }}
+            />
+          </View>
+        )}
+        <View style={styles.inputColumn}>
+          <Text style={{ color: colors.secondary }}>Reps</Text>
+          <TextInput
+            ref={repsInput}
+            accessibilityLabel={`${exercise.name} set ${index + 1} reps`}
+            style={inputStyle}
+            value={reps}
+            keyboardType="number-pad"
+            returnKeyType="done"
+            onFocus={() => setFocused("reps")}
+            onSubmitEditing={() => {
+              Keyboard.dismiss();
+              setFocused(null);
+              void save();
+            }}
+            onChangeText={(value) => update("reps", value)}
+            onBlur={() => {
+              setFocused((current) => (current === "reps" ? null : current));
+              void save();
+            }}
+          />
+        </View>
+        <View style={styles.completeColumn}>
+          <Button
+            label={set.completed_at ? "Undo" : "Done"}
+            accessibilityLabel={`${context}: ${set.completed_at ? "Mark incomplete" : "Complete set"}`}
+            onPress={() => {
+              void save(true);
+            }}
+          />
+        </View>
+      </View>
+      {focused && (
+        <View style={styles.tools}>
+          {focused === "load" && (
+            <Button
+              secondary
+              label="Next: reps"
+              accessibilityLabel={`${context}: Next, reps`}
+              onPress={() => repsInput.current?.focus()}
+            />
+          )}
+          <Button
+            secondary
+            label="Done editing set"
+            accessibilityLabel={`${context}: Done editing set`}
+            onPress={() => {
+              Keyboard.dismiss();
+              setFocused(null);
+              void save();
+            }}
+          />
+        </View>
       )}
-      <TextInput
-        accessibilityLabel={`${exercise.name} set ${index + 1} reps`}
-        style={inputStyle}
-        value={reps}
-        keyboardType="number-pad"
-        onChangeText={(value) => update("reps", value)}
-        onBlur={() => {
-          void save();
-        }}
-      />
-      <Button
-        label={set.completed_at ? "Mark incomplete" : "Complete set"}
-        onPress={() => {
-          void save(true);
-        }}
-      />
       <Button
         secondary
-        label={set.set_type === "working" ? "Make warm-up" : "Make working"}
-        onPress={() => {
-          const input = editedSet(
-            set,
-            exercise.load_mode,
-            latest.current.load,
-            latest.current.reps,
-          );
-          if (input)
-            void send({
-              type: "upsert_set",
-              exercise_id: exercise.id,
-              set: {
-                ...input,
-                set_type: set.set_type === "working" ? "warmup" : "working",
-              },
-            });
-        }}
+        label={options ? "Hide set options" : "Set options"}
+        accessibilityLabel={`${context}: ${options ? "Hide set options" : "Set options"}`}
+        onPress={() => setOptions(!options)}
       />
-      {exercise.load_mode !== "bodyweight" && (
-        <LoadUnitControl
+      {options && (
+        <SetOptions
+          exercise={exercise}
+          set={set}
           load={load}
-          unit={set.entered_unit}
-          onChangeUnit={(unit) => {
-            const input = editedSet(
-              set,
-              exercise.load_mode,
-              latest.current.load,
-              latest.current.reps,
-            );
-            if (input)
-              void send({
-                type: "upsert_set",
-                exercise_id: exercise.id,
-                set: { ...input, entered_unit: unit },
-              });
-          }}
+          latest={() => latest.current}
+          send={send}
         />
       )}
-      <Button
-        secondary
-        disabled={index === 0}
-        label="Move set up"
-        onPress={() => {
-          void send({
-            type: "reorder_sets",
-            exercise_id: exercise.id,
-            ids: moved(
-              exercise.sets.map((item) => item.id),
-              index,
-              -1,
-            ),
-          });
-        }}
-      />
-      <Button
-        secondary
-        label="Remove set"
-        onPress={() => {
-          void send({
-            type: "remove_set",
-            exercise_id: exercise.id,
-            set_id: set.id,
-          });
-        }}
-      />
       {message ? (
         <Text accessibilityRole="alert" style={{ color: colors.error }}>
           {message}
@@ -195,13 +210,3 @@ export function SetEditor({
     </View>
   );
 }
-const styles = StyleSheet.create({
-  row: { gap: 8, padding: 12, borderWidth: 1, borderRadius: 12 },
-  input: {
-    minHeight: 48,
-    fontSize: 20,
-    borderWidth: 1,
-    padding: 10,
-    borderRadius: 8,
-  },
-});

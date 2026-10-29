@@ -1,4 +1,5 @@
 import { Text } from "react-native";
+import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/Button";
 import { Heading } from "@/components/Heading";
@@ -25,6 +26,9 @@ export function WorkoutDetailScreen({
   });
   return (
     <Screen>
+      {!summary && (
+        <Button secondary label="Back" onPress={() => router.back()} />
+      )}
       <Heading
         title={
           summary && workout.data?.status === "completed"
@@ -44,7 +48,12 @@ export function WorkoutDetailScreen({
           }}
         />
       ) : workout.data.status === "completed" ? (
-        <SessionDetails session={workout.data} />
+        <>
+          <SessionDetails session={workout.data} />
+          {summary && (
+            <Button label="Done" onPress={() => router.replace("/(tabs)")} />
+          )}
+        </>
       ) : (
         <Text style={{ color: colors.text }}>
           This workout has not been completed.

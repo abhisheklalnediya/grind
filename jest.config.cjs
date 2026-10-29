@@ -1,3 +1,5 @@
+const path = require("node:path");
+const archivePath = path.join(__dirname, "assets/exercises/repdb/free.en.json");
 module.exports = {
   preset: "jest-expo",
   testMatch: [
@@ -6,7 +8,11 @@ module.exports = {
   ],
   setupFilesAfterEnv: ["<rootDir>/tests/setup.ts"],
   modulePaths: ["<rootDir>/node_modules/expo/node_modules"],
-  moduleNameMapper: { "^@/(.*)$": "<rootDir>/src/$1" },
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "^repdb-images$": "<rootDir>/src/services/exercises/emptyImages.json",
+    "^repdb-archive$": archivePath,
+  },
   collectCoverageFrom: [
     "app/**/*.{ts,tsx}",
     "src/**/*.{ts,tsx}",

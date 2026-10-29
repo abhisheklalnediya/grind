@@ -1,4 +1,5 @@
 import type { PropsWithChildren } from "react";
+import { Linking } from "react-native";
 import type { Session, User } from "@supabase/supabase-js";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -83,6 +84,16 @@ beforeEach(() => {
   auth(identity("user-a", "alex@example.test"));
   jest.mocked(loadSettings).mockResolvedValue(settings);
   jest.mocked(saveSettings).mockResolvedValue(settings);
+});
+it("keeps RepDB attribution available when preferences fail to load", async () => {
+  jest.mocked(loadSettings).mockRejectedValue(Error("offline"));
+  const open = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
+  const { Wrapper } = harness();
+  await render(<SettingsScreen />, { wrapper: Wrapper });
+  await screen.findByText("Couldn’t load your preferences.");
+  await fireEvent.press(screen.getByRole("link", { name: "Exercise data by RepDB, opens website" }));
+  expect(open).toHaveBeenCalledWith("https://repdb.co");
+  open.mockRestore();
 });
 it("keeps training drafts across appearance changes and failed saves, and only announces acknowledged success", async () => {
   const { Wrapper } = harness();

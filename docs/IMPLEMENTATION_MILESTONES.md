@@ -2,6 +2,10 @@
 
 Status: sequence planned on 25 October 2026; user subsequently authorized local implementation through M3. Both device platforms are available, live provider calls remain disabled, and M4–M8 and hosted operations are not automatically authorized. Current checks and device-acceptance gaps are in [BUILD_STATUS.md](BUILD_STATUS.md).
 
+## 29 October 2026 amendment — self-hosted catalog
+
+RepDB Free is the primary MVP exercise catalog and static-image source. Free Exercise DB is supplementary only after source-specific review; its images remain blocked until rights are documented. Follow the [self-hosted catalog implementation plan](EXERCISE_CATALOG_PLAN.md) for immutable snapshots, licenses/credits, additive schema/import, deduplication, private media storage, member-only APIs, caching, workout/custom integration and acceptance. This supersedes MuscleWiki selection, streaming/player/token/cache requirements for MVP; historical MuscleWiki material below is retained as context only. Existing shared-Auth/isolation, canonical migration and M8 cutover rules remain in force. Planning only: no data import, hosted change or code implementation is claimed.
+
 ## Starting point and scope
 
 At the original planning checkpoint GRIND had architecture/requirements documents, specialist roles and a reviewed 21-view clickable design, with no application scaffold. React Native application and local database source now exist through M3; see [BUILD_STATUS.md](BUILD_STATUS.md) for current verified state. The HTML prototype uses simulated auth, saving, records and notifications.
@@ -18,11 +22,11 @@ Build the existing online-first iOS/Android MVP. Follow [ARCHITECTURE.md](ARCHIT
 | M3 — Everyday training | Routines, custom exercises, previous performance, preferences and dark/light appearance | M2 |
 | M4 — Native rest experience | Reliable in-app rest controls, background alerts and supported OS countdown surfaces | M1 timer proof, M2 set lifecycle, M3 rest preferences |
 | M5 — Records, corrections and data controls | Trustworthy records, deliberate history edits and Grind-only data deletion | M2/M3 data contracts; M4 cleanup integration |
-| M6 — Exercise demonstrations | Real on-demand MuscleWiki text/media integration with safe failure handling | M1 provider gate; M3 catalog identity |
+| M6 — Exercise demonstrations | RepDB Free catalog and self-hosted static demonstrations with safe failure handling | Rights/release gates; M3 catalog identity |
 | M7 — Beta readiness | Verified iOS/Android builds against approved hosted staging | M1–M6 and explicit hosted-change authorization |
 | M8 — Standalone GRIND backend | GRIND runs on its own Supabase project/database, separate from BabyBoo | User-approved separation/cutover plan and validated migration rehearsal |
 
-M2 is the first useful end-to-end logger, not the complete MVP. All M1–M7 features are required for the documented MVP. M4 and M6 can proceed alongside M3/M5 once contracts are stable and file ownership is separate. Provider integration must not block core logging development, but unresolved provider access blocks declaring the full MVP complete.
+M2 is the first useful end-to-end logger, not the complete MVP. All M1–M7 features are required for the documented MVP. M4 and M6 can proceed alongside M3/M5 once contracts are stable and file ownership is separate. Provider integration must not block core logging development, but the self-hosted catalog/static-image acceptance gates must pass before declaring the full MVP complete; MuscleWiki entitlement is no longer an MVP dependency.
 
 ## M0 — Alignment and implementation contracts
 
@@ -106,13 +110,13 @@ Acceptance: tested warm-up/incomplete/cancelled exclusions, mixed-unit ties, loa
 
 Owners: architect approves record/correction/deletion contracts; developer implements; designer checks records/correction/destructive copy; reviewer independently verifies SQL/security and cross-app preservation.
 
-## M6 — MuscleWiki exercise media
+## M6 — Self-hosted exercise catalog and static demonstrations
 
-Scope: implement server-only provider adapter, internal UUID mappings, authenticated membership-gated search/detail/playback endpoints, bounded permitted text cache, concurrent-miss leases/fencing, expiry purge and rate/budget/circuit controls. Add explicit-play native player, supported variants, ephemeral token handling, attribution and unavailable states. Persist no media bytes or playback tokens; persisted descriptors remain off unless permission is resolved.
+Scope: execute [EXERCISE_CATALOG_PLAN.md](EXERCISE_CATALOG_PLAN.md), tasks C1–C6. RepDB Free is primary; Free Exercise DB supplements reviewed gaps only, with images blocked until documented rights approval. Snapshot immutable revisions/licenses, preserve stable UUIDs, normalize/deduplicate, import atomically, host approved static assets privately, implement member-only search/detail/filter services, bounded caching, visible attribution and workout/custom integration. No upstream runtime calls or native video player required.
 
-Acceptance: authorized live integration works after entitlement and retention gates clear; native playback is measured for range requests/replay/token expiry. Automated fixture checks cover cache sharing/concurrency/expiry, invalid upstream paths, auth failures, 403/429, bounded retries and token redaction. Custom exercises/logging/History continue during provider outage. Backup/log/cache behavior meets verified retention rules without weakening BabyBoo backups. An unavailable-only demo does not satisfy this milestone.
+Acceptance: all catalog-plan release criteria pass, including rights/provenance, import/retry/rollback, isolation, stable historical snapshots/Previous, zero upstream runtime traffic, credits, static-image fallback and native accessibility checks. RepDB-only launch is acceptable. This is planned work, not an import/deployment authorization or completed M6.
 
-Owners: developer owns provider service/private backend/native demo component in separated tasks; architect checks boundaries; designer checks explicit play/unavailable behavior; reviewer verifies cache/security/failure tests and native request evidence.
+Owners: catalog/backend/app developers receive bounded C1–C5 assignments; reviewer checks C6 evidence. Existing hosted, spending, shared migration and M8 cutover gates remain.
 
 ## M7 — Hosted staging and beta readiness
 

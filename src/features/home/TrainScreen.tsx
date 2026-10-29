@@ -17,6 +17,14 @@ export function TrainScreen() {
     queryFn: async () => (training.api ? training.api.routines() : []),
     enabled: Boolean(training.api),
   });
+  const recentWorkouts = useQuery({
+    queryKey: ["history", "recent", scope],
+    queryFn: async () => {
+      if (!training.api) throw new Error("Sign in to view history.");
+      return training.api.history(null);
+    },
+    enabled: Boolean(training.api),
+  });
   const start = async () => {
     setBusy(true);
     setError("");
@@ -105,6 +113,42 @@ export function TrainScreen() {
         secondary
         onPress={() => router.push("/(tabs)/history")}
       />
+      <Heading title="Recent workouts" />
+      {recentWorkouts.isPending ? (
+        <Text style={{ color: colors.secondary }}>
+          {training.api ? "Loading recent workouts…" : "Sign in to view workouts."}
+        </Text>
+      ) : recentWorkouts.isError ? (
+        <>
+          <Text accessibilityRole="alert" style={{ color: colors.error }}>
+            Couldn’t load recent workouts.
+          </Text>
+          <Button
+            label="Retry recent workouts"
+            secondary
+            onPress={() => { void recentWorkouts.refetch(); }}
+          />
+        </>
+      ) : recentWorkouts.data.items.length === 0 ? (
+        <Text style={{ color: colors.secondary }}>
+          Completed workouts will appear here.
+        </Text>
+      ) : (
+        recentWorkouts.data.items.slice(0, 5).map((workout) => {
+          const date = new Intl.DateTimeFormat(undefined, {
+            timeZone: workout.timezone,
+            dateStyle: "medium",
+          }).format(new Date(workout.finished_at ?? workout.started_at));
+          return (
+            <Button
+              key={workout.id}
+              label={`${workout.name} · ${date}`}
+              secondary
+              onPress={() => router.push(`/history-detail?id=${workout.id}`)}
+            />
+          );
+        })
+      )}
     </Screen>
   );
 }

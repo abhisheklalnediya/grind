@@ -1,5 +1,13 @@
 # GRIND — maintained build and implementation status
 
+**29 October — exercise list and picker cleanup:** RepDB English JSON and 1,217 flat images are staged in the local repository, with one image per exercise in the generated registry. Library and server-backed picker use compact rows. Typecheck, strict lint and coverage pass (56 suites, 275 tests; 98.32% statements, 95.17% branches, 97.82% functions, 99.17% lines); catalog Python tests and Android/iOS JS exports pass. Android arm64 debug assemble passed and APK installed on emulator-5554; exercise screen was not observed on device. Bundled exercises are browse-only pending reviewed server identity/load mappings; existing server rows remain separately visible and may duplicate names. Filter taxonomy is not unified. Public repository distribution requires license review.
+
+**29 October — bundled exercise list:** local list implementation includes 701 archive records with one bundled image each, local search/filters, custom server entries and read-only RepDB detail. Typecheck, zero-warning lint and coverage pass (57 suites / 275 tests; 97.11% statements, 94.02% branches, 95.62% functions, 97.95% lines); 8 catalog Python tests and Android JS export pass. Source assets and generated registry are ignored and must be provisioned; absent registry falls back to placeholders. RepDB-to-server UUID mapping, selectable workout catalog, reviewed taxonomy, release fail-closed build, license/delivery review and native builds/device visual acceptance remain open.
+
+**29 October — downloaded RepDB browser:** typecheck, lint and coverage pass (55 suites, 270 tests; 98.24% statements, 95.11% branches, 97.76% functions, 99.16% lines); Android JS export passes. Seven archive/catalog inspection tests pass. Backend specialist reports archive identity and importer SQL tests passed in rolled-back disposable local DB. Browse-only entries do not yet support workout selection or images; native/hosted acceptance remains open.
+
+**29 October — exercise engine groundwork:** typecheck and lint passed; coverage suite 54 suites / 266 tests passed (98.29% statements, 95.15% branches, 98.12% functions, 99.18% lines). Catalog validator 4 tests and backend harness 4 tests passed. New catalog migration and SQL tests passed in a rolled-back guarded disposable database according to backend specialist; no hosted or native acceptance. RepDB acquisition/import, media delivery and full engine integration remain incomplete; existing library path retained until migration rollout.
+
 Last checked: **28 October 2026 (Asia/Kolkata)**
 Owner: coordinator
 Authorized delivery scope: **M0–M3**, React Native/Expo, disposable local Supabase

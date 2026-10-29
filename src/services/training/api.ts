@@ -149,6 +149,41 @@ export function createTrainingApi(transport: TrainingTransport) {
         },
         previousSchema,
       ),
+    searchCatalog: (input: {
+      query: string;
+      muscle?: string;
+      equipment?: string;
+      custom?: boolean;
+      after?: { name: string; id: string };
+      limit?: number;
+    }) => {
+      const parsed = z
+        .object({
+          query: z.string().max(100),
+          muscle: z.string().max(100).optional(),
+          equipment: z.string().max(100).optional(),
+          custom: z.boolean().optional(),
+          after: z
+            .object({ name: z.string().max(200), id: z.string().uuid() })
+            .optional(),
+          limit: z.number().int().min(1).max(50).optional(),
+        })
+        .strict()
+        .parse(input);
+      return rpc(
+        "search_catalog",
+        {
+          p_query: parsed.query.trim(),
+          p_muscle: parsed.muscle?.trim() || null,
+          p_equipment: parsed.equipment?.trim() || null,
+          p_after_name: parsed.after?.name ?? null,
+          p_after_id: parsed.after?.id ?? null,
+          p_limit: parsed.limit ?? 30,
+          p_custom: parsed.custom ?? false,
+        },
+        z.array(exerciseSchema),
+      );
+    },
     catalog: async () => {
       const result = z
         .array(exerciseSchema)

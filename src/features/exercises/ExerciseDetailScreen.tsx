@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
+import { Linking, Text } from "react-native";
 import { Screen } from "@/components/Screen";
 import { Heading } from "@/components/Heading";
 import { Button } from "@/components/Button";
@@ -12,7 +13,7 @@ export function ExerciseDetailScreen({ id }: { id: string }) {
   const catalog = useCatalog();
   const exercise = catalog.data?.find((item) => item.id === id);
   const { api } = useTraining();
-  const { scope } = useTheme();
+  const { scope, colors } = useTheme();
   const previous = useQuery({
     queryKey: ["exercise-previous", scope, id, exercise?.load_mode],
     queryFn: () => {
@@ -49,7 +50,24 @@ export function ExerciseDetailScreen({ id }: { id: string }) {
             Use a controlled range of motion and a load appropriate to your
             ability. Stop if movement causes pain.
           </Copy>
-          <Copy>Video instructions are not available yet.</Copy>
+          <Copy>
+            Exercise illustrations and detailed instructions are not available
+            yet.
+          </Copy>
+          <Text
+            accessibilityRole="link"
+            accessibilityLabel="Exercise data by RepDB, opens website"
+            onPress={() => {
+              void Linking.openURL("https://repdb.co").catch(() => {});
+            }}
+            style={{
+              color: colors.text,
+              textDecorationLine: "underline",
+              minHeight: 48,
+            }}
+          >
+            Exercise data by RepDB (repdb.co)
+          </Text>
           <Heading title="Latest performance" />
           {previous.isPending ? (
             <Copy>Loading previous performance…</Copy>

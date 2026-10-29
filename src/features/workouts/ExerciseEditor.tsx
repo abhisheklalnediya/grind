@@ -144,17 +144,18 @@ export function ExerciseEditor({
           ordinal,
         );
         return (
-          <View key={set.id} style={styles.row}>
-            <Text style={{ color: colors.secondary }}>
-              Previous:{" "}
-              {prior
+          <SetEditor
+            key={set.id}
+            exercise={exercise}
+            set={set}
+            previous={
+              prior
                 ? `${prior.entered_load ?? "Bodyweight"} ${prior.entered_load === null ? "" : prior.entered_unit} × ${prior.reps}`
                 : previous.isPending
                   ? "Loading…"
-                  : "—"}
-            </Text>
-            <SetEditor exercise={exercise} set={set} />
-          </View>
+                  : "—"
+            }
+          />
         );
       })}
       {defaults.error ? (
@@ -217,4 +218,4 @@ export function ExerciseEditor({
   );
 }
 
-const styles = StyleSheet.create({ group: { gap: 12 }, row: { gap: 8 } });
+const styles = StyleSheet.create({ group: { gap: 12 } });

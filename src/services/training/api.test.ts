@@ -123,3 +123,26 @@ it("rejects unsafe response shapes and invalid drafts instead of claiming saved"
   jest.mocked(localTrainingTransport).mockReturnValue(port);
   expect(trainingApi("user-a")).toBeDefined();
 });
+
+it("validates bounded catalog searches and server responses", async () => {
+  const { port, api } = setup();
+  const exercise = makeCatalogExercise();
+  jest.mocked(port.rpc).mockResolvedValue([exercise]);
+  expect(
+    await api.searchCatalog({ query: " curl ", muscle: "biceps", limit: 10 }),
+  ).toEqual([exercise]);
+  expect(port.rpc).toHaveBeenCalledWith("search_catalog", {
+    p_query: "curl",
+    p_muscle: "biceps",
+    p_equipment: null,
+    p_after_name: null,
+    p_after_id: null,
+    p_limit: 10,
+    p_custom: false,
+  });
+  expect(() => api.searchCatalog({ query: "x", limit: 51 })).toThrow();
+  jest.mocked(port.rpc).mockResolvedValue([{ id: "invalid" }]);
+  await expect(api.searchCatalog({ query: "" })).rejects.toMatchObject({
+    kind: "response",
+  });
+});

@@ -7,6 +7,7 @@ module.exports = defineConfig([
   },
   {
     files: ["app/**/*.{ts,tsx}", "src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}"],
+    settings: { "import/core-modules": ["repdb-archive", "repdb-images"] },
     rules: {
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-non-null-assertion": "error",

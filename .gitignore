@@ -18,3 +18,5 @@ android/
 
 expo-env.d.ts
 # @end expo-cli
+# Locally acquired licensed exercise data; do not publish the archive.
+/Data/
