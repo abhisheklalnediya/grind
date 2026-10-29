@@ -11,25 +11,20 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { isConfiguredExercise } from "@/domain/training";
 import { useTheme } from "@/theme/useTheme";
 import {
   bundledExercises,
   catalogAvailable,
   exerciseImage,
-  searchBundledExercises,
 } from "@/services/exercises";
-import { filterCatalog, useCatalog } from "./catalog";
+import { useCatalog } from "./catalog";
+import { catalogItems } from "./catalogItems";
 import { ExerciseListRow } from "./ExerciseListRow";
 import { ExerciseFilter } from "./ExerciseFilter";
 import { RepdbExerciseDetail } from "./RepdbExerciseDetail";
 
 type LocalExercise = (typeof bundledExercises)[number];
-type ListItem =
-  | { kind: "repdb"; exercise: LocalExercise }
-  | {
-      kind: "server";
-      exercise: NonNullable<ReturnType<typeof useCatalog>["data"]>[number];
-    };
 
 export function ExerciseLibraryScreen() {
   const { colors } = useTheme();
@@ -38,16 +33,18 @@ export function ExerciseLibraryScreen() {
   const [muscle, setMuscle] = useState("");
   const [equipment, setEquipment] = useState("");
   const [mine, setMine] = useState(false);
-  const [selected, setSelected] = useState<LocalExercise | null>(null);
+  const [selected, setSelected] = useState<{
+    exercise: LocalExercise;
+    available: boolean;
+    loggingUnavailable: boolean;
+  } | null>(null);
   const muscles = useMemo(
     () =>
       Array.from(
         new Set([
-          ...bundledExercises.flatMap((item) => [
-            ...item.primaryMuscles,
-            ...item.secondaryMuscles,
-          ]),
-          ...(query.data ?? []).map((item) => item.primary_muscle),
+          ...(query.data ?? [])
+            .filter(isConfiguredExercise)
+            .map((item) => item.primary_muscle),
         ]),
       )
         .filter(Boolean)
@@ -58,37 +55,31 @@ export function ExerciseLibraryScreen() {
     () =>
       Array.from(
         new Set([
-          ...bundledExercises.map((item) => item.equipment),
-          ...(query.data ?? []).map((item) => item.equipment),
+          ...(query.data ?? [])
+            .filter(isConfiguredExercise)
+            .map((item) => item.equipment),
         ]),
       )
         .filter(Boolean)
         .sort(),
     [query.data],
   );
-  const items = useMemo<ListItem[]>(() => {
-    const local: ListItem[] = mine
-      ? []
-      : searchBundledExercises(bundledExercises, {
-          query: search,
-          muscle,
-          equipment,
-        }).map((exercise) => ({ kind: "repdb", exercise }));
-    const server: ListItem[] = filterCatalog(
-      query.data ?? [],
-      search,
-      muscle,
-      equipment,
-      mine,
-    ).map((exercise) => ({ kind: "server", exercise }));
-    return [...local, ...server].sort((a, b) =>
-      a.exercise.name.localeCompare(b.exercise.name),
-    );
-  }, [search, muscle, equipment, mine, query.data]);
+  const items = useMemo(
+    () =>
+      catalogItems(
+        bundledExercises,
+        query.data ?? [],
+        { query: search, muscle, equipment },
+        mine,
+      ),
+    [search, muscle, equipment, mine, query.data],
+  );
   if (selected)
     return (
       <RepdbExerciseDetail
-        exercise={selected}
+        exercise={selected.exercise}
+        available={selected.available}
+        loggingUnavailable={selected.loggingUnavailable}
         onBack={() => setSelected(null)}
       />
     );
@@ -112,7 +103,15 @@ export function ExerciseLibraryScreen() {
                 name={item.exercise.name}
                 subtitle={`${item.exercise.primaryMuscles.map(label).join(", ")} · ${label(item.exercise.equipment)}`}
                 image={exerciseImage(item.exercise.id)}
-                onPress={() => setSelected(item.exercise)}
+                onPress={() =>
+                  setSelected({
+                    exercise: item.exercise,
+                    available: Boolean(item.server),
+                    loggingUnavailable: Boolean(
+                      item.server && !isConfiguredExercise(item.server),
+                    ),
+                  })
+                }
               />
             ) : (
               <ExerciseListRow

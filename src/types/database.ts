@@ -34,12 +34,14 @@ export type Database = {
           created_at: string
           equipment: string
           id: string
-          load_convention: string
-          load_mode: string
+          is_configured: boolean
+          load_convention: string | null
+          load_mode: string | null
           name: string
           origin: string
           owner_id: string | null
           primary_muscle: string
+          tracking_type: string | null
         }
         Insert: {
           archived_at?: string | null
@@ -47,12 +49,14 @@ export type Database = {
           created_at?: string
           equipment: string
           id?: string
-          load_convention: string
-          load_mode?: string
+          is_configured?: boolean
+          load_convention?: string | null
+          load_mode?: string | null
           name: string
           origin: string
           owner_id?: string | null
           primary_muscle: string
+          tracking_type?: string | null
         }
         Update: {
           archived_at?: string | null
@@ -60,12 +64,14 @@ export type Database = {
           created_at?: string
           equipment?: string
           id?: string
-          load_convention?: string
-          load_mode?: string
+          is_configured?: boolean
+          load_convention?: string | null
+          load_mode?: string | null
           name?: string
           origin?: string
           owner_id?: string | null
           primary_muscle?: string
+          tracking_type?: string | null
         }
         Relationships: [
           {
@@ -86,6 +92,7 @@ export type Database = {
           position: number
           rest_seconds: number
           routine_id: string
+          tracking_type: string
         }
         Insert: {
           exercise_id: string
@@ -95,6 +102,7 @@ export type Database = {
           position: number
           rest_seconds: number
           routine_id: string
+          tracking_type?: string
         }
         Update: {
           exercise_id?: string
@@ -104,6 +112,7 @@ export type Database = {
           position?: number
           rest_seconds?: number
           routine_id?: string
+          tracking_type?: string
         }
         Relationships: [
           {
@@ -124,7 +133,11 @@ export type Database = {
       }
       routine_sets: {
         Row: {
+          canonical_distance_km: number | null
           canonical_kg: number | null
+          distance_unit: string | null
+          duration_seconds: number | null
+          entered_distance: string | null
           entered_load: string | null
           entered_unit: string
           id: string
@@ -134,7 +147,11 @@ export type Database = {
           set_type: string
         }
         Insert: {
+          canonical_distance_km?: number | null
           canonical_kg?: number | null
+          distance_unit?: string | null
+          duration_seconds?: number | null
+          entered_distance?: string | null
           entered_load?: string | null
           entered_unit: string
           id: string
@@ -144,7 +161,11 @@ export type Database = {
           set_type: string
         }
         Update: {
+          canonical_distance_km?: number | null
           canonical_kg?: number | null
+          distance_unit?: string | null
+          duration_seconds?: number | null
+          entered_distance?: string | null
           entered_load?: string | null
           entered_unit?: string
           id?: string
@@ -270,6 +291,7 @@ export type Database = {
           position: number
           rest_seconds: number
           session_id: string
+          tracking_type: string
         }
         Insert: {
           exercise_id: string
@@ -281,6 +303,7 @@ export type Database = {
           position: number
           rest_seconds: number
           session_id: string
+          tracking_type?: string
         }
         Update: {
           exercise_id?: string
@@ -292,6 +315,7 @@ export type Database = {
           position?: number
           rest_seconds?: number
           session_id?: string
+          tracking_type?: string
         }
         Relationships: [
           {
@@ -363,8 +387,12 @@ export type Database = {
       }
       workout_sets: {
         Row: {
+          canonical_distance_km: number | null
           canonical_kg: number | null
           completed_at: string | null
+          distance_unit: string | null
+          duration_seconds: number | null
+          entered_distance: string | null
           entered_load: string | null
           entered_unit: string
           id: string
@@ -374,8 +402,12 @@ export type Database = {
           workout_exercise_id: string
         }
         Insert: {
+          canonical_distance_km?: number | null
           canonical_kg?: number | null
           completed_at?: string | null
+          distance_unit?: string | null
+          duration_seconds?: number | null
+          entered_distance?: string | null
           entered_load?: string | null
           entered_unit: string
           id: string
@@ -385,8 +417,12 @@ export type Database = {
           workout_exercise_id: string
         }
         Update: {
+          canonical_distance_km?: number | null
           canonical_kg?: number | null
           completed_at?: string | null
+          distance_unit?: string | null
+          duration_seconds?: number | null
+          entered_distance?: string | null
           entered_load?: string | null
           entered_unit?: string
           id?: string
@@ -439,6 +475,26 @@ export type Database = {
         }
         Returns: Json
       }
+      catalog_with_sources: {
+        Args: { p_after_id?: string; p_after_name?: string; p_limit?: number }
+        Returns: {
+          archived_at: string
+          category: string
+          created_at: string
+          equipment: string
+          id: string
+          is_configured: boolean
+          load_convention: string
+          load_mode: string
+          name: string
+          origin: string
+          owner_id: string
+          primary_muscle: string
+          source_exercise_id: string
+          source_key: string
+          tracking_type: string
+        }[]
+      }
       complete_grind_setup: {
         Args: { p_default_rest_seconds: number; p_preferred_unit: string }
         Returns: {
@@ -468,6 +524,7 @@ export type Database = {
           p_exercise_id: string
           p_load_convention?: string
           p_load_mode: string
+          p_tracking_type?: string
         }
         Returns: Json
       }
@@ -523,6 +580,38 @@ export type Database = {
           p_template: Json
         }
         Returns: Json
+      }
+      search_catalog: {
+        Args: {
+          p_after_id?: string
+          p_after_name?: string
+          p_custom?: boolean
+          p_equipment?: string
+          p_limit?: number
+          p_muscle?: string
+          p_query?: string
+        }
+        Returns: {
+          archived_at: string | null
+          category: string
+          created_at: string
+          equipment: string
+          id: string
+          is_configured: boolean
+          load_convention: string | null
+          load_mode: string | null
+          name: string
+          origin: string
+          owner_id: string | null
+          primary_muscle: string
+          tracking_type: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "exercises"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       start_workout: {
         Args: {

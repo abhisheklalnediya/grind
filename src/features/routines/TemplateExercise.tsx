@@ -45,6 +45,7 @@ export function TemplateExercise({
           set={set}
           index={index}
           mode={exercise.load_mode}
+          trackingType={exercise.tracking_type ?? "reps"}
           onChange={(value) =>
             onChange({
               ...exercise,
@@ -98,12 +99,14 @@ function TemplateSet({
   set,
   index,
   mode,
+  trackingType,
   onChange,
   onRemove,
 }: {
   set: Exercise["sets"][number];
   index: number;
   mode: Exercise["load_mode"];
+  trackingType: NonNullable<Exercise["tracking_type"]>;
   onChange: (set: Exercise["sets"][number]) => void;
   onRemove: () => void;
 }) {
@@ -120,7 +123,54 @@ function TemplateSet({
           })
         }
       />
-      {mode !== "bodyweight" ? (
+      {trackingType !== "reps" ? (
+        <>
+          <Field
+            numeric
+            label={`Set ${index + 1} duration seconds`}
+            value={
+              set.duration_seconds == null ? "" : String(set.duration_seconds)
+            }
+            onChange={(value) =>
+              onChange({
+                ...set,
+                duration_seconds: value ? Number(value) : null,
+              })
+            }
+          />
+          {trackingType === "distance_duration" ? (
+            <>
+              <Field
+                numeric
+                label={`Set ${index + 1} distance`}
+                value={set.entered_distance ?? ""}
+                onChange={(value) =>
+                  onChange({
+                    ...set,
+                    entered_distance: value || null,
+                    distance_unit: set.distance_unit ?? "km",
+                  })
+                }
+              />
+              <Button
+                secondary
+                label={`Distance unit: ${set.distance_unit ?? "km"}`}
+                disabled={Boolean(set.entered_distance)}
+                onPress={() =>
+                  onChange({
+                    ...set,
+                    distance_unit:
+                      (set.distance_unit ?? "km") === "km" ? "mi" : "km",
+                  })
+                }
+              />
+              {set.entered_distance ? (
+                <Copy>Clear distance to change its unit.</Copy>
+              ) : null}
+            </>
+          ) : null}
+        </>
+      ) : mode !== "bodyweight" ? (
         <>
           <Field
             numeric
@@ -137,14 +187,16 @@ function TemplateSet({
           />
         </>
       ) : null}
-      <Field
-        numeric
-        label={`Set ${index + 1} reps`}
-        value={set.reps === null ? "" : String(set.reps)}
-        onChange={(value) =>
-          onChange({ ...set, reps: value ? Number(value) : null })
-        }
-      />
+      {trackingType === "reps" ? (
+        <Field
+          numeric
+          label={`Set ${index + 1} reps`}
+          value={set.reps === null ? "" : String(set.reps)}
+          onChange={(value) =>
+            onChange({ ...set, reps: value ? Number(value) : null })
+          }
+        />
+      ) : null}
       <Button secondary label={`Remove set ${index + 1}`} onPress={onRemove} />
     </>
   );

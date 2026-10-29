@@ -2,6 +2,7 @@ import {
   customExercisePayloadSchema,
   exerciseSchema,
   historyPageSchema,
+  isConfiguredExercise,
   routinePayloadSchema,
   routineSchema,
   sessionSchema,
@@ -186,4 +187,92 @@ it("keeps bodyweight and positive assistance semantics for targets and saved row
       true,
     );
   }
+});
+it("preserves timed measurements while accepting legacy graphs", () => {
+  const measured = {
+    ...set,
+    entered_load: null,
+    reps: null,
+    duration_seconds: 300,
+    entered_distance: "1.250",
+    distance_unit: "mi",
+    completed_at: time,
+  };
+  const timed = {
+    ...workoutExercise,
+    tracking_type: "distance_duration",
+    sets: [measured],
+  };
+  expect(workoutExerciseSchema.parse(timed).sets[0]?.entered_distance).toBe(
+    "1.250",
+  );
+  expect(
+    workoutExerciseSchema.safeParse({
+      ...timed,
+      sets: [{ ...measured, distance_unit: null }],
+    }).success,
+  ).toBe(false);
+  expect(
+    workoutExerciseSchema.safeParse({
+      ...timed,
+      sets: [{ ...measured, duration_seconds: null }],
+    }).success,
+  ).toBe(false);
+  expect(workoutExerciseSchema.safeParse(workoutExercise).success).toBe(true);
+  expect(
+    templateExerciseSchema.parse({
+      ...template,
+      tracking_type: "duration",
+      sets: [{ ...set, duration_seconds: 45 }],
+    }).tracking_type,
+  ).toBe("duration");
+});
+
+it("accepts unconfigured provider rows without inventing logging semantics", () => {
+  const base = {
+    ...custom,
+    id,
+    origin: "provider",
+    owner_id: null,
+    archived_at: null,
+    created_at: time,
+  };
+  const unconfigured = {
+    ...base,
+    is_configured: false,
+    load_mode: null,
+    load_convention: null,
+    tracking_type: null,
+  };
+  const parsed = exerciseSchema.parse(unconfigured);
+  expect(isConfiguredExercise(parsed)).toBe(false);
+  expect(isConfiguredExercise(exerciseSchema.parse(base))).toBe(true);
+  expect(
+    exerciseSchema.safeParse({
+      ...unconfigured,
+      origin: "custom",
+      owner_id: id,
+    }).success,
+  ).toBe(false);
+  expect(
+    exerciseSchema.safeParse({ ...unconfigured, load_mode: "external" })
+      .success,
+  ).toBe(false);
+  expect(
+    exerciseSchema.safeParse({ ...unconfigured, load_convention: "Weight" })
+      .success,
+  ).toBe(false);
+  expect(
+    exerciseSchema.safeParse({ ...unconfigured, tracking_type: "reps" })
+      .success,
+  ).toBe(false);
+  expect(exerciseSchema.safeParse({ ...base, load_mode: null }).success).toBe(
+    false,
+  );
+  expect(
+    exerciseSchema.safeParse({ ...base, load_convention: null }).success,
+  ).toBe(false);
+  expect(
+    exerciseSchema.safeParse({ ...base, tracking_type: null }).success,
+  ).toBe(false);
 });

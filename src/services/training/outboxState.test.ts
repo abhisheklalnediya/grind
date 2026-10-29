@@ -188,3 +188,31 @@ it("clears only acknowledged workout text drafts and keeps unrelated rows", () =
     }),
   ).toEqual({ "workout:w:name": "New", other: "72." });
 });
+it("finishes measured sets only when their required values are present", () => {
+  const measured = {
+    ...makeSet(),
+    entered_load: null,
+    reps: null,
+    duration_seconds: 120,
+    entered_distance: "1.5",
+    distance_unit: "km" as const,
+    completed_at: "2026-10-27T00:00:00Z",
+  };
+  const timed = {
+    ...exercise,
+    tracking_type: "distance_duration" as const,
+    sets: [measured],
+  };
+  expect(canFinish({ ...session, exercises: [timed] })).toBe(true);
+  expect(
+    canFinish({
+      ...session,
+      exercises: [
+        { ...timed, sets: [{ ...measured, entered_distance: null }] },
+      ],
+    }),
+  ).toBe(false);
+  expect(rawFieldKey(exercise.id, makeSet().id, "duration")).toContain(
+    ":duration",
+  );
+});

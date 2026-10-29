@@ -91,8 +91,27 @@ try:
     assert all(status == 200 and saved['preferred_unit'] == 'lb' and
                saved['default_rest_seconds'] == 90 and saved['user_id'] == account['user_id']
                for status, saved in setups), 'Concurrent setup save failed.'
-    status, rows = request('/rest/v1/exercises?select=id', token=token1, schema=True)
-    assert status == 200 and len(rows) == 7, 'Member catalog failed.'
+    status, rows = request('/rest/v1/exercises?select=id&archived_at=is.null', token=token1, schema=True)
+    assert status == 200 and len(rows) >= 1, 'Member catalog failed.'
+    catalog, after = [], None
+    for _ in range(100):
+        status, page = rpc('catalog_with_sources', token1, {
+            'p_after_name': after['name'] if after else None,
+            'p_after_id': after['id'] if after else None,
+            'p_limit': 100,
+        })
+        assert status == 200 and isinstance(page, list), 'Paginated catalog request failed.'
+        catalog.extend(page)
+        if len(page) < 100:
+            break
+        after = page[-1]
+    else:
+        raise AssertionError('Catalog pagination did not terminate.')
+    assert len({row['id'] for row in catalog}) == len(catalog), 'Duplicate catalog UUID.'
+    repdb = [row for row in catalog if row.get('source_key') == 'repdb']
+    if repdb:
+        assert len(repdb) == 701 and len({row['source_exercise_id'] for row in repdb}) == 701, 'RepDB catalog is incomplete or duplicated.'
+    print(f'PASS authenticated paginated catalog: {len(repdb)} distinct RepDB pages.')
     status, denial = request('/rest/v1/user_settings?user_id=eq.' + account['user_id'], {'preferred_unit': 'kg'}, token=token1,
                         schema=True, method='PATCH')
     assert status in (401, 403, 404, 405), f'Raw settings request unexpected HTTP {status}, code {denial.get("code")}. '

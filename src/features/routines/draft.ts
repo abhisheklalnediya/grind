@@ -5,6 +5,7 @@ import type {
   TrainingExercise,
   TrainingRoutine,
 } from "@/domain/training";
+import { isConfiguredExercise } from "@/domain/training";
 export type RoutineDraft = {
   scope: string;
   id: string | null;
@@ -50,6 +51,9 @@ export const useRoutineDraft = create<DraftStore>((set) => ({
   add: (scope, exercises, restSeconds = 120) =>
     set((state) => {
       if (!state.draft || state.draft.scope !== scope) return state;
+      const configured = exercises.filter(isConfiguredExercise);
+      if (configured.length !== exercises.length)
+        throw new Error("This exercise is not yet available for workouts.");
       const old = state.draft.payload.exercises;
       return {
         draft: {
@@ -59,11 +63,14 @@ export const useRoutineDraft = create<DraftStore>((set) => ({
             ...state.draft.payload,
             exercises: [
               ...old,
-              ...exercises.map((exercise, index) => ({
+              ...configured.map((exercise, index) => ({
                 id: randomUUID(),
                 exercise_id: exercise.id,
                 position: old.length + index,
                 load_mode: exercise.load_mode,
+                ...(exercise.tracking_type
+                  ? { tracking_type: exercise.tracking_type }
+                  : {}),
                 notes: "",
                 rest_seconds: restSeconds,
                 sets: [],

@@ -102,6 +102,73 @@ it("creates, retains and scopes transient template selection and edits", () => {
   expect(useRoutineDraft.getState().draft?.version).toBe(1);
   expect(useRoutineDraft.getState().draft?.dirty).toBe(false);
 });
+it("retains a distance exercise tracking type in the routine draft", () => {
+  useRoutineDraft.getState().begin("a");
+  useRoutineDraft
+    .getState()
+    .add("a", [{ ...catalog, tracking_type: "distance_duration" }]);
+  expect(
+    useRoutineDraft.getState().draft?.payload.exercises[0]?.tracking_type,
+  ).toBe("distance_duration");
+});
+it("rejects an unconfigured exercise in a routine draft", () => {
+  useRoutineDraft.getState().begin("a");
+  expect(() => useRoutineDraft.getState().add("a", [{ ...catalog, origin: "provider", is_configured: false, load_mode: null, load_convention: null, tracking_type: null }])).toThrow("not yet available");
+  expect(useRoutineDraft.getState().draft?.payload.exercises).toEqual([]);
+});
+it("edits a timed routine set and distance unit", async () => {
+  setup();
+  const onChange = jest.fn();
+  await mount(
+    <TemplateExercise
+      exercise={{
+        ...template,
+        tracking_type: "distance_duration",
+        sets: [
+          {
+            id: trainingId(8),
+            position: 0,
+            set_type: "working",
+            entered_load: null,
+            entered_unit: "kg",
+            reps: null,
+          },
+        ],
+      }}
+      name="Run"
+      onChange={onChange}
+      onRemove={jest.fn()}
+      onUp={jest.fn()}
+      onDown={jest.fn()}
+    />,
+  );
+  await fireEvent.changeText(
+    screen.getByLabelText("Set 1 duration seconds"),
+    "120",
+  );
+  expect(onChange).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      sets: [expect.objectContaining({ duration_seconds: 120 })],
+    }),
+  );
+  await fireEvent.changeText(screen.getByLabelText("Set 1 distance"), "1.25");
+  expect(onChange).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      sets: [
+        expect.objectContaining({
+          entered_distance: "1.25",
+          distance_unit: "km",
+        }),
+      ],
+    }),
+  );
+  await fireEvent.press(screen.getByText("Distance unit: km"));
+  expect(onChange).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      sets: [expect.objectContaining({ distance_unit: "mi" })],
+    }),
+  );
+});
 it("shows saved routine and starts it without changing its template", async () => {
   const { start } = setup();
   await mount(<RoutineDetailScreen id={trainingId(4)} />);

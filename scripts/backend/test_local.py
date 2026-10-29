@@ -83,6 +83,125 @@ class LocalHarnessTests(unittest.TestCase):
             self.assertNotIn('care.sql', executed)
             self.assertNotIn('bootstrap.sql', executed)
 
+    def test_forward_plan_accepts_only_explicit_append_only_grind_changes(self):
+        with tempfile.TemporaryDirectory(prefix='grind-m1-') as folder:
+            work = Path(folder)
+            source = work / 'source'
+            snapshot = work / 'supabase'
+            for base in (source, snapshot):
+                for name in ('migrations', 'tests'):
+                    (base / name).mkdir(parents=True)
+                (base / 'migrations/20261025180000_grind_foundation.sql').write_text('begin;\nselect 1;\ncommit;')
+            (work / local.MARKER).write_text(local.PROJECT)
+            (snapshot / 'config.toml').write_text(local.CONFIG)
+            old = local.sql_manifest(source)
+            (work / 'sql-manifest.json').write_text(json.dumps(old))
+            migration = 'migrations/20261029180000_grind_catalog.sql'
+            (source / migration).write_text('-- comment\nbegin;\nselect 2;\ncommit;')
+            (source / 'tests/grind_catalog.sql').write_text('select 1;')
+            with patch.object(local, 'SOURCE', source):
+                before, after, pending = local.forward_plan(work, [migration])
+                self.assertEqual(before, old)
+                self.assertEqual(pending, [migration])
+                sql = local.forward_sql(before, after, pending)
+                self.assertEqual(sql.lower().count('begin;'), 1)
+                self.assertEqual(sql.lower().count('commit;'), 1)
+                self.assertIn('lock table supabase_migrations.schema_migrations', sql)
+                self.assertIn('sha256:' + after[migration], sql)
+                with self.assertRaisesRegex(SystemExit, 'Explicitly approve'):
+                    local.forward_plan(work, [])
+                (source / 'migrations/20261025180000_grind_foundation.sql').write_text('tampered')
+                with self.assertRaisesRegex(SystemExit, 'Existing source'):
+                    local.forward_plan(work, [migration])
+
+    def test_forward_plan_rejects_non_grind_and_old_versions(self):
+        with tempfile.TemporaryDirectory(prefix='grind-m1-') as folder:
+            work = Path(folder)
+            source, snapshot = work / 'source', work / 'supabase'
+            for base in (source, snapshot):
+                for name in ('migrations', 'tests'):
+                    (base / name).mkdir(parents=True)
+                (base / 'migrations/20261025180000_grind_foundation.sql').write_text('begin;\nselect 1;\ncommit;')
+            (work / local.MARKER).write_text(local.PROJECT)
+            (snapshot / 'config.toml').write_text(local.CONFIG)
+            (work / 'sql-manifest.json').write_text(json.dumps(local.sql_manifest(source)))
+            with patch.object(local, 'SOURCE', source):
+                item = 'migrations/20261029180000_care_change.sql'
+                (source / item).write_text('begin;\nselect 1;\ncommit;')
+                with self.assertRaisesRegex(SystemExit, 'Only new Grind'):
+                    local.forward_plan(work, [item])
+                (source / item).unlink()
+                item = 'migrations/20261024180000_grind_older.sql'
+                (source / item).write_text('begin;\nselect 1;\ncommit;')
+                with self.assertRaisesRegex(SystemExit, 'strictly forward'):
+                    local.forward_plan(work, [item])
+
+    def test_forward_update_checks_history_then_synchronizes_without_reset(self):
+        with tempfile.TemporaryDirectory(prefix='grind-m1-') as folder:
+            work = Path(folder)
+            source, snapshot = work / 'source', work / 'supabase'
+            for base in (source, snapshot):
+                for name in ('migrations', 'tests'):
+                    (base / name).mkdir(parents=True)
+                (base / 'migrations/20261025180000_grind_foundation.sql').write_text('begin;\nselect 1;\ncommit;')
+            (work / local.MARKER).write_text(local.PROJECT)
+            (snapshot / 'config.toml').write_text(local.CONFIG)
+            old = local.sql_manifest(source)
+            (work / 'sql-manifest.json').write_text(json.dumps(old))
+            migration = 'migrations/20261029180000_grind_catalog.sql'
+            (source / migration).write_text('begin;\nselect 2;\ncommit;')
+            new = local.sql_manifest(source)
+            history_old = [{'version': '20261025180000', 'name': 'grind_foundation', 'statements': None}]
+            history_new = history_old + [{'version': '20261029180000', 'name': 'grind_catalog', 'statements': ['sha256:' + new[migration]]}]
+            with patch.object(local, 'SOURCE', source), patch.object(local, 'target', return_value=work), \
+                    patch.object(local, 'database_history', side_effect=[history_old, history_new]), \
+                    patch.object(local, 'run') as run, contextlib.redirect_stdout(io.StringIO()):
+                local.update_forward([migration])
+                self.assertEqual(run.call_count, 1)
+                self.assertIn('lock table supabase_migrations.schema_migrations', run.call_args.kwargs['sql'])
+            self.assertEqual(local.sql_manifest(snapshot), new)
+            self.assertEqual(json.loads((work / 'sql-manifest.json').read_text()), new)
+
+    def test_forward_update_refuses_unexpected_history_before_write(self):
+        with tempfile.TemporaryDirectory(prefix='grind-m1-') as folder:
+            work = Path(folder)
+            source, snapshot = work / 'source', work / 'supabase'
+            for base in (source, snapshot):
+                for name in ('migrations', 'tests'):
+                    (base / name).mkdir(parents=True)
+                (base / 'migrations/20261025180000_grind_foundation.sql').write_text('begin;\nselect 1;\ncommit;')
+            (work / local.MARKER).write_text(local.PROJECT)
+            (snapshot / 'config.toml').write_text(local.CONFIG)
+            (work / 'sql-manifest.json').write_text(json.dumps(local.sql_manifest(source)))
+            migration = 'migrations/20261029180000_grind_catalog.sql'
+            (source / migration).write_text('begin;\nselect 2;\ncommit;')
+            with patch.object(local, 'SOURCE', source), patch.object(local, 'target', return_value=work), \
+                    patch.object(local, 'database_history', return_value=[]), patch.object(local, 'run') as run:
+                with self.assertRaisesRegex(SystemExit, 'history differs'):
+                    local.update_forward([migration])
+                run.assert_not_called()
+                self.assertFalse((snapshot / migration).exists())
+
+    def test_migration_body_rejects_transactions_and_psql_commands(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'migration.sql'
+            for text in ('select 1;', 'begin;\ncommit;\ncommit;', 'begin;\n\\echo bad\ncommit;'):
+                path.write_text(text)
+                import hashlib
+                with self.assertRaises(SystemExit):
+                    local.migration_body(path, hashlib.sha256(path.read_bytes()).hexdigest())
+
+    def test_history_recovery_requires_exact_new_markers(self):
+        manifest = {'migrations/20261025180000_grind_foundation.sql': 'a'*64,
+                    'migrations/20261029180000_grind_catalog.sql': 'b'*64}
+        expected = local.history_rows(manifest, marked={'migrations/20261029180000_grind_catalog.sql'})
+        actual = [{'version': '20261025180000', 'name': 'grind_foundation', 'statements': None},
+                  {'version': '20261029180000', 'name': 'grind_catalog', 'statements': ['sha256:' + 'b'*64]}]
+        self.assertTrue(local.history_matches(actual, expected))
+        actual[-1]['statements'] = None
+        self.assertFalse(local.history_matches(actual, expected))
+        self.assertFalse(local.history_matches(actual[:-1], expected))
+
     def test_local_environment_contains_only_public_config(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

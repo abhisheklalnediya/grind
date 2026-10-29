@@ -1,7 +1,8 @@
-import type {
-  TrainingExercise,
-  TrainingSession,
-  WorkoutCommand,
+import {
+  isConfiguredExercise,
+  type TrainingExercise,
+  type TrainingSession,
+  type WorkoutCommand,
 } from "@/domain/training";
 import { TrainingError } from "./errors";
 export type ProjectedCommand = {
@@ -37,6 +38,8 @@ export function projectCommand(
   if (command.type === "add_exercise") {
     if (session.exercises.some((exercise) => exercise.id === command.id))
       return session;
+    if (entry.catalog && !isConfiguredExercise(entry.catalog))
+      throw new TrainingError("validation");
     const exercise = {
       id: command.id,
       exercise_id: command.exercise_id,
@@ -44,6 +47,7 @@ export function projectCommand(
       name: entry.catalog?.name ?? "Exercise",
       load_convention: entry.catalog?.load_convention ?? "Unspecified",
       load_mode: command.load_mode,
+      tracking_type: command.tracking_type ?? entry.catalog?.tracking_type ?? undefined,
       notes: command.notes,
       rest_seconds: command.rest_seconds,
       sets: [],
@@ -87,6 +91,12 @@ export function projectCommand(
         existing.entered_load === command.set.entered_load &&
         existing.entered_unit === command.set.entered_unit &&
         existing.reps === command.set.reps &&
+        (existing.duration_seconds ?? null) ===
+          (command.set.duration_seconds ?? null) &&
+        (existing.entered_distance ?? null) ===
+          (command.set.entered_distance ?? null) &&
+        (existing.distance_unit ?? null) ===
+          (command.set.distance_unit ?? null) &&
         existing.set_type === command.set.set_type;
       const set = {
         ...command.set,

@@ -1,5 +1,33 @@
 # GRIND agent status
 
+## 29 October — enabled-only exercise lists; Dumbbell and EZ Curl Bar
+
+The user requested that Add Exercise and All Exercises show only configured entries, then approved Dumbbell and EZ Curl Bar weight/reps. Reused existing `is_configured` field; no new boolean/schema field was needed. Both lists now filter unconfigured and unmapped bundled entries, including their filter options. Added forward migration `20261029230000_grind_dumbbell_ez_catalog_configuration.sql` and SQL selection/logging tests in the canonical BabyBoo stream. It enables 88 Dumbbell and 21 EZ Curl Bar entries using distinct conventions “Weight per dumbbell” and “Total EZ-bar weight.” Current local total: 204/701 enabled (Barbell 76, Smith Machine 19, Dumbbell 88, EZ Curl Bar 21); 497 remain unavailable and zero other equipment is enabled. Applied via guarded `update-forward`, no reset. Typecheck, strict lint, coverage (57 suites/306 tests), focused exercise UI/catalog tests (29), all Grind SQL tests, and authenticated local API smoke pass. Native visual picker acceptance, hosted deployment and catalog release review remain open.
+
+## 29 October — RepDB barbell and Smith machine selection
+
+At that checkpoint the user approved weight-and-rep logging for RepDB entries with equipment exactly `Barbell` or `Smith Machine`; that configuration remains in place and is included in the latest totals above. See [BUILD_STATUS.md](BUILD_STATUS.md) and [TASKS.md](planning/TASKS.md).
+
+## 29 October — Add Exercise catalog diagnosis
+
+At the time of this diagnosis, local SQL showed 701 RepDB-linked exercises, of which 700 had null logging configuration; the picker and server rejected those rows. Six old seed rows were archived and the referenced bench-press UUID remained mapped. The subsequent user-approved barbell/Smith configuration is recorded above and supersedes that count. The user's earlier report of seven selectable entries could not be reconciled with the database without inspecting the actual device/build. See [build status](BUILD_STATUS.md) and [tasks](planning/TASKS.md).
+
+## 29 October — 701 local RepDB pages imported
+
+User requested replacing the seven seed entries with the RepDB pages. Applied the guarded configuration migration without reset and imported all 701 records to the isolated local database. Repeated import and actual database counts confirm 701 active global entries and 701 distinct approved source links. Bench press keeps the UUID referenced by the existing workout, and the other six seed rows are archived for historical safety. Only bench press is configured for logging; the other 700 pages are browsable but not selectable while their measurement semantics are unreviewed. No hosted operation or native acceptance is claimed. See [build status](BUILD_STATUS.md) and [tasks](planning/TASKS.md).
+
+## 29 October — catalog and measurement integration in progress
+
+The user approved tracking types for repetitions, duration and duration with distance. Client and forward migration changes preserve legacy repetition data, add measurement fields, and use explicit RepDB source links for a single mapped catalog row; four reviewed forward migrations were applied to the isolated local database without reset after a rolled-back rehearsal and independent review. The existing workout reference remains present. The measurement and catalog projection SQL suites were exercised in rolled-back transactions. Typecheck, lint and coverage passed (57 suites, 297 tests; native acceptance is pending). All 701 RepDB records are staged privately as pending in the isolated database; repeated staging was idempotent. A rollback-only synthetic import rehearsal preserved the referenced bench UUID and produced 701 unique links on two consecutive runs. No classification has been approved: timed weighted movements need further product/data handling. The disposable migration snapshot was updated without resetting existing workout data. Publishing the reviewed catalog and retiring or mapping seed entries remain incomplete. Future release removal/metadata reconciliation and weighted timed movements require design and verification before those cases are supported. See [tasks](planning/TASKS.md).
+
+## 29 October — catalog consolidation investigation
+
+User requested replacing the seed list with RepDB and adding duration and distance tracking. Read-only inspection of the marked isolated local database found seven global seed rows and one workout reference to Barbell bench press; no routine references. The disposable migration snapshot is stale. RepDB IDs are slugs, while workout and routine references require UUIDs. The existing privileged loader requires reviewed logging semantics; importing alone would duplicate the current bundled/server presentation. No database or app behavior was changed. See [task tracker](planning/TASKS.md) for the implementation scope and remaining acceptance.
+
+## 29 October — workout picker catalog
+
+The workout and routine picker now uses the shared exercise row and shows searchable bundled RepDB previews alongside selectable server exercises. Preview entries remain unavailable for workout selection until server identity mapping and import are completed. Existing selection and retry behavior is retained. Typecheck, lint, 56 test suites and coverage passed; native visual acceptance and catalog import remain open.
+
 ## 29 October — list cleanup and application assets
 
 User identified an old exercise screen. Audit found the workout picker still used its old layout, and the recorded Android APK predated the new list; the displayed device screen was not inspected. The coordinator and UI specialists aligned both list and picker, removed the orphan archive browser, staged the supplied free JSON and images in Git, and changed Metro to use application assets. Independent review found that hiding existing server catalog rows would lose history access; this was corrected, retaining separate labeled records until identity mapping is reviewed. The picker remains server-backed and RepDB records are browse-only. No hosted data changes. See BUILD_STATUS.md for current checks and device limitations.

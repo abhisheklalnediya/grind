@@ -15,11 +15,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "@/components/Button";
 import { useTrainingDefaults } from "@/features/preferences";
 import { useTraining } from "@/features/training";
+import { isConfiguredExercise } from "@/domain/training";
 import { useTheme } from "@/theme/useTheme";
 import { useRoutineDraft } from "@/features/routines";
 import { Copy } from "./fields";
 import { ExerciseFilter } from "./ExerciseFilter";
-import { filterCatalog, useCatalog } from "./catalog";
+import { useCatalog } from "./catalog";
+import { bundledExercises, exerciseImage } from "@/services/exercises";
+import { ExerciseListRow } from "./ExerciseListRow";
 export function ExercisePickerScreen({
   target,
 }: {
@@ -34,27 +37,62 @@ export function ExercisePickerScreen({
   const [search, setSearch] = useState("");
   const [muscle, setMuscle] = useState("");
   const [equipment, setEquipment] = useState("");
+  const bundledBySourceId = useMemo(
+    () => new Map(bundledExercises.map((item) => [item.id, item])),
+    [],
+  );
   const muscles = useMemo(
     () =>
-      Array.from(new Set((query.data ?? []).map((item) => item.primary_muscle)))
+      Array.from(
+        new Set([
+          ...(query.data ?? []).filter(isConfiguredExercise).map((item) => item.primary_muscle),
+        ]),
+      )
         .filter(Boolean)
         .sort(),
     [query.data],
   );
   const equipmentOptions = useMemo(
     () =>
-      Array.from(new Set((query.data ?? []).map((item) => item.equipment)))
+      Array.from(
+        new Set([
+          ...(query.data ?? []).filter(isConfiguredExercise).map((item) => item.equipment),
+        ]),
+      )
         .filter(Boolean)
         .sort(),
     [query.data],
   );
-  const visibleItems = filterCatalog(
-    query.data ?? [],
-    search,
-    muscle,
-    equipment,
-    false,
-  );
+  const normalize = (value: string) =>
+    value.trim().toLowerCase().replaceAll("_", " ");
+  const normalizedQuery = normalize(search);
+  const normalizedMuscle = normalize(muscle);
+  const normalizedEquipment = normalize(equipment);
+  const visibleItems = (query.data ?? [])
+    .filter(
+      (exercise) => !exercise.archived_at && isConfiguredExercise(exercise),
+    )
+    .filter((exercise) => {
+      const sourceId =
+        exercise.source_key === "repdb" ? exercise.source_exercise_id : null;
+      const sourceExercise = sourceId
+        ? bundledBySourceId.get(sourceId)
+        : undefined;
+      const names = [
+        exercise.name,
+        ...(sourceExercise
+          ? [sourceExercise.name, ...sourceExercise.synonyms]
+          : []),
+      ];
+      return (
+        names.some((name) => normalize(name).includes(normalizedQuery)) &&
+        (!normalizedMuscle ||
+          normalize(exercise.primary_muscle).includes(normalizedMuscle)) &&
+        (!normalizedEquipment ||
+          normalize(exercise.equipment).includes(normalizedEquipment))
+      );
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const added = useRef(new Set<string>());
@@ -66,6 +104,14 @@ export function ExercisePickerScreen({
       const items = (query.data ?? []).filter((item) =>
         selected.includes(item.id),
       );
+      if (
+        items.length !== selected.length ||
+        items.some(
+          (item) => item.archived_at !== null && item.archived_at !== undefined,
+        ) ||
+        items.some((item) => !isConfiguredExercise(item))
+      )
+        throw new Error("An exercise is no longer available for logging.");
       if (target === "routine") {
         if (
           !useRoutineDraft.getState().draft ||
@@ -80,6 +126,8 @@ export function ExercisePickerScreen({
           throw new Error("Start or resume a workout first.");
         let position = training.session.exercises.length;
         for (const item of items) {
+          if (!isConfiguredExercise(item))
+            throw new Error("Exercise is unavailable for logging.");
           if (added.current.has(item.id)) continue;
           let id = ids.current.get(item.id);
           if (!id) {
@@ -93,6 +141,9 @@ export function ExercisePickerScreen({
               exercise_id: item.id,
               position,
               load_mode: item.load_mode,
+              ...(item.tracking_type
+                ? { tracking_type: item.tracking_type }
+                : {}),
               notes: "",
               rest_seconds: defaults.restSeconds,
             },
@@ -177,7 +228,7 @@ export function ExercisePickerScreen({
               <View style={styles.count}>
                 <Text style={{ color: colors.secondary }}>
                   {visibleItems.length}{" "}
-                  {visibleItems.length === 1 ? "exercise" : "exercises"} · A–Z
+                  {visibleItems.length === 1 ? "exercise" : "exercises"}
                 </Text>
                 <Text style={{ color: colors.accentText }}>
                   {selected.length} selected
@@ -185,12 +236,17 @@ export function ExercisePickerScreen({
               </View>
               {query.isPending ? <Copy>Loading exercises…</Copy> : null}
               {query.isError ? (
-                <Button
-                  label="Retry exercises"
-                  onPress={() => {
-                    void query.refetch();
-                  }}
-                />
+                <>
+                  <Copy>
+                    Couldn’t load exercises. Check your connection and retry.
+                  </Copy>
+                  <Button
+                    label="Retry exercises"
+                    onPress={() => {
+                      void query.refetch();
+                    }}
+                  />
+                </>
               ) : null}
             </>
           }
@@ -202,60 +258,34 @@ export function ExercisePickerScreen({
             ) : null
           }
           renderItem={({ item }) => {
-            const chosen = selected.includes(item.id);
+            const exercise = item;
+            const sourceId =
+              exercise.source_key === "repdb"
+                ? exercise.source_exercise_id
+                : null;
+            const sourceExercise = sourceId
+              ? bundledBySourceId.get(sourceId)
+              : undefined;
+            const chosen = selected.includes(exercise.id);
             return (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  chosen ? `Selected · ${item.name}` : item.name
+              <ExerciseListRow
+                name={exercise.name}
+                subtitle={`${exercise.primary_muscle} · ${exercise.equipment}`}
+                custom={exercise.origin === "custom"}
+                image={
+                  sourceExercise
+                    ? exerciseImage(sourceExercise.id)
+                    : undefined
                 }
-                accessibilityState={{ selected: chosen }}
+                selected={chosen}
                 onPress={() =>
                   setSelected((old) =>
                     chosen
-                      ? old.filter((id) => id !== item.id)
-                      : [...old, item.id],
+                      ? old.filter((id) => id !== exercise.id)
+                      : [...old, exercise.id],
                   )
                 }
-                style={[styles.row, { borderColor: colors.border }]}
-              >
-                <View
-                  style={[
-                    styles.thumb,
-                    {
-                      backgroundColor: colors.surface,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                >
-                  <Text
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
-                    style={{ color: colors.secondary, fontSize: 24 }}
-                  >
-                    ◇
-                  </Text>
-                </View>
-                <View style={styles.body}>
-                  <Text style={[styles.name, { color: colors.text }]}>
-                    {chosen ? `Selected · ${item.name}` : item.name}
-                  </Text>
-                  <Text style={[styles.subtitle, { color: colors.secondary }]}>
-                    {item.primary_muscle} · {item.equipment}
-                    {item.origin === "custom" ? " · My exercise" : ""}
-                  </Text>
-                </View>
-                <Text
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
-                  style={{
-                    color: chosen ? colors.accentText : colors.secondary,
-                    fontSize: 22,
-                  }}
-                >
-                  {chosen ? "✓" : "+"}
-                </Text>
-              </Pressable>
+              />
             );
           }}
         />
@@ -326,24 +356,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   empty: { textAlign: "center", paddingVertical: 48 },
-  row: {
-    minHeight: 78,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 13,
-    borderBottomWidth: 1,
-    paddingVertical: 10,
-  },
-  thumb: {
-    height: 56,
-    width: 56,
-    borderWidth: 1,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  body: { flex: 1, minWidth: 0 },
-  name: { fontSize: 14, fontWeight: "700" },
-  subtitle: { fontSize: 12, marginTop: 5 },
   footer: { borderTopWidth: 1, padding: 16, gap: 8 },
 });

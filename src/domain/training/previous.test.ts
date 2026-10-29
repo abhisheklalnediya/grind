@@ -40,3 +40,26 @@ it("matches warm-up and working ordinals separately and leaves unmatched values 
   ).toBe(false);
   expect(previousSchema.parse(null)).toBeNull();
 });
+it("retains previous timed and distance measurements", () => {
+  const previous = previousSchema.parse({
+    session_id: id,
+    finished_at: "2026-10-27T12:00:00Z",
+    sets: [
+      {
+        set_type: "working",
+        ordinal: 0,
+        entered_load: null,
+        entered_unit: "kg",
+        reps: null,
+        duration_seconds: 600,
+        entered_distance: "2.500",
+        distance_unit: "mi",
+      },
+    ],
+  });
+  expect(previousForSet(previous, "working", 0)).toMatchObject({
+    duration_seconds: 600,
+    entered_distance: "2.500",
+    distance_unit: "mi",
+  });
+});

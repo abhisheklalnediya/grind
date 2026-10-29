@@ -38,7 +38,8 @@ You are the lead coordinator for GRIND. First read all existing project document
 9. Do not deploy, spend money, alter production data, or expose secrets without explicit approval.
 
 ## Agent model and cost discipline
-- Prefer Sol or a lighter available model (for example, gpt-6.1-sol or gpt-6-luna) for bounded subagent tasks, according to their complexity and available models. Use a stronger model only when the task genuinely warrants it, and respect any explicit user model preference.
+- The lead coordinator serves as the primary architect and retains responsibility for architecture, integration and decisions.
+- Default all subagents to GPT-6 Luna (`gpt-6-luna`). Use a stronger available model when a particular task would materially benefit from it, or an available fallback if Luna is unavailable. Respect explicit user model preferences.
 - Give each subagent focused context, exact file ownership and acceptance checks. Use parallel agents for genuinely independent work; avoid duplicate agents and unnecessary handoffs. If a chosen model is unavailable or fails, use an available fallback and report material limitations.
 - Run focused checks during implementation, then run the required full gates once at an integration checkpoint. Repeat or broaden checks only when a change, failure or unresolved concern warrants it. Preserve independent review and all quality and safety requirements; do not infer actual credit usage or pricing without evidence.
 

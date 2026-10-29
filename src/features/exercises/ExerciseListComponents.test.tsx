@@ -75,3 +75,13 @@ it("handles image failure and hardware back in RepDB detail", async () => {
   expect(back).toHaveBeenCalled();
   listener.mockRestore();
 });
+it("announces picker selection and invokes the row action", async () => {
+  const press = jest.fn();
+  await render(
+    <ExerciseListRow name="Curl" subtitle="Biceps" selected onPress={press} />,
+  );
+  const row = screen.getByRole("button", { name: "Selected · Curl" });
+  expect(row.props.accessibilityState.selected).toBe(true);
+  await fireEvent.press(row);
+  expect(press).toHaveBeenCalled();
+});

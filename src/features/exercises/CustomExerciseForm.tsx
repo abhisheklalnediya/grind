@@ -7,6 +7,7 @@ import {
   customExercisePayloadSchema,
   type CustomExercisePayload,
   type TrainingExercise,
+  type ConfiguredExercise,
 } from "@/domain/training";
 import { useTraining } from "@/features/training";
 import { Screen } from "@/components/Screen";
@@ -28,7 +29,7 @@ export function CustomExerciseForm({
   catalog,
 }: {
   id?: string;
-  existing?: TrainingExercise;
+  existing?: ConfiguredExercise;
   catalog: TrainingExercise[];
 }) {
   const { api } = useTraining();

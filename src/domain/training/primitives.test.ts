@@ -1,5 +1,9 @@
 import {
   decimalLoadSchema,
+  distanceSchema,
+  durationSchema,
+  distanceUnitSchema,
+  trackingTypeSchema,
   loadModeSchema,
   nameSchema,
   notesSchema,
@@ -47,4 +51,26 @@ it("validates bounded strings, integer ranges, modes, units and timestamps", () 
     true,
   );
   expect(timestampSchema.safeParse("yesterday").success).toBe(false);
+});
+it("bounds timed and distance measurements and their units", () => {
+
+  for (const value of [".001", "100000", "1.250"])
+    expect(distanceSchema.safeParse(value).success).toBe(true);
+  for (const value of [
+    "0",
+    "100000.001",
+    "1.0000",
+    "-1",
+    "1e2",
+    "0".repeat(33),
+  ])
+    expect(distanceSchema.safeParse(value).success).toBe(false);
+  for (const value of [1, 86400])
+    expect(durationSchema.safeParse(value).success).toBe(true);
+  for (const value of [0, 86401, 1.5])
+    expect(durationSchema.safeParse(value).success).toBe(false);
+  expect(distanceUnitSchema.safeParse("mi").success).toBe(true);
+  expect(distanceUnitSchema.safeParse("meters").success).toBe(false);
+  expect(trackingTypeSchema.safeParse("distance_duration").success).toBe(true);
+  expect(trackingTypeSchema.safeParse("time").success).toBe(false);
 });

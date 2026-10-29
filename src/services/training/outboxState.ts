@@ -76,7 +76,7 @@ export const emptyDraft = (): DraftDocument => ({
 export const rawFieldKey = (
   exercise: string,
   set: string,
-  field: "load" | "reps",
+  field: "load" | "reps" | "duration" | "distance",
 ) => `${exercise}:${set}:${field}`;
 export function canFinish(session: TrainingSession | null): boolean {
   return (
@@ -89,7 +89,7 @@ export function canFinish(session: TrainingSession | null): boolean {
         exercise.sets.every(
           (set) =>
             set.completed_at !== null &&
-            isSetCompleteable(set, exercise.load_mode),
+            isSetCompleteable(set, exercise.load_mode, exercise.tracking_type),
         ),
     )
   );

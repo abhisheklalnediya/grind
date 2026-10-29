@@ -1,6 +1,10 @@
 import { z } from "zod";
 import {
   decimalLoadSchema,
+  distanceSchema,
+  distanceUnitSchema,
+  durationSchema,
+  trackingTypeSchema,
   idSchema,
   loadModeSchema,
   nameSchema,
@@ -22,6 +26,9 @@ export const setInputSchema = z
     entered_load: decimalLoadSchema.nullable(),
     entered_unit: unitSchema,
     reps: repsSchema.nullable(),
+    duration_seconds: durationSchema.nullable().optional(),
+    entered_distance: distanceSchema.nullable().optional(),
+    distance_unit: distanceUnitSchema.nullable().optional(),
   })
   .strict();
 export const trainingSetSchema = setInputSchema
@@ -32,6 +39,7 @@ const exerciseFields = {
   exercise_id: idSchema,
   position: positionSchema,
   load_mode: loadModeSchema,
+  tracking_type: trackingTypeSchema.optional(),
   notes: notesSchema,
   rest_seconds: restSchema,
 };
@@ -79,7 +87,7 @@ export const workoutExerciseSchema = z
       validateModeLoad(exercise.load_mode, set.entered_load, context, index);
       if (
         set.completed_at !== null &&
-        !isSetCompleteable(set, exercise.load_mode)
+        !isSetCompleteable(set, exercise.load_mode, exercise.tracking_type)
       ) {
         context.addIssue({
           code: "custom",
@@ -121,13 +129,20 @@ export const customExercisePayloadSchema = z
     category: z.string().trim().min(1).max(40),
     load_convention: nameSchema,
     load_mode: loadModeSchema,
+    tracking_type: trackingTypeSchema.optional(),
   })
   .strict();
 export const exerciseSchema = customExercisePayloadSchema
   .extend({
     id: idSchema,
+    is_configured: z.boolean().optional(),
+    load_mode: loadModeSchema.nullable(),
+    load_convention: nameSchema.nullable(),
+    tracking_type: trackingTypeSchema.nullable().optional(),
     origin: z.enum(["grind", "custom", "provider"]),
     owner_id: idSchema.nullable(),
+    source_key: z.string().min(1).nullable().optional(),
+    source_exercise_id: z.string().min(1).nullable().optional(),
     archived_at: timestampSchema.nullable(),
     created_at: timestampSchema,
   })
@@ -136,6 +151,18 @@ export const exerciseSchema = customExercisePayloadSchema
     (exercise) =>
       (exercise.origin === "custom") === (exercise.owner_id !== null),
     "Only custom exercises have an owner.",
+  )
+  .refine(
+    (exercise) =>
+      exercise.is_configured === false
+        ? exercise.origin === "provider" &&
+          exercise.load_mode === null &&
+          exercise.load_convention === null &&
+          exercise.tracking_type === null
+        : exercise.load_mode !== null &&
+          exercise.load_convention !== null &&
+          exercise.tracking_type !== null,
+    "Exercise logging configuration is inconsistent.",
   );
 const cursorSchema = z.object({ finished_at: timestampSchema, id: idSchema });
 export const historyPageSchema = z.object({
@@ -145,6 +172,21 @@ export const historyPageSchema = z.object({
 export type TrainingSession = z.infer<typeof sessionSchema>;
 export type TrainingRoutine = z.infer<typeof routineSchema>;
 export type TrainingExercise = z.infer<typeof exerciseSchema>;
+export type ConfiguredExercise = TrainingExercise & {
+  load_mode: z.infer<typeof loadModeSchema>;
+  load_convention: string;
+  tracking_type?: z.infer<typeof trackingTypeSchema> | undefined;
+};
+export function isConfiguredExercise(
+  exercise: TrainingExercise,
+): exercise is ConfiguredExercise {
+  return (
+    exercise.is_configured !== false &&
+    exercise.load_mode !== null &&
+    exercise.load_convention !== null &&
+    exercise.tracking_type !== null
+  );
+}
 export type TrainingSet = z.infer<typeof trainingSetSchema>;
 export type RoutinePayload = z.infer<typeof routinePayloadSchema>;
 export type CustomExercisePayload = z.infer<typeof customExercisePayloadSchema>;

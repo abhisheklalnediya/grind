@@ -15,6 +15,7 @@ export function ExerciseListRow({
   custom = false,
   existingCatalog = false,
   onPress,
+  selected,
 }: {
   name: string;
   subtitle: string;
@@ -22,13 +23,21 @@ export function ExerciseListRow({
   custom?: boolean;
   existingCatalog?: boolean;
   onPress: () => void;
+  selected?: boolean;
 }) {
   const { colors } = useTheme();
   const [failed, setFailed] = useState(false);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${name}, ${subtitle}${custom ? ", my exercise" : existingCatalog ? ", existing catalog exercise" : ""}`}
+      accessibilityLabel={
+        selected === undefined
+          ? `${name}, ${subtitle}${custom ? ", my exercise" : existingCatalog ? ", existing catalog exercise" : ""}`
+          : selected
+            ? `Selected · ${name}`
+            : name
+      }
+      accessibilityState={selected === undefined ? undefined : { selected }}
       onPress={onPress}
       style={[styles.row, { borderColor: colors.border }]}
     >
@@ -58,7 +67,7 @@ export function ExerciseListRow({
       </View>
       <View style={styles.body}>
         <Text style={[styles.name, { color: colors.text }]}>
-          {name}
+          {selected ? `Selected · ${name}` : name}
           {custom ? (
             <Text style={{ color: colors.accentText, fontSize: 10 }}>
               {" "}
@@ -78,9 +87,12 @@ export function ExerciseListRow({
       <Text
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
-        style={{ color: colors.secondary, fontSize: 24 }}
+        style={{
+          color: selected ? colors.accentText : colors.secondary,
+          fontSize: 24,
+        }}
       >
-        ›
+        {selected === undefined ? "›" : selected ? "✓" : "+"}
       </Text>
     </Pressable>
   );

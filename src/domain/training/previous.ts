@@ -1,6 +1,9 @@
 import { z } from "zod";
 import {
   decimalLoadSchema,
+  distanceSchema,
+  distanceUnitSchema,
+  durationSchema,
   idSchema,
   repsSchema,
   setTypeSchema,
@@ -14,7 +17,10 @@ export const previousSetSchema = z.object({
   ordinal: z.number().int().min(0),
   entered_load: decimalLoadSchema.nullable(),
   entered_unit: unitSchema,
-  reps: repsSchema,
+  reps: repsSchema.nullable(),
+  duration_seconds: durationSchema.nullable().optional(),
+  entered_distance: distanceSchema.nullable().optional(),
+  distance_unit: distanceUnitSchema.nullable().optional(),
 });
 export const previousSchema = z
   .object({

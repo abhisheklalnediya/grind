@@ -1,5 +1,5 @@
 import type {
-  TrainingExercise,
+  ConfiguredExercise,
   TrainingRoutine,
   TrainingSession,
   TrainingSet,
@@ -31,7 +31,7 @@ export function makeSession(): TrainingSession {
     exercises: [],
   };
 }
-export function makeCatalogExercise(): TrainingExercise {
+export function makeCatalogExercise(): ConfiguredExercise {
   return {
     id: trainingId(2),
     origin: "grind",

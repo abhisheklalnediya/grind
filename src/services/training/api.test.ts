@@ -146,3 +146,12 @@ it("validates bounded catalog searches and server responses", async () => {
     kind: "response",
   });
 });
+it("requests previous values for the same tracking type", async () => {
+  const { port, api } = setup();
+  jest.mocked(port.rpc).mockResolvedValue(null);
+  await api.previous(trainingId(1), "bodyweight", "Timed", "duration");
+  expect(port.rpc).toHaveBeenCalledWith(
+    "get_previous_performance",
+    expect.objectContaining({ p_tracking_type: "duration" }),
+  );
+});

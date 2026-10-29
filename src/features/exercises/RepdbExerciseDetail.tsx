@@ -13,9 +13,13 @@ import { exerciseImage, type BundledExercise } from "@/services/exercises";
 export function RepdbExerciseDetail({
   exercise,
   onBack,
+  available = false,
+  loggingUnavailable = false,
 }: {
   exercise: BundledExercise;
   onBack: () => void;
+  available?: boolean;
+  loggingUnavailable?: boolean;
 }) {
   const { colors } = useTheme();
   const image = exerciseImage(exercise.id);
@@ -62,10 +66,16 @@ export function RepdbExerciseDetail({
           Illustration unavailable.
         </Text>
       )}
-      <Text style={{ color: colors.secondary }}>
-        Catalog preview · Import is required before adding this exercise to a
-        workout.
-      </Text>
+      {loggingUnavailable ? (
+        <Text style={{ color: colors.secondary }}>
+          Logging unavailable until this exercise is configured.
+        </Text>
+      ) : !available ? (
+        <Text style={{ color: colors.secondary }}>
+          Catalog preview · Import is required before adding this exercise to a
+          workout.
+        </Text>
+      ) : null}
       <Text style={{ color: colors.text }}>{exercise.description}</Text>
       <Text
         accessibilityRole="header"

@@ -63,3 +63,39 @@ it("validates each mutation's stable IDs and rejects malformed or authority-bear
     }).success,
   ).toBe(false);
 });
+it("accepts measured commands and rejects invalid measurement values", () => {
+  const command = {
+    type: "upsert_set",
+    exercise_id: id,
+    set: {
+      id,
+      position: 0,
+      set_type: "working",
+      entered_load: null,
+      entered_unit: "kg",
+      reps: null,
+      duration_seconds: 120,
+      entered_distance: "1.250",
+      distance_unit: "km",
+    },
+  };
+  expect(workoutCommandSchema.parse(command)).toEqual(command);
+  expect(
+    workoutCommandSchema.safeParse({
+      ...command,
+      set: { ...command.set, entered_distance: "-1" },
+    }).success,
+  ).toBe(false);
+  expect(
+    workoutCommandSchema.safeParse({
+      type: "add_exercise",
+      id,
+      exercise_id: id,
+      position: 0,
+      load_mode: "bodyweight",
+      tracking_type: "duration",
+      notes: "",
+      rest_seconds: 120,
+    }).success,
+  ).toBe(true);
+});

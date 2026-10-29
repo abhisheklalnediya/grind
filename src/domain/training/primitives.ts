@@ -6,6 +6,23 @@ export const loadModeSchema = z.enum([
   "assisted",
   "weighted_bodyweight",
 ]);
+export const trackingTypeSchema = z.enum([
+  "reps",
+  "duration",
+  "distance_duration",
+]);
+export const distanceUnitSchema = z.enum(["km", "mi"]);
+export const durationSchema = z.number().int().min(1).max(86400);
+export const distanceSchema = z
+  .string()
+  .max(32)
+  .regex(/^(?:\d+(?:\.\d{1,3})?|\.\d{1,3})$/)
+  .refine(
+    (value) => Number(value) > 0 && Number(value) <= 100000,
+    "Distance must be positive and at most 100000.",
+  );
+export type TrackingType = z.infer<typeof trackingTypeSchema>;
+export type DistanceUnit = z.infer<typeof distanceUnitSchema>;
 export const unitSchema = z.enum(["kg", "lb"]);
 export const setTypeSchema = z.enum(["warmup", "working"]);
 export const idSchema = z.uuid();

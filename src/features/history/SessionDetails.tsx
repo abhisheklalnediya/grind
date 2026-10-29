@@ -11,7 +11,8 @@ export function SessionDetails({ session }: { session: TrainingSession }) {
   const volume = completed.reduce(
     (sum, { exercise, set }) =>
       sum +
-      ((exercise.load_mode === "external" ||
+      ((exercise.tracking_type ?? "reps") === "reps" &&
+      (exercise.load_mode === "external" ||
         exercise.load_mode === "weighted_bodyweight") &&
       set.entered_load !== null
         ? Number(toCanonicalKg(set.entered_load, set.entered_unit)) *
@@ -39,7 +40,12 @@ export function SessionDetails({ session }: { session: TrainingSession }) {
       {session.exercises.map((exercise) => (
         <View key={exercise.id} style={styles.row}>
           <Text style={{ color: colors.text, fontSize: 20 }}>
-            {exercise.name} · {exercise.load_mode}
+            {exercise.name} ·{" "}
+            {exercise.tracking_type === "duration"
+              ? "Duration"
+              : exercise.tracking_type === "distance_duration"
+                ? "Duration and distance"
+                : exercise.load_mode}
           </Text>
           <Text style={{ color: colors.secondary }}>
             {exercise.load_convention}
@@ -48,10 +54,21 @@ export function SessionDetails({ session }: { session: TrainingSession }) {
           {exercise.sets.map((set) => (
             <Text key={set.id} style={{ color: colors.text }}>
               {set.set_type}:{" "}
-              {set.entered_load === null
-                ? "Bodyweight"
-                : `${set.entered_load} ${set.entered_unit}`}{" "}
-              × {set.reps ?? "—"}
+              {exercise.tracking_type && exercise.tracking_type !== "reps" ? (
+                <>
+                  {set.duration_seconds ?? "—"} seconds
+                  {exercise.tracking_type === "distance_duration"
+                    ? ` · ${set.entered_distance ?? "—"} ${set.distance_unit ?? ""}`
+                    : ""}
+                </>
+              ) : (
+                <>
+                  {set.entered_load === null
+                    ? "Bodyweight"
+                    : `${set.entered_load} ${set.entered_unit}`}{" "}
+                  × {set.reps ?? "—"}
+                </>
+              )}
               {set.completed_at ? " ✓" : ""}
             </Text>
           ))}

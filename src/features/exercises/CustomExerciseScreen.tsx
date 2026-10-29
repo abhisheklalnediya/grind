@@ -1,3 +1,4 @@
+import { isConfiguredExercise } from "@/domain/training";
 import { Screen } from "@/components/Screen";
 import { Button } from "@/components/Button";
 import { Copy } from "./fields";
@@ -28,7 +29,7 @@ export function CustomExerciseScreen({ id }: { id?: string }) {
     <CustomExerciseForm
       key={id ?? "new"}
       {...(id ? { id } : {})}
-      {...(existing ? { existing } : {})}
+      {...(existing && isConfiguredExercise(existing) ? { existing } : {})}
       catalog={catalog.data ?? []}
     />
   );

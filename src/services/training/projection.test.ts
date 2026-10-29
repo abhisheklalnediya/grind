@@ -31,6 +31,12 @@ function populated(): TrainingSession {
 }
 const run = (session: TrainingSession, command: WorkoutCommand) =>
   projectCommand(session, { command }, now);
+it("rejects unconfigured exercises before projecting a workout", () => {
+  expect(() => projectCommand(makeSession(), {
+    command: add,
+    catalog: { ...makeCatalogExercise(), origin: "provider", is_configured: false, load_mode: null, load_convention: null, tracking_type: null },
+  }, now)).toThrow();
+});
 it("projects all exercise operations immutably, with stable IDs and complete permutations", () => {
   const original = makeSession();
   const session = populated();
@@ -139,4 +145,48 @@ it("preserves unchanged completion, resets changed sets, and supports ordering/r
       now,
     )?.name,
   ).toBe("Pending");
+});
+it("preserves the tracking type and clears completion after measurement edits", () => {
+  const timed = projectCommand(
+    makeSession(),
+    { command: { ...add, tracking_type: "distance_duration" } },
+    now,
+  );
+  expect(timed.exercises[0]?.tracking_type).toBe("distance_duration");
+  const values = {
+    ...makeSet(),
+    entered_load: null,
+    reps: null,
+    duration_seconds: 120,
+    entered_distance: "1.0",
+    distance_unit: "km" as const,
+  };
+  const withSet = run(timed, {
+    type: "upsert_set",
+    exercise_id: exercise,
+    set: values,
+  });
+  const completed = run(withSet, {
+    type: "complete_set",
+    exercise_id: exercise,
+    set_id: values.id,
+    completed: true,
+  });
+  expect(
+    run(completed, { type: "upsert_set", exercise_id: exercise, set: values })
+      .exercises[0]?.sets[0]?.completed_at,
+  ).not.toBeNull();
+  for (const change of [
+    { duration_seconds: 121 },
+    { entered_distance: "2" },
+    { distance_unit: "mi" as const },
+  ]) {
+    expect(
+      run(completed, {
+        type: "upsert_set",
+        exercise_id: exercise,
+        set: { ...values, ...change },
+      }).exercises[0]?.sets[0]?.completed_at,
+    ).toBeNull();
+  }
 });

@@ -9,7 +9,7 @@ const environment = {
   url: "http://127.0.0.1:55421/",
   key: "public-local-fixture",
 };
-it("uses the fixed Grind schema, scoped auth and JSON RPC; catalog is GET without a body", async () => {
+it("uses the fixed Grind schema, scoped auth and bounded catalog RPC", async () => {
   const fetcher = jest.fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>(
     async () => new Response(JSON.stringify({ saved: true }), { status: 200 }),
   );
@@ -33,12 +33,59 @@ it("uses the fixed Grind schema, scoped auth and JSON RPC; catalog is GET withou
       }),
     }),
   );
+  fetcher.mockResolvedValueOnce(new Response("[]"));
   await port.catalog();
   expect(fetcher).toHaveBeenLastCalledWith(
-    expect.stringContaining("archived_at=is.null"),
-    expect.objectContaining({ method: "GET" }),
+    expect.stringContaining("rpc/catalog_with_sources"),
+    expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({
+        p_after_name: null,
+        p_after_id: null,
+        p_limit: 100,
+      }),
+    }),
   );
-  expect(fetcher.mock.lastCall?.[1]).not.toHaveProperty("body");
+});
+it("reads bounded catalog pages and rejects repeated identities", async () => {
+  const first = Array.from({ length: 100 }, (_, index) => ({
+    id: `10000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
+    name: `Exercise ${index}`,
+  }));
+  const fetcher = jest
+    .fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>()
+    .mockResolvedValueOnce(new Response(JSON.stringify(first)))
+    .mockResolvedValueOnce(new Response("[]"));
+  const port = createTrainingTransport({
+    environment,
+    token: async () => "local",
+    fetch: fetcher,
+  });
+  expect(await port.catalog()).toHaveLength(100);
+  expect(JSON.parse(String(fetcher.mock.calls[1]?.[1]?.body))).toEqual({
+    p_after_name: first[99]?.name,
+    p_after_id: first[99]?.id,
+    p_limit: 100,
+  });
+  fetcher
+    .mockResolvedValueOnce(new Response(JSON.stringify(first)))
+    .mockResolvedValueOnce(new Response(JSON.stringify([first[0]])));
+  await expect(port.catalog()).rejects.toMatchObject({ kind: "response" });
+  fetcher.mockResolvedValueOnce(new Response(JSON.stringify([{ id: "invalid", name: "Exercise" }])));
+  await expect(port.catalog()).rejects.toMatchObject({ kind: "response" });
+});
+it("rejects catalogs exceeding the bounded pagination limit", async () => {
+  let page = 0;
+  const fetcher = jest.fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>(async () => {
+    const rows = Array.from({ length: 100 }, (_, index) => ({
+      id: `10000000-0000-4000-8000-${String(++page).padStart(12, "0")}`,
+      name: `Exercise ${index}`,
+    }));
+    return new Response(JSON.stringify(rows));
+  });
+  const port = createTrainingTransport({ environment, token: async () => "local", fetch: fetcher });
+  await expect(port.catalog()).rejects.toMatchObject({ kind: "response" });
+  expect(fetcher).toHaveBeenCalledTimes(100);
 });
 it("rejects missing identity without requests and sanitizes network, JSON and SQL errors", async () => {
   const fetcher = jest.fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>(

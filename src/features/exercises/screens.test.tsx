@@ -12,6 +12,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useTraining } from "@/features/training";
+import type { TrainingExercise } from "@/domain/training";
 import {
   makeCatalogExercise,
   makeSession,
@@ -26,6 +27,7 @@ import {
 } from "./index";
 import { filterCatalog } from "./catalog";
 import { useRoutineDraft } from "@/features/routines";
+jest.mock("repdb-images", () => ({ "bench-press": 12 }));
 jest.mock("@/features/training", () => ({ useTraining: jest.fn() }));
 const mockAddListener = jest.fn();
 const mockDispatch = jest.fn();
@@ -50,7 +52,7 @@ const custom = {
 };
 function setup(
   options: {
-    items?: (typeof exercise)[];
+    items?: TrainingExercise[];
     catalogError?: boolean;
     mutationError?: boolean;
     session?: boolean;
@@ -77,13 +79,15 @@ function setup(
   } as unknown as ReturnType<typeof useTraining>);
   return { api, catalog, save, archive, command };
 }
-async function mount(element: React.ReactElement) {
-  const client = new QueryClient({
+async function mount(
+  element: React.ReactElement,
+  client = new QueryClient({
     defaultOptions: {
       queries: { retry: false, gcTime: 0 },
       mutations: { retry: false },
     },
-  });
+  }),
+) {
   return render(
     <QueryClientProvider client={client}>{element}</QueryClientProvider>,
   );
@@ -269,7 +273,7 @@ it("keeps picker selection across search and adds stable workout commands", asyn
   await screen.findByText("Bench press");
   await fireEvent.press(screen.getByText("Bench press"));
   await fireEvent.changeText(screen.getByLabelText("Search exercises"), "pull");
-  await fireEvent.press(screen.getByText("Custom pull-up"));
+  await fireEvent.press(screen.getByRole("button", { name: "Custom pull-up" }));
   await fireEvent.press(screen.getByText("Add 2 exercises"));
   await waitFor(() => expect(command).toHaveBeenCalledTimes(2));
   expect(command).toHaveBeenCalledWith(
@@ -329,6 +333,9 @@ it("retries picker catalog, deselects an item, retains filters and navigates to 
   const { catalog } = setup({ catalogError: true });
   await mount(<ExercisePickerScreen target="routine" />);
   await screen.findByText("Retry exercises");
+  expect(
+    screen.getByText("Couldn’t load exercises. Check your connection and retry."),
+  ).toBeTruthy();
   catalog.mockResolvedValue([exercise]);
   await fireEvent.press(screen.getByText("Retry exercises"));
   await screen.findByText("Bench press");
@@ -404,10 +411,34 @@ it("retains picker selections across searches of a large catalog", async () => {
     items[44],
   );
 });
+it("rejects a selected exercise archived by a refreshed catalog", async () => {
+  const { command } = setup({ session: true });
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0 },
+      mutations: { retry: false },
+    },
+  });
+  await mount(<ExercisePickerScreen target="workout" />, client);
+  await screen.findByText("Bench press");
+  await fireEvent.press(screen.getByText("Bench press"));
+  const queryKey = client.getQueryCache().getAll().find((query) => query.queryKey[0] === "catalog")?.queryKey;
+  if (!queryKey) throw new Error("Catalog query was not created");
+  await act(async () => {
+    client.setQueryData(queryKey, [
+      { ...exercise, archived_at: "2026-10-29T12:00:00.000Z" },
+      custom,
+    ]);
+  });
+  await waitFor(() => expect(screen.queryByText(/Bench press/)).toBeNull());
+  await fireEvent.press(screen.getByText("Add 1 exercises"));
+  await screen.findByText("An exercise is no longer available for logging.");
+  expect(command).not.toHaveBeenCalled();
+});
 (existsSync(join(process.cwd(), "assets/exercises/repdb/free.en.json"))
   ? it
   : it.skip)(
-  "browses RepDB entries in the list with honest local detail",
+  "hides bundled exercises without an enabled server configuration",
   async () => {
     setup();
     await mount(<ExerciseLibraryScreen />);
@@ -415,24 +446,8 @@ it("retains picker selections across searches of a large catalog", async () => {
       screen.getByLabelText("Search exercises"),
       "barbell ab rollout",
     );
-    await screen.findByText("Barbell Ab Rollout");
-    await fireEvent.press(screen.getByText("Barbell Ab Rollout"));
-    expect(
-      screen.getByText(/Import is required before adding this exercise/),
-    ).toBeTruthy();
-    expect(
-      screen.getByText(/A kneeling ab rollout using a loaded barbell/),
-    ).toBeTruthy();
-    const open = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
-    await fireEvent.press(
-      screen.getByRole("link", {
-        name: "Exercise data by RepDB, opens website",
-      }),
-    );
-    expect(open).toHaveBeenCalledWith("https://repdb.co");
-    open.mockRestore();
-    await fireEvent.press(screen.getByText("‹ Back to exercises"));
-    expect(screen.getByText("Barbell Ab Rollout")).toBeTruthy();
+    await screen.findByText("No exercises found");
+    expect(screen.queryByText("Barbell Ab Rollout")).toBeNull();
   },
 );
 (existsSync(join(process.cwd(), "assets/exercises/repdb/free.en.json"))
@@ -467,3 +482,141 @@ it("retains picker selections across searches of a large catalog", async () => {
     ).toBeTruthy();
   },
 );
+
+it("shows only server catalog identities in the picker until RepDB is imported", async () => {
+  setup({ items: [exercise, custom], session: true });
+  await mount(<ExercisePickerScreen target="workout" />);
+  await fireEvent.changeText(
+    screen.getByLabelText("Search exercises"),
+    "barbell ab rollout",
+  );
+  await screen.findByText("No matching exercises.");
+  expect(screen.queryByText("Barbell Ab Rollout")).toBeNull();
+  await fireEvent.changeText(screen.getByLabelText("Search exercises"), "");
+  expect(await screen.findByText("Bench press")).toBeTruthy();
+  expect(screen.getByRole("button", { name: /Custom pull-up/ })).toBeTruthy();
+});
+
+it("uses bundled imagery only for a matching server RepDB source ID", async () => {
+  const mapped = {
+    ...exercise,
+    source_key: "repdb",
+    source_exercise_id: "bench-press",
+  };
+  setup({ items: [mapped] });
+  await mount(<ExercisePickerScreen target="workout" />);
+  await screen.findByText("Bench press");
+  expect(screen.getByTestId("exercise-row-image")).toBeTruthy();
+});
+
+it("shows one mapped RepDB entry in the library with its image and available details", async () => {
+  const mapped = {
+    ...exercise,
+    name: "Barbell Bench Press",
+    source_key: "repdb",
+    source_exercise_id: "bench-press",
+  };
+  setup({ items: [mapped] });
+  await mount(<ExerciseLibraryScreen />);
+  await fireEvent.changeText(
+    screen.getByLabelText("Search exercises"),
+    "Barbell Bench Press",
+  );
+  await waitFor(() =>
+    expect(screen.queryByText("Loading your exercises…")).toBeNull(),
+  );
+  await waitFor(() =>
+    expect(screen.getAllByText("Barbell Bench Press")).toHaveLength(1),
+  );
+  expect(screen.getByTestId("exercise-row-image")).toBeTruthy();
+  await fireEvent.press(screen.getByText("Barbell Bench Press"));
+  expect(
+    screen.queryByText(/Import is required before adding this exercise/),
+  ).toBeNull();
+  expect(screen.getByTestId("exercise-detail-image")).toBeTruthy();
+});
+
+it("selects the mapped server UUID from a single RepDB picker row", async () => {
+  const mapped = {
+    ...exercise,
+    name: "Barbell Bench Press",
+    source_key: "repdb",
+    source_exercise_id: "bench-press",
+  };
+  const { command } = setup({ items: [mapped], session: true });
+  await mount(<ExercisePickerScreen target="workout" />);
+  await fireEvent.changeText(
+    screen.getByLabelText("Search exercises"),
+    "Barbell Bench Press",
+  );
+  await waitFor(() =>
+    expect(screen.getAllByText("Barbell Bench Press")).toHaveLength(1),
+  );
+  await fireEvent.press(
+    screen.getByRole("button", { name: "Barbell Bench Press" }),
+  );
+  await fireEvent.press(screen.getByText("Add 1 exercises"));
+  await waitFor(() =>
+    expect(command).toHaveBeenCalledWith(
+      expect.objectContaining({ exercise_id: mapped.id }),
+      expect.objectContaining({ id: mapped.id }),
+    ),
+  );
+});
+
+it("hides unconfigured imported exercises from the picker", async () => {
+  const unresolved = {
+    ...exercise,
+    name: "Reviewed bench label",
+    origin: "provider" as const,
+    source_key: "repdb",
+    source_exercise_id: "bench-press",
+    is_configured: false,
+    load_mode: null,
+    load_convention: null,
+    tracking_type: null,
+  };
+  const { command } = setup({ items: [unresolved], session: true });
+  await mount(<ExercisePickerScreen target="workout" />);
+  await screen.findByText("No matching exercises.");
+  expect(screen.queryByText("Reviewed bench label")).toBeNull();
+  expect(router.push).not.toHaveBeenCalled();
+  expect(command).not.toHaveBeenCalled();
+});
+
+it("hides unconfigured imported exercises from All Exercises", async () => {
+  const unresolved = {
+    ...exercise,
+    name: "Unavailable catalog row",
+    origin: "provider" as const,
+    is_configured: false,
+    load_mode: null,
+    load_convention: null,
+    tracking_type: null,
+  };
+  setup({ items: [unresolved] });
+  await mount(<ExerciseLibraryScreen />);
+  await fireEvent.changeText(
+    screen.getByLabelText("Search exercises"),
+    "Unavailable catalog row",
+  );
+  await screen.findByText("No exercises found");
+  expect(screen.queryByText("Unavailable catalog row")).toBeNull();
+});
+
+it("shows unavailable logging on an imported exercise detail without fetching previous", async () => {
+  const unresolved = {
+    ...exercise,
+    origin: "provider" as const,
+    is_configured: false,
+    load_mode: null,
+    load_convention: null,
+    tracking_type: null,
+  };
+  const { api } = setup({ items: [unresolved] });
+  await mount(<ExerciseDetailScreen id={unresolved.id} />);
+  await screen.findByText(
+    "Logging unavailable until this exercise is configured.",
+  );
+  expect(api.previous).not.toHaveBeenCalled();
+});

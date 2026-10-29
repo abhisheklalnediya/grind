@@ -96,3 +96,53 @@ it("labels assistance and added load without implying lifted body mass", () => {
   expect(loadFieldLabel("assisted", "lb")).toBe("Assistance (lb)");
   expect(loadFieldLabel("weighted_bodyweight", "kg")).toBe("Added weight (kg)");
 });
+it("validates duration and distance independently of weight and repetitions", () => {
+  const base = { entered_load: null, reps: null };
+  expect(isSetCompleteable(base, "bodyweight", "duration")).toBe(false);
+  expect(
+    isSetCompleteable(
+      { ...base, duration_seconds: 60 },
+      "bodyweight",
+      "duration",
+    ),
+  ).toBe(true);
+  for (const duration_seconds of [0, 86401, 1.5])
+    expect(
+      isSetCompleteable(
+        { ...base, duration_seconds },
+        "bodyweight",
+        "duration",
+      ),
+    ).toBe(false);
+  const distance = {
+    ...base,
+    duration_seconds: 600,
+    entered_distance: "2.500",
+    distance_unit: "km" as const,
+  };
+  expect(isSetCompleteable(distance, "bodyweight", "distance_duration")).toBe(
+    true,
+  );
+  expect(
+    isSetCompleteable(
+      { ...distance, duration_seconds: null },
+      "bodyweight",
+      "distance_duration",
+    ),
+  ).toBe(false);
+  for (const entered_distance of [null, "0", "100001", "1.2345", "1e2"])
+    expect(
+      isSetCompleteable(
+        { ...distance, entered_distance },
+        "bodyweight",
+        "distance_duration",
+      ),
+    ).toBe(false);
+  expect(
+    isSetCompleteable(
+      { ...distance, distance_unit: null },
+      "bodyweight",
+      "distance_duration",
+    ),
+  ).toBe(false);
+});

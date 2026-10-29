@@ -12,6 +12,7 @@ import { useTraining } from "@/features/training";
 import { useTheme } from "@/theme/useTheme";
 import { useTrainingDefaults } from "@/features/preferences";
 import { SetEditor } from "./SetEditor";
+import { TimedSetEditor } from "./TimedSetEditor";
 import { useWorkoutDraft } from "./useWorkoutDraft";
 import { moved } from "./fields";
 export function ExerciseEditor({
@@ -44,12 +45,14 @@ export function ExerciseEditor({
       exercise.exercise_id,
       exercise.load_mode,
       exercise.load_convention,
+      exercise.tracking_type ?? "reps",
     ],
     queryFn: () =>
       training.api?.previous(
         exercise.exercise_id,
         exercise.load_mode,
         exercise.load_convention,
+        exercise.tracking_type,
       ) ?? Promise.resolve(null),
     enabled: !!training.api,
   });
@@ -82,8 +85,11 @@ export function ExerciseEditor({
         {exercise.name}
       </Text>
       <Text style={{ color: colors.secondary }}>
-        {loadFieldLabel(exercise.load_mode, defaults.unit)} ·{" "}
-        {exercise.load_convention}
+        {exercise.tracking_type === "duration"
+          ? "Duration"
+          : exercise.tracking_type === "distance_duration"
+            ? "Duration and distance"
+            : `${loadFieldLabel(exercise.load_mode, defaults.unit)} · ${exercise.load_convention}`}
       </Text>
       <TextInput
         accessibilityLabel={`${exercise.name} notes`}
@@ -129,7 +135,9 @@ export function ExerciseEditor({
               (item) =>
                 item.exercise_id === exercise.exercise_id &&
                 item.load_mode === exercise.load_mode &&
-                item.load_convention === exercise.load_convention,
+                item.load_convention === exercise.load_convention &&
+                (item.tracking_type ?? "reps") ===
+                  (exercise.tracking_type ?? "reps"),
             )
             .flatMap((item) => item.sets)
             .filter((item) => item.set_type === set.set_type).length ?? 0;
@@ -143,6 +151,21 @@ export function ExerciseEditor({
           set.set_type,
           ordinal,
         );
+        if (exercise.tracking_type && exercise.tracking_type !== "reps")
+          return (
+            <TimedSetEditor
+              key={set.id}
+              exercise={exercise}
+              set={set}
+              previous={
+                prior
+                  ? `${prior.duration_seconds ?? "—"} seconds${exercise.tracking_type === "distance_duration" ? ` · ${prior.entered_distance ?? "—"} ${prior.distance_unit ?? ""}` : ""}`
+                  : previous.isPending
+                    ? "Loading…"
+                    : "—"
+              }
+            />
+          );
         return (
           <SetEditor
             key={set.id}

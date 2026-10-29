@@ -1,5 +1,9 @@
 import {
   decimalLoadSchema,
+  durationSchema,
+  distanceSchema,
+  distanceUnitSchema,
+  type TrackingType,
   repsSchema,
   unitSchema,
   type LoadMode,
@@ -22,9 +26,24 @@ export function parseLoadInput(raw: string, mode: LoadMode): LoadInput {
   return { status: "valid", value: raw };
 }
 export function isSetCompleteable(
-  set: { entered_load: string | null; reps: number | null },
+  set: {
+    entered_load: string | null;
+    reps: number | null;
+    duration_seconds?: number | null | undefined;
+    entered_distance?: string | null | undefined;
+    distance_unit?: "km" | "mi" | null | undefined;
+  },
   mode: LoadMode,
+  trackingType: TrackingType = "reps",
 ): boolean {
+  if (trackingType === "duration")
+    return durationSchema.safeParse(set.duration_seconds).success;
+  if (trackingType === "distance_duration")
+    return (
+      durationSchema.safeParse(set.duration_seconds).success &&
+      distanceSchema.safeParse(set.entered_distance).success &&
+      distanceUnitSchema.safeParse(set.distance_unit).success
+    );
   if (!repsSchema.safeParse(set.reps).success) return false;
   if (mode === "bodyweight") return set.entered_load === null;
   if (set.entered_load === null) return false;

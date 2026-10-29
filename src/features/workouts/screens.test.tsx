@@ -260,6 +260,137 @@ it("counts completed working load and preserves units", async () => {
     screen.getByText("480 kg eligible volume (external and added load)"),
   ).toBeTruthy();
 });
+it("shows timed and distance history without adding it to strength volume", async () => {
+  await mount(
+    <SessionDetails
+      session={{
+        ...session,
+        exercises: [
+          {
+            ...exercise,
+            tracking_type: "distance_duration",
+            sets: [
+              {
+                ...makeSet(),
+                duration_seconds: 600,
+                entered_distance: "1.250",
+                distance_unit: "mi",
+                completed_at: "2026-10-27T12:01:00Z",
+              },
+            ],
+          },
+        ],
+      }}
+    />,
+  );
+  expect(screen.getByText("Bench · Duration and distance")).toBeTruthy();
+  expect(screen.getByText(/600 seconds · 1.250 mi/)).toBeTruthy();
+  expect(
+    screen.getByText("0 kg eligible volume (external and added load)"),
+  ).toBeTruthy();
+});
+it("records duration and distance in a timed workout set", async () => {
+  mockTraining.session = {
+    ...session,
+    exercises: [
+      {
+        ...exercise,
+        tracking_type: "distance_duration",
+        sets: [{ ...makeSet(), reps: null, entered_load: null }],
+      },
+    ],
+  };
+  await mount(<WorkoutScreen />);
+  await fireEvent.changeText(
+    screen.getByLabelText("Bench set 1 duration seconds"),
+    "600",
+  );
+  await fireEvent.changeText(
+    screen.getByLabelText("Bench set 1 distance"),
+    "1.25",
+  );
+  await fireEvent.press(
+    screen.getByRole("button", { name: "Bench set 1: Complete set" }),
+  );
+  await waitFor(() =>
+    expect(mockCommand).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "upsert_set",
+        set: expect.objectContaining({
+          duration_seconds: 600,
+          entered_distance: "1.25",
+          distance_unit: "km",
+        }),
+      }),
+    ),
+  );
+  expect(mockCommand).toHaveBeenCalledWith(
+    expect.objectContaining({ type: "complete_set", completed: true }),
+  );
+  await fireEvent.press(
+    screen.getByRole("button", { name: "Bench set 1: Make warm-up" }),
+  );
+  expect(mockCommand).toHaveBeenCalledWith(
+    expect.objectContaining({
+      type: "upsert_set",
+      set: expect.objectContaining({
+        set_type: "warmup",
+        duration_seconds: 600,
+        entered_distance: "1.25",
+      }),
+    }),
+  );
+});
+it("shows previous timed performance and validates required measurements", async () => {
+  mockTraining.api.previous.mockResolvedValueOnce({
+    session_id: trainingId(1),
+    finished_at: "2026-10-27T12:01:00Z",
+    sets: [
+      {
+        set_type: "working",
+        ordinal: 0,
+        entered_load: null,
+        entered_unit: "kg",
+        reps: null,
+        duration_seconds: 90,
+        entered_distance: "0.5",
+        distance_unit: "mi",
+      },
+    ],
+  });
+  mockTraining.session = {
+    ...session,
+    exercises: [
+      {
+        ...exercise,
+        tracking_type: "distance_duration",
+        sets: [{ ...makeSet(), reps: null, entered_load: null }],
+      },
+    ],
+  };
+  await mount(<WorkoutScreen />);
+  await waitFor(() =>
+    expect(screen.getByText("Previous: 90 seconds · 0.5 mi")).toBeTruthy(),
+  );
+  await fireEvent.press(
+    screen.getByRole("button", { name: "Bench set 1: Complete set" }),
+  );
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Enter the required duration and distance.",
+  );
+  expect(mockCommand).not.toHaveBeenCalled();
+});
+it("does not change distance units after text is entered before the draft rerenders", async () => {
+  mockTraining.session = {
+    ...session,
+    exercises: [{ ...exercise, tracking_type: "distance_duration", sets: [{ ...makeSet(), reps: null, entered_load: null }] }],
+  };
+  await mount(<WorkoutScreen />);
+  await fireEvent.changeText(screen.getByLabelText("Bench set 1 distance"), "5");
+  await fireEvent.press(screen.getByRole("button", { name: "Bench set 1 distance unit" }));
+  expect(screen.getByRole("alert")).toHaveTextContent("Clear distance to change its unit.");
+  expect(mockCommand).not.toHaveBeenCalled();
+});
 it("edits type, unit, ordering and workout name without completing", async () => {
   mockTraining.session = {
     ...session,

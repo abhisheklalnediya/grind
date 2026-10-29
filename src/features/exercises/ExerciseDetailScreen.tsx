@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { Linking, Text } from "react-native";
+import { isConfiguredExercise } from "@/domain/training";
 import { Screen } from "@/components/Screen";
 import { Heading } from "@/components/Heading";
 import { Button } from "@/components/Button";
@@ -17,10 +18,16 @@ export function ExerciseDetailScreen({ id }: { id: string }) {
   const previous = useQuery({
     queryKey: ["exercise-previous", scope, id, exercise?.load_mode],
     queryFn: () => {
-      if (!api || !exercise) throw new Error("Exercise unavailable.");
-      return api.previous(id, exercise.load_mode);
+      if (!api || !exercise || !isConfiguredExercise(exercise))
+        throw new Error("Exercise unavailable.");
+      return api.previous(
+        id,
+        exercise.load_mode,
+        exercise.load_convention,
+        exercise.tracking_type,
+      );
     },
-    enabled: Boolean(api && exercise),
+    enabled: Boolean(api && exercise && isConfiguredExercise(exercise)),
   });
   return (
     <Screen>
@@ -44,7 +51,9 @@ export function ExerciseDetailScreen({ id }: { id: string }) {
             {exercise.category}
           </Copy>
           <Copy>
-            {loadModes[exercise.load_mode]} · {exercise.load_convention}
+            {isConfiguredExercise(exercise)
+              ? `${loadModes[exercise.load_mode]} · ${exercise.load_convention}`
+              : "Logging unavailable until this exercise is configured."}
           </Copy>
           <Copy>
             Use a controlled range of motion and a load appropriate to your
@@ -68,32 +77,38 @@ export function ExerciseDetailScreen({ id }: { id: string }) {
           >
             Exercise data by RepDB (repdb.co)
           </Text>
-          <Heading title="Latest performance" />
-          {previous.isPending ? (
-            <Copy>Loading previous performance…</Copy>
+          {isConfiguredExercise(exercise) ? (
+            <>
+              <Heading title="Latest performance" />
+              {previous.isPending ? (
+                <Copy>Loading previous performance…</Copy>
+              ) : null}
+              {previous.isError ? (
+                <Button
+                  label="Retry previous performance"
+                  onPress={() => {
+                    void previous.refetch();
+                  }}
+                />
+              ) : null}
+              {previous.isSuccess && !previous.data ? (
+                <Copy>
+                  No completed workout for this exercise and load mode.
+                </Copy>
+              ) : null}
+              {previous.data?.sets.map((set) => (
+                <Copy key={`${set.set_type}-${set.ordinal}`}>
+                  {set.set_type === "warmup" ? "Warm-up" : "Working"}{" "}
+                  {set.ordinal + 1}:{" "}
+                  {set.entered_load === null
+                    ? "Bodyweight"
+                    : `${set.entered_load} ${set.entered_unit}`}{" "}
+                  × {set.reps} reps
+                </Copy>
+              ))}
+              <ExerciseHistory exercise={exercise} />
+            </>
           ) : null}
-          {previous.isError ? (
-            <Button
-              label="Retry previous performance"
-              onPress={() => {
-                void previous.refetch();
-              }}
-            />
-          ) : null}
-          {previous.isSuccess && !previous.data ? (
-            <Copy>No completed workout for this exercise and load mode.</Copy>
-          ) : null}
-          {previous.data?.sets.map((set) => (
-            <Copy key={`${set.set_type}-${set.ordinal}`}>
-              {set.set_type === "warmup" ? "Warm-up" : "Working"}{" "}
-              {set.ordinal + 1}:{" "}
-              {set.entered_load === null
-                ? "Bodyweight"
-                : `${set.entered_load} ${set.entered_unit}`}{" "}
-              × {set.reps} reps
-            </Copy>
-          ))}
-          <ExerciseHistory exercise={exercise} />
           <Copy>Personal records will be available in a later milestone.</Copy>
           {exercise.origin === "custom" ? (
             <Button

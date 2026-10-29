@@ -10,6 +10,7 @@ import {
   workoutCommandSchema,
   type CustomExercisePayload,
   type LoadMode,
+  type TrackingType,
   type RoutinePayload,
   type WorkoutCommand,
 } from "@/domain/training";
@@ -139,13 +140,19 @@ export function createTrainingApi(transport: TrainingTransport) {
         { p_operation_id: operation, p_exercise_id: id },
         exerciseSchema,
       ),
-    previous: (exercise: string, mode: LoadMode, convention?: string) =>
+    previous: (
+      exercise: string,
+      mode: LoadMode,
+      convention?: string,
+      trackingType?: TrackingType,
+    ) =>
       rpc(
         "get_previous_performance",
         {
           p_exercise_id: exercise,
           p_load_mode: mode,
           p_load_convention: convention ?? null,
+          ...(trackingType ? { p_tracking_type: trackingType } : {}),
         },
         previousSchema,
       ),

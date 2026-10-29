@@ -4,6 +4,7 @@ import { getSupabase } from "../supabase";
 import { TrainingError, trainingFailure } from "./errors";
 export type RpcName =
   | "search_catalog"
+  | "catalog_with_sources"
   | "save_grind_settings"
   | "start_workout"
   | "apply_workout_command"
@@ -35,7 +36,7 @@ export function createTrainingTransport(
 ): TrainingTransport {
   const request = async (
     path: string,
-    parameters?: RpcParameters,
+    parameters: RpcParameters,
   ): Promise<unknown> => {
     const token = await dependencies.token();
     if (!token) throw new TrainingError("auth");
@@ -44,7 +45,7 @@ export function createTrainingTransport(
       response = await dependencies.fetch(
         `${new URL(dependencies.environment.url).origin}/rest/v1/${path}`,
         {
-          method: parameters === undefined ? "GET" : "POST",
+          method: "POST",
           headers: {
             apikey: dependencies.environment.key,
             Authorization: `Bearer ${token}`,
@@ -52,9 +53,7 @@ export function createTrainingTransport(
             "Accept-Profile": "grind",
             "Content-Profile": "grind",
           },
-          ...(parameters === undefined
-            ? {}
-            : { body: JSON.stringify(parameters) }),
+          body: JSON.stringify(parameters),
         },
       );
     } catch {
@@ -77,8 +76,36 @@ export function createTrainingTransport(
   };
   return {
     rpc: (name, parameters) => request(`rpc/${name}`, parameters),
-    catalog: () =>
-      request("exercises?select=*&archived_at=is.null&order=name.asc,id.asc"),
+    catalog: async () => {
+      const pageSchema = z
+        .array(
+          z.object({ id: z.uuid(), name: z.string().min(1) }).passthrough(),
+        )
+        .max(100);
+      const result: unknown[] = [];
+      const seen = new Set<string>();
+      let afterName: string | null = null;
+      let afterId: string | null = null;
+      for (let page = 0; page < 100; page++) {
+        const parsed = pageSchema.safeParse(
+          await request("rpc/catalog_with_sources", {
+            p_after_name: afterName,
+            p_after_id: afterId,
+            p_limit: 100,
+          }),
+        );
+        if (!parsed.success) throw new TrainingError("response");
+        for (const item of parsed.data) {
+          if (seen.has(item.id)) throw new TrainingError("response");
+          seen.add(item.id);
+          result.push(item);
+          afterName = item.name;
+          afterId = item.id;
+        }
+        if (parsed.data.length < 100) return result;
+      }
+      throw new TrainingError("response");
+    },
   };
 }
 export function localTrainingTransport(

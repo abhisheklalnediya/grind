@@ -6,6 +6,7 @@ import {
   notesSchema,
   positionSchema,
   restSchema,
+  trackingTypeSchema,
 } from "./primitives";
 import { setInputSchema } from "./schemas";
 
@@ -22,6 +23,7 @@ export const workoutCommandSchema = z.discriminatedUnion("type", [
       exercise_id: idSchema,
       position: positionSchema,
       load_mode: loadModeSchema,
+      tracking_type: trackingTypeSchema.optional(),
       notes: notesSchema,
       rest_seconds: restSchema,
     })
