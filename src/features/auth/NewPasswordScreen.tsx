@@ -49,7 +49,7 @@ export function NewPasswordScreen() {
     <Screen>
       <Heading
         title="Choose a new password."
-        subtitle="Your sign-in is shared. This changes your password for both Grind and BabyBoo."
+        subtitle="Choose a new password for your Grind account."
       />
       <Text style={styles.label}>New password</Text>
       <TextInput

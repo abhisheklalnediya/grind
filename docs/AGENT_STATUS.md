@@ -1,5 +1,29 @@
 # GRIND agent status
 
+## 30 October — uncommitted change review
+
+Coordinator and independent reviewer checked the pending standalone backend and application changes. Added coverage for a non-string Auth error code after the critical branch gate exposed a gap. Typecheck, lint, 57 suites/308 tests, coverage, prototype syntax and 10 Python harness tests pass. Docker access was denied in this session, so the SQL suites were not rerun; prior local evidence below remains historical. Native and authenticated hosted acceptance remain open. The local VS Code terminal auto-approval setting is excluded from the commit.
+
+## 30 October — GRIND-only Supabase/Auth boundary
+
+User clarified that the standalone GRIND project must have no BabyBoo connection. GRIND app copy now describes an independent account; password recovery/reset and sign-out copy are GRIND-only. The disposable backend harness reads only this repository's `supabase/` directory and allows only `grind://auth/callback`. `.env.local` and the Supabase CLI link were checked without exposing keys; both point to `mgyzzipsqmsabptrfchw`, while `.env.development.local` points to a local GRIND endpoint. Active app/config/harness sources have no BabyBoo reference. Historical dated records below preserve earlier architecture history and are superseded by this boundary. Focused auth/settings tests (24), Python harness tests (10), typecheck, lint, prototype syntax and full coverage passed (57 suites/308 tests; 97.66% statements, 93.31% branches, 96.45% functions, 98.32% lines).
+
+## 30 October — Luna design/implementation review and scoped corrections
+
+User requested GPT Luna review and corrections. `luna_design` owned exercise UI/routine-target fixes; `luna_implementation` owned settings response validation; `luna_reviewer` independently reviewed screens and final diffs; coordinator fixed the pending routine-save race and integrated evidence. No major architecture changes or hosted/provider actions were taken. Existing migration/configuration edits were preserved.
+
+Scoped software review is complete with no remaining actionable issue in the changed code. Current native visual/device acceptance and richer History row presentation remain open. Detailed findings and verification are in the [review record](reports/reviews/2026-10-30-design-implementation.md); current check counts/gates are owned by [build status](BUILD_STATUS.md).
+
+## 30 October — standalone Supabase hosted migration checkpoint
+
+User selected project `mgyzzipsqmsabptrfchw` and authorized migration/isolation there. The previously supplied `aarofbmnnlkvdvrvhzem` candidate was dropped; no Supabase project was deleted. GRIND now owns a separate root migration stream with the reviewed GRIND SQL; standalone ownership comments were updated in the first two migration files.
+
+A new local Supabase stack uses ports 55520–55527. Its clean `supabase db reset --local` replay applied all nine migrations successfully. All nine transactional SQL suites then passed when run with `psql`; the generic `supabase test db`/pg_prove runner is incompatible with these non-TAP scripts, and the standalone foundation test was adapted to remove its BabyBoo-only `public.babies` assertion. Focused app config tests pass (3 suites/7 tests) for local endpoints and the new exact hosted origin.
+
+Hosted migration is complete: remote history was empty, a dry-run listed the nine migrations, all nine applied, and the linked history now matches. A read-only precheck found no Auth users, Grind schemas or existing Grind rows. The one GRIND Auth user/email identity and owned rows were transferred in a transaction and exact-compared with source: account/settings 1, workouts 2, workout exercises 2, sets 1, receipts 13, routines 0. No Auth sessions, unrelated Auth users or RepDB rows were transferred. Hosted configuration exposes `grind`, keeps `grind_private` unexposed, and allows `grind://auth/callback`; Auth MFA, site URL and email OTP/rate settings were preserved. The publishable key was verified against the selected project. An anonymous read probe was denied at schema permissions as expected; authenticated app sign-in/RLS/recovery and physical-device acceptance remain unverified. `.env.local` points to the selected hosted project and `.env.development.local` points to the standalone 55521 local API; both are ignored and owner-only.
+
+**Open:** verify migrated account sign-in, recovery, authenticated API/RLS and physical-device behavior; complete the client cutover and record its rollback boundary. The 701 RepDB backend/API release remains gated on rights clarification. Full M8 acceptance remains open.
+
 ## 29 October — enabled-only exercise lists; Dumbbell and EZ Curl Bar
 
 The user requested that Add Exercise and All Exercises show only configured entries, then approved Dumbbell and EZ Curl Bar weight/reps. Reused existing `is_configured` field; no new boolean/schema field was needed. Both lists now filter unconfigured and unmapped bundled entries, including their filter options. Added forward migration `20261029230000_grind_dumbbell_ez_catalog_configuration.sql` and SQL selection/logging tests in the canonical BabyBoo stream. It enables 88 Dumbbell and 21 EZ Curl Bar entries using distinct conventions “Weight per dumbbell” and “Total EZ-bar weight.” Current local total: 204/701 enabled (Barbell 76, Smith Machine 19, Dumbbell 88, EZ Curl Bar 21); 497 remain unavailable and zero other equipment is enabled. Applied via guarded `update-forward`, no reset. Typecheck, strict lint, coverage (57 suites/306 tests), focused exercise UI/catalog tests (29), all Grind SQL tests, and authenticated local API smoke pass. Native visual picker acceptance, hosted deployment and catalog release review remain open.
@@ -58,19 +82,19 @@ Logging/recovery, saved snapshots/history, catalog/custom exercises, routines, a
 
 Earlier foundation evidence below is historical; use the maintained report for current command results and artifact identity.
 
-## Decisions and authorization
+## Decisions and authorization (historical baseline; see current M8 status above)
 
 - React Native + strict TypeScript, using Expo SDK 57 as native tooling. User explicitly reaffirmed React Native on 26 October. HTML files remain design references.
 - GRIND project root consolidated and recorded in local Git; remote publishing and deployment have not been performed.
 - Current Volt Lime prototype is the implementation design baseline, subject to user feedback. User added dark/light appearance to M3; the current prototype only demonstrates dark.
-- Current transitional backend: shared BabyBoo Auth identities; independent GRIND data/membership/onboarding, secure session namespace and callback.
-- On 27 October the user requested plan point8/M8: move GRIND to a standalone Supabase project/database. Separation/Auth migration/cutover will be designed and reviewed before execution; no infrastructure or live data changes authorized by adding the roadmap item.
-- Existing BabyBoo migration stream is canonical. Coordinator assigned only the new forward migration/test; existing BabyBoo configuration/source/migrations and running stack remain untouched.
+- Historical M0–M7 backend: shared BabyBoo Auth identities; independent GRIND data/membership/onboarding, secure session namespace and callback. Current M8 target and hosted authorization are recorded at the top of this file.
+- On 27 October the user requested plan point 8/M8. At that time, the roadmap item alone did not authorize infrastructure or live-data changes; the later explicit authorization for `mgyzzipsqmsabptrfchw` supersedes that state.
+- BabyBoo's migration stream was canonical for the earlier shared deployment. GRIND now owns the fresh root `supabase/migrations` stream; preserve the existing BabyBoo stack and history.
 - User chose disposable local Supabase development first and confirmed both physical device platforms are available.
 - Defaults: kg, 120-second rest; settings validation 15–3600 seconds. All four load modes and completed-workout Previous matching were approved before M2/M3; frozen details are in engineering/M2_M3_CONTRACT.md.
 - MuscleWiki entitlement is unconfirmed; user explicitly requested live calls disabled.
 - User confirmed Apple signing is not configured and requested iPhone native-build verification remain pending. Installed Xcode26.2 is below the documented SDK57 requirement26.4+.
-- Hosted writes, deployments, purchases/provider spend, production changes and full shared-account deletion remain outside current authorization.
+- Current authorization permits GRIND schema and selected GRIND account-data migration to `mgyzzipsqmsabptrfchw` only. App deployment, purchases/provider spend, BabyBoo changes, unrelated/production data changes and full shared-account deletion remain outside scope.
 
 ## Owners and task log
 

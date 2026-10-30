@@ -23,7 +23,7 @@ import {
   useRoutineDraft,
 } from "./index";
 import { TemplateExercise } from "./TemplateExercise";
-import type { RoutinePayload } from "@/domain/training";
+import type { RoutinePayload, TrainingRoutine } from "@/domain/training";
 jest.mock("@/features/training", () => ({ useTraining: jest.fn() }));
 const mockListener = jest.fn();
 const mockDispatch = jest.fn();
@@ -181,6 +181,81 @@ it("shows saved routine and starts it without changing its template", async () =
     pathname: "/routine-edit",
     params: { id: trainingId(4) },
   });
+});
+it("shows total and per-set targets across load modes and tracking types", async () => {
+  const { read } = setup();
+  const base = makeRoutine();
+  const external: TrainingRoutine["exercises"][number] = {
+    ...template,
+    sets: [
+      {
+        id: trainingId(30),
+        position: 0,
+        set_type: "warmup",
+        entered_load: "18.50",
+        entered_unit: "lb",
+        reps: 8,
+      },
+      {
+        id: trainingId(31),
+        position: 1,
+        set_type: "working",
+        entered_load: null,
+        entered_unit: "kg",
+        reps: null,
+      },
+    ],
+  };
+  const variants: TrainingRoutine["exercises"] = [
+    external,
+    {
+      ...template,
+      id: trainingId(32),
+      load_mode: "bodyweight",
+      sets: [{
+        id: trainingId(33), position: 0, set_type: "working",
+        entered_load: null, entered_unit: "kg", reps: 6,
+      }],
+    },
+    {
+      ...template,
+      id: trainingId(34),
+      load_mode: "assisted",
+      sets: [{
+        id: trainingId(35), position: 0, set_type: "working",
+        entered_load: null, entered_unit: "lb", reps: 5,
+      }],
+    },
+    {
+      ...template,
+      id: trainingId(36),
+      tracking_type: "duration",
+      sets: [{
+        id: trainingId(37), position: 0, set_type: "warmup",
+        entered_load: null, entered_unit: "kg", reps: null,
+        duration_seconds: null,
+      }],
+    },
+    {
+      ...template,
+      id: trainingId(38),
+      tracking_type: "distance_duration",
+      sets: [{
+        id: trainingId(39), position: 0, set_type: "working",
+        entered_load: null, entered_unit: "kg", reps: null,
+        duration_seconds: 600, entered_distance: "1.25", distance_unit: "mi",
+      }],
+    },
+  ];
+  read.mockResolvedValue({ ...base, exercises: variants });
+  await mount(<RoutineDetailScreen id={trainingId(4)} />);
+  await screen.findByText("6 planned sets");
+  expect(screen.getByText("Warm-up 1 · Weight 18.50 lb · 8 reps")).toBeTruthy();
+  expect(screen.getByText("Working 1 · Weight unspecified · reps unspecified")).toBeTruthy();
+  expect(screen.getByText("Working 1 · Bodyweight · 6 reps")).toBeTruthy();
+  expect(screen.getByText("Working 1 · Assistance unspecified · 5 reps")).toBeTruthy();
+  expect(screen.getByText("Warm-up 1 · Duration unspecified")).toBeTruthy();
+  expect(screen.getByText("Working 1 · 600 sec · 1.25 mi")).toBeTruthy();
 });
 it("archives only after confirmation and retries failed reads", async () => {
   const { read, archive } = setup({ error: true });
@@ -446,4 +521,30 @@ it("resumes an existing active workout without starting another session", async 
   await fireEvent.press(await screen.findByText("Resume active workout"));
   expect(start).not.toHaveBeenCalled();
   expect(router.push).toHaveBeenCalledWith("/workout");
+});
+it("locks editing and exit during save, then restores the draft after failure", async () => {
+  const { save } = setup();
+  let rejectSave: (error: Error) => void = () => {
+    throw new Error("Save has not started");
+  };
+  save.mockImplementation(() => new Promise((_, reject) => { rejectSave = reject; }));
+  const alert = jest.spyOn(Alert, "alert");
+  await mount(<RoutineEditorScreen />);
+  await fireEvent.changeText(screen.getByLabelText("Routine name"), "Keep my draft");
+  await fireEvent.press(screen.getByText("Save routine"));
+  await screen.findByText("Saving routine… Please wait before editing or leaving.");
+  expect(screen.queryByLabelText("Routine name")).toBeNull();
+  expect(screen.queryByText("Add exercises")).toBeNull();
+  expect(screen.queryByText("Cancel")).toBeNull();
+  const preventDefault = jest.fn();
+  const listener = mockListener.mock.calls.at(-1)?.[1];
+  listener({ preventDefault, data: { action: { type: "GO_BACK" } } });
+  expect(preventDefault).toHaveBeenCalledTimes(1);
+  expect(alert).not.toHaveBeenCalled();
+  await act(async () => rejectSave(new Error("Connection interrupted")));
+  expect(await screen.findByText("Connection interrupted")).toBeTruthy();
+  expect(screen.getByLabelText("Routine name").props.value).toBe("Keep my draft");
+  expect(useRoutineDraft.getState().draft?.dirty).toBe(true);
+  await fireEvent.press(screen.getByText("Cancel"));
+  expect(router.back).toHaveBeenCalledTimes(1);
 });

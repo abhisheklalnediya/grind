@@ -12,7 +12,7 @@ export function getSupabase() {
   const environment = readEnvironment();
   if (!environment)
     throw new Error(
-      "Configure a local Supabase URL and public publishable key before signing in. Hosted connections are disabled for M1.",
+      "Configure a local Supabase URL or the approved GRIND project URL and public publishable key before signing in.",
     );
   ensureAuthCrypto();
   const storageKey = `${AUTH_STORAGE_KEY}.${new URL(environment.url).origin.replace(/[^a-zA-Z0-9._-]/g, "_")}`;

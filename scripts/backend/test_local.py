@@ -22,7 +22,7 @@ class LocalHarnessTests(unittest.TestCase):
             for name in ('migrations', 'tests'):
                 (source / name).mkdir()
                 (source / name / ('20261025180000_one.sql' if name == 'migrations' else 'one.sql')).write_text('select 1;')
-            original = ('project_id = "babyBoo"\nport = 54421\n'
+            original = ('project_id = "other_project"\nport = 54421\n'
                         'schemas = ["public", "graphql_public"]\n'
                         'additional_redirect_urls = ["https://old"]\n'
                         '[auth.email]\nenable_confirmations = false\n[other]\n')
@@ -58,7 +58,7 @@ class LocalHarnessTests(unittest.TestCase):
                 (work / local.MARKER).write_text(local.PROJECT)
                 (work / 'supabase').mkdir()
                 config = work / 'supabase' / 'config.toml'
-                config.write_text('project_id = "babyBoo"\nport = 54421')
+                config.write_text('project_id = "other_project"\nport = 54421')
                 with self.assertRaisesRegex(SystemExit, 'unexpected'):
                     local.target()
                 config.write_text(f'project_id = "{local.PROJECT}"\nport = 55421')

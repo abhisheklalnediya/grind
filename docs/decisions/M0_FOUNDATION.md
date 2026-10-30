@@ -1,5 +1,7 @@
 # M0 foundation decisions and source inventory
 
+> Historical proposal, superseded on 30 October 2026. Its shared-project/Auth and sibling-workspace instructions are obsolete. GRIND uses only project `mgyzzipsqmsabptrfchw`, root `supabase/migrations`, and GRIND-owned local resources. Do not follow the historical cross-app access, migration, test, or account instructions below.
+
 25 October 2026. User authorized starting M0/M1. Architect scope here is source inspection and foundation contracts only. No BabyBoo files, database schemas, hosted settings or provider resources were changed. Technical defaults below are recommendations for coordinator/developer review before migration work; user approval does not make untested native or hosted behavior verified.
 
 ## Precedence and development boundary

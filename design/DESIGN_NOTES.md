@@ -33,7 +33,7 @@ Four bottom tabs contain Train, History, Exercises and Settings. Active workouts
 | Exercise library | Combined filtering, All/Custom scope, details rather than selection |
 | Exercise detail | Overview/History/Records, load convention, explicit Play, unavailable-media fallback |
 | Settings | Unit/rest, contextual rest-alert choice, sign out with pending-input warning |
-| Delete Grind data | Scope explanation + acknowledgement + second confirmation; preserves shared identity and BabyBoo data |
+| Delete Grind account data | Scope explanation + acknowledgement + second confirmation; applies only to the standalone Grind account |
 
 ## Try these journeys
 

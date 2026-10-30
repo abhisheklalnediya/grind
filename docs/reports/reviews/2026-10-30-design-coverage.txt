@@ -1,0 +1,205 @@
+
+> grind@0.1.0 test:coverage
+> jest --runInBand --coverage
+
+PASS src/features/exercises/screens.test.tsx
+PASS src/features/routines/screens.test.tsx
+PASS tests/routesM3.test.tsx
+PASS src/services/scopedSettings.test.ts
+PASS src/features/home/TrainScreen.test.tsx
+PASS src/services/training/outbox.test.ts
+PASS src/features/exercises/reviewFixes.test.tsx
+PASS src/features/workouts/screens.test.tsx
+PASS src/features/auth/AuthGate.test.tsx
+PASS src/features/exercises/catalogItems.test.ts
+PASS src/features/preferences/preferences.test.tsx
+PASS src/features/shell/SettingsScreen.test.tsx
+PASS tests/routing.test.tsx
+PASS src/features/auth/AuthScreen.test.tsx
+PASS tests/workoutRecovery.test.tsx
+PASS src/services/training/api.test.ts
+PASS src/services/training/transport.test.ts
+PASS src/features/training/TrainingProvider.test.tsx
+PASS src/features/auth/VerifyScreen.test.tsx
+PASS src/features/auth/CallbackScreen.test.tsx
+PASS src/features/shell/AppRuntime.test.tsx
+PASS src/features/auth/AuthProvider.test.tsx
+PASS src/theme/AppearanceControls.test.tsx
+PASS src/theme/ThemeProvider.test.tsx
+PASS src/components/LoadUnitControl.test.tsx
+PASS src/features/workouts/reviewFixes.test.tsx
+PASS src/features/auth/NewPasswordScreen.test.tsx
+PASS src/features/auth/SetupScreen.test.tsx
+PASS src/features/exercises/ExerciseListComponents.test.tsx
+PASS src/services/training/outboxState.test.ts
+PASS src/components/components.test.tsx
+PASS src/services/training/outboxPersistence.test.ts
+PASS src/services/training/projection.test.ts
+PASS src/features/workouts/useWorkoutDraft.test.tsx
+PASS src/services/exercises/index.test.ts
+PASS src/domain/training/loads.test.ts
+PASS src/services/environment.test.ts
+PASS src/features/shell/PlaceholderScreen.test.tsx
+PASS src/features/shell/SettingsRoute.test.tsx
+PASS src/domain/training/schemas.test.ts
+PASS src/theme/appearance.test.ts
+PASS src/services/supabase.test.ts
+PASS src/services/grindAccount.test.ts
+PASS src/features/auth/validation.test.ts
+PASS src/services/secureSessionStorage.test.ts
+PASS src/features/workouts/WorkoutElapsed.test.tsx
+PASS src/components/TabIcon.test.tsx
+PASS src/features/auth/authCallback.test.ts
+PASS src/domain/training/previous.test.ts
+PASS src/domain/training/commands.test.ts
+PASS src/features/auth/sessionLifecycle.test.ts
+PASS src/domain/training/primitives.test.ts
+PASS src/features/auth/authService.test.ts
+PASS src/services/authCrypto.test.ts
+PASS src/state/useEditorStore.test.ts
+PASS src/services/trainingCache.test.ts
+PASS src/services/training/errors.test.ts
+----------------------------|---------|----------|---------|---------|--------------------------------------
+File                        | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+----------------------------|---------|----------|---------|---------|--------------------------------------
+All files                   |   97.66 |    93.31 |   96.45 |   98.32 |
+ app                        |   93.75 |      100 |    87.5 |   93.75 |
+  _layout.tsx               |      75 |      100 |      50 |      75 | 10
+  custom-exercise.tsx       |     100 |      100 |     100 |     100 |
+  exercise-detail.tsx       |     100 |      100 |     100 |     100 |
+  exercise-picker.tsx       |     100 |      100 |     100 |     100 |
+  history-detail.tsx        |     100 |      100 |     100 |     100 |
+  routine-edit.tsx          |     100 |      100 |     100 |     100 |
+  routine.tsx               |     100 |      100 |     100 |     100 |
+ app/(tabs)                 |     100 |      100 |     100 |     100 |
+  _layout.tsx               |     100 |      100 |     100 |     100 |
+  exercises.tsx             |     100 |      100 |     100 |     100 |
+  history.tsx               |     100 |      100 |     100 |     100 |
+  index.tsx                 |     100 |      100 |     100 |     100 |
+  settings.tsx              |     100 |      100 |     100 |     100 |
+ app/auth                   |     100 |      100 |     100 |     100 |
+  _layout.tsx               |     100 |      100 |     100 |     100 |
+  callback.tsx              |       0 |        0 |       0 |       0 |
+  new-password.tsx          |       0 |        0 |       0 |       0 |
+  recovery.tsx              |     100 |      100 |     100 |     100 |
+  setup.tsx                 |       0 |        0 |       0 |       0 |
+  sign-in.tsx               |     100 |      100 |     100 |     100 |
+  sign-up.tsx               |     100 |      100 |     100 |     100 |
+  verify.tsx                |       0 |        0 |       0 |       0 |
+ app/workout                |     100 |      100 |     100 |     100 |
+  _layout.tsx               |     100 |      100 |     100 |     100 |
+  finish.tsx                |     100 |      100 |     100 |     100 |
+  index.tsx                 |     100 |      100 |     100 |     100 |
+  summary.tsx               |     100 |      100 |     100 |     100 |
+ src/components             |     100 |      100 |     100 |     100 |
+  Button.tsx                |     100 |      100 |     100 |     100 |
+  Heading.tsx               |     100 |      100 |     100 |     100 |
+  LoadUnitControl.tsx       |     100 |      100 |     100 |     100 |
+  Screen.tsx                |     100 |      100 |     100 |     100 |
+  TabIcon.tsx               |     100 |      100 |     100 |     100 |
+ src/domain/training        |     100 |      100 |     100 |     100 |
+  commands.ts               |     100 |      100 |     100 |     100 |
+  index.ts                  |       0 |        0 |       0 |       0 |
+  loads.ts                  |     100 |      100 |     100 |     100 |
+  previous.ts               |     100 |      100 |     100 |     100 |
+  primitives.ts             |     100 |      100 |     100 |     100 |
+  schemas.ts                |     100 |      100 |     100 |     100 |
+ src/features/auth          |     100 |    99.13 |     100 |     100 |
+  AuthGate.tsx              |     100 |      100 |     100 |     100 |
+  AuthProvider.tsx          |     100 |      100 |     100 |     100 |
+  AuthScreen.tsx            |     100 |      100 |     100 |     100 |
+  CallbackScreen.tsx        |     100 |    94.44 |     100 |     100 | 33
+  NewPasswordScreen.tsx     |     100 |    91.66 |     100 |     100 | 80
+  SetupScreen.tsx           |     100 |      100 |     100 |     100 |
+  VerifyScreen.tsx          |     100 |      100 |     100 |     100 |
+  authCallback.ts           |     100 |      100 |     100 |     100 |
+  authService.ts            |     100 |      100 |     100 |     100 |
+  sessionLifecycle.ts       |     100 |      100 |     100 |     100 |
+  validation.ts             |     100 |      100 |     100 |     100 |
+ src/features/exercises     |   96.88 |    93.98 |   95.76 |   97.81 |
+  CustomExerciseForm.tsx    |   96.36 |    88.88 |     100 |   98.11 | 62
+  CustomExerciseScreen.tsx  |     100 |      100 |     100 |     100 |
+  ExerciseDetailScreen.tsx  |   93.33 |    97.36 |   88.88 |   92.85 | 22
+  ExerciseFilter.tsx        |    92.3 |      100 |    87.5 |    92.3 | 59
+  ExerciseHistory.tsx       |   95.45 |     90.9 |     100 |     100 | 23,38,81
+  ExerciseLibraryScreen.tsx |   96.87 |     92.3 |   94.11 |   96.87 | 83
+  ExerciseListRow.tsx       |     100 |      100 |     100 |     100 |
+  ExercisePickerScreen.tsx  |   98.78 |     92.1 |     100 |   98.73 | 130
+  RepdbExerciseDetail.tsx   |   93.33 |       90 |   77.77 |   92.85 | 95
+  catalog.ts                |      90 |       90 |     100 |     100 | 41
+  catalogItems.ts           |     100 |      100 |     100 |     100 |
+  fields.tsx                |     100 |      100 |     100 |     100 |
+  index.ts                  |       0 |        0 |       0 |       0 |
+  shared.ts                 |       0 |        0 |       0 |       0 |
+ src/features/history       |   95.55 |    82.71 |     100 |     100 |
+  HistoryScreen.tsx         |   95.65 |       80 |     100 |     100 | 18,30,48,84
+  SessionDetails.tsx        |     100 |    78.94 |     100 |     100 | 19,44,59-69
+  WorkoutDetailScreen.tsx   |      90 |     91.3 |     100 |     100 | 22,41
+  index.ts                  |       0 |        0 |       0 |       0 |
+ src/features/home          |   97.05 |     87.5 |   94.44 |     100 |
+  ResumeStrip.tsx           |     100 |      100 |     100 |     100 |
+  TrainScreen.tsx           |   96.77 |    86.66 |   93.75 |     100 | 17-23,55,141
+ src/features/preferences   |    92.3 |    92.85 |   83.33 |     100 |
+  index.tsx                 |    92.3 |    92.85 |   83.33 |     100 | 43
+ src/features/routines      |   95.76 |    85.92 |     100 |     100 |
+  RoutineDetailScreen.tsx   |   94.44 |    87.09 |     100 |     100 | 24-30,49,84
+  RoutineEditorScreen.tsx   |   94.05 |    85.29 |     100 |     100 | 32,50-72,85,108-118,124,169,202,235
+  RoutineTargets.tsx        |     100 |    79.41 |     100 |     100 | 18,31,45-47,54-55
+  TemplateExercise.tsx      |     100 |    84.78 |     100 |     100 | 67,132-141,150,163-167
+  draft.ts                  |     100 |    96.29 |     100 |     100 | 85
+  index.ts                  |       0 |        0 |       0 |       0 |
+ src/features/shell         |   96.05 |     91.3 |   96.42 |   97.29 |
+  AppRuntime.tsx            |     100 |      100 |     100 |     100 |
+  PlaceholderScreen.tsx     |     100 |      100 |     100 |     100 |
+  SettingsRoute.tsx         |     100 |      100 |     100 |     100 |
+  SettingsScreen.tsx        |      94 |     87.5 |   92.85 |   95.91 | 85-86
+ src/features/training      |     100 |      100 |     100 |     100 |
+  TrainingProvider.tsx      |     100 |      100 |     100 |     100 |
+  index.ts                  |       0 |        0 |       0 |       0 |
+  types.ts                  |       0 |        0 |       0 |       0 |
+ src/features/workouts      |   91.52 |    82.19 |    86.4 |   91.33 |
+  ExerciseEditor.tsx        |     100 |    83.87 |     100 |     100 | 51,77-88,132,162,184,223
+  FinishScreen.tsx          |      96 |      100 |   93.75 |      96 | 74
+  RecoveryControls.tsx      |   94.28 |      100 |      90 |   96.77 | 103
+  SetEditor.tsx             |   92.06 |       88 |      88 |   91.52 | 35,127,147-149
+  SetOptions.tsx            |   76.92 |       50 |   85.71 |      75 | 56-63
+  SummaryScreen.tsx         |     100 |      100 |     100 |     100 |
+  TimedSetEditor.tsx        |      75 |    68.29 |      55 |   74.07 | 43,63-64,112,130,146,163-182,209-232
+  WorkoutElapsed.tsx        |     100 |      100 |     100 |     100 |
+  WorkoutScreen.tsx         |     100 |    81.25 |   88.88 |     100 | 39,60,73
+  fields.ts                 |     100 |      100 |     100 |     100 |
+  index.ts                  |       0 |        0 |       0 |       0 |
+  setEditorStyles.ts        |     100 |      100 |     100 |     100 |
+  useWorkoutDraft.ts        |     100 |    92.85 |     100 |     100 | 33
+ src/services               |     100 |      100 |     100 |     100 |
+  authCrypto.ts             |     100 |      100 |     100 |     100 |
+  environment.ts            |     100 |      100 |     100 |     100 |
+  grindAccount.ts           |     100 |      100 |     100 |     100 |
+  scopedSettings.ts         |     100 |      100 |     100 |     100 |
+  secureSessionStorage.ts   |     100 |      100 |     100 |     100 |
+  supabase.ts               |     100 |      100 |     100 |     100 |
+  trainingCache.ts          |     100 |      100 |     100 |     100 |
+ src/services/exercises     |     100 |    88.23 |     100 |     100 |
+  index.ts                  |     100 |    88.23 |     100 |     100 | 61,83
+ src/services/training      |     100 |      100 |     100 |     100 |
+  api.ts                    |     100 |      100 |     100 |     100 |
+  errors.ts                 |     100 |      100 |     100 |     100 |
+  outbox.ts                 |     100 |      100 |     100 |     100 |
+  outboxPersistence.ts      |     100 |      100 |     100 |     100 |
+  outboxState.ts            |     100 |      100 |     100 |     100 |
+  projection.ts             |     100 |      100 |     100 |     100 |
+  transport.ts              |     100 |      100 |     100 |     100 |
+ src/state                  |     100 |      100 |     100 |     100 |
+  useEditorStore.ts         |     100 |      100 |     100 |     100 |
+ src/theme                  |     100 |      100 |     100 |     100 |
+  AppearanceControls.tsx    |     100 |      100 |     100 |     100 |
+  ThemeProvider.tsx         |     100 |      100 |     100 |     100 |
+  appearance.ts             |     100 |      100 |     100 |     100 |
+  useTheme.ts               |     100 |      100 |     100 |     100 |
+----------------------------|---------|----------|---------|---------|--------------------------------------
+
+Test Suites: 57 passed, 57 total
+Tests:       308 passed, 308 total
+Snapshots:   0 total
+Time:        11.851 s, estimated 15 s
+Ran all test suites.

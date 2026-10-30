@@ -88,3 +88,7 @@ Python safety tests validate harness targeting/source-drift guards using fiction
 - `features/preferences/preferences.test.tsx` verifies setup-gated scoped settings defaults, invalidation/refetch and failure retry. `components/LoadUnitControl.test.tsx` verifies display conversion without changing populated source units, empty-entry unit choice and partial-value guards.
 - `services/trainingCache.test.ts` and mounted TrainingProvider callback tests cover completion invalidation, recovered completion and duplicate-emission suppression.
 - Final command results are in BUILD_STATUS.md; the initial failing run is retained as dated evidence. No thresholds/exclusions were weakened. Query test lifecycle warnings were addressed at the actual refresh interaction rather than suppressing console output.
+
+## 30 October review additions
+
+`features/routines/screens.test.tsx` mounts `RoutineTargets` through the real routine detail screen to verify planned total/per-set targets, entered units, unspecified values, working/warm-up and measurement modes. Its deferred-save regression verifies that routine editing/navigation are unavailable during save and a failed request restores the dirty draft. Exercise screen regression distinguishes fetch failure from an empty successful result. `services/scopedSettings.test.ts` rejects a foreign-account save response. Current integration counts and metrics are owned by [BUILD_STATUS.md](../BUILD_STATUS.md).

@@ -1,5 +1,6 @@
 import { z } from "zod";
 const schema = z.object({ url: z.url(), key: z.string().min(20) });
+const STANDALONE_GRIND_ORIGIN = "https://mgyzzipsqmsabptrfchw.supabase.co";
 export type PublicEnvironment = { url: string; key: string };
 export function validateEnvironment(
   url: string | undefined,
@@ -21,9 +22,14 @@ export function validateEnvironment(
     host === "127.0.0.1" ||
     host === "[::1]" ||
     privateV4;
+  const standalone =
+    address.origin === STANDALONE_GRIND_ORIGIN &&
+    address.pathname === "/" &&
+    !address.search &&
+    !address.hash;
   if (
     !["http:", "https:"].includes(address.protocol) ||
-    !local ||
+    (!local && !standalone) ||
     address.username ||
     address.password
   )

@@ -18,7 +18,7 @@ function fixture() {
 it("round-trips large unicode tokens in bounded chunks, replaces and removes only its key", async () => {
   const { data, storage } = fixture();
   const session = "😀".repeat(4000);
-  data.set("babyboo", "untouched");
+  data.set("another-app", "untouched");
   await storage.setItem("grind", session);
   expect(await storage.getItem("grind")).toBe(session);
   for (const [key, value] of data)
@@ -29,7 +29,7 @@ it("round-trips large unicode tokens in bounded chunks, replaces and removes onl
   expect(data.size).toBe(3);
   await storage.removeItem("grind");
   expect(await storage.getItem("grind")).toBeNull();
-  expect([...data]).toEqual([["babyboo", "untouched"]]);
+  expect([...data]).toEqual([["another-app", "untouched"]]);
 });
 it("preserves the prior session when an interrupted write cannot commit its manifest", async () => {
   const { storage, port } = fixture();

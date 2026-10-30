@@ -25,6 +25,7 @@ it("requires a verified recovery context and only finishes after successful pass
     } as unknown as ReturnType<typeof useAuth>);
   jest.mocked(authService.updatePassword).mockResolvedValue(undefined);
   await render(<NewPasswordScreen />);
+  expect(screen.getByText("Choose a new password for your Grind account.")).toBeVisible();
   await fireEvent.changeText(
     screen.getByLabelText("New password"),
     "new-test-password",

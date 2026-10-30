@@ -14,7 +14,7 @@ Features:
 7. Personal records, with explicit calculation definitions and tests. Implement after the core logger if helpful, but include before MVP completion.
 8. Database migration, RLS/ownership, command consistency and domain tests, plus physical-device timer checks.
 9. Build/run instructions for both Android and iOS.
-10. Email/password signup, verification, login, password reset, persistent sessions and sign-out; Grind-only data/membership deletion through a privileged server operation that preserves shared Auth/BabyBoo data.
+10. Email/password signup, verification, login, password reset, persistent sessions and sign-out using GRIND's standalone Supabase Auth; account deletion through a narrowly scoped GRIND server operation.
 
 Model routine templates separately from actual sessions; do not overwrite historical workouts when a routine changes. Keep exercise definitions independent from individual gym machines. Allow future nullable gym/equipment association without making it required now. Preserve room for future spotter-assistance and next-session-intention fields.
 
@@ -28,4 +28,4 @@ RepDB Free is the primary MVP exercise catalog and static-image source. Free Exe
 
 ## Exercise/provider and backend amendment — 25 October 2026
 
-Historical provider choice (superseded for MVP above): MuscleWiki was selected; the supplied list/detail/video samples are sufficient for architecture, not proof of live integration. Use BabyBoo's existing Supabase project/Auth with separate Grind schemas, membership, onboarding and local session storage. Coordinate its migration history before deployment. Keep Grind-only data deletion separate from shared Auth identity deletion. These decisions supersede any separate-backend or single-app account-deletion assumption above. Read docs/EXERCISE_MEDIA_MODULE.md and docs/MVP_PAGES.md before exercise implementation. Local secrets exist in ignored env files; never copy their values into source, documentation or client code.
+Historical provider choice (superseded for MVP above): MuscleWiki was selected; the supplied list/detail/video samples are sufficient for architecture, not proof of live integration. The earlier shared-backend proposal is superseded: GRIND uses only its standalone Supabase project, Auth and migration history. Read docs/EXERCISE_MEDIA_MODULE.md and docs/MVP_PAGES.md before exercise implementation. Local secrets exist in ignored env files; never copy their values into source, documentation or client code.

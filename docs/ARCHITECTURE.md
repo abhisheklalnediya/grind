@@ -5,17 +5,17 @@ Decision date: 2026-10-17. Original architecture proposal following the revised 
 
 ## 29 October 2026 amendment — self-hosted catalog
 
-RepDB Free is the primary MVP exercise catalog and static-image source. Free Exercise DB is supplementary only after source-specific review; its images remain blocked until rights are documented. Follow the [self-hosted catalog implementation plan](EXERCISE_CATALOG_PLAN.md) for immutable snapshots, licenses/credits, additive schema/import, deduplication, private media storage, member-only APIs, caching, workout/custom integration and acceptance. This supersedes MuscleWiki selection, streaming/player/token/cache requirements for MVP; historical MuscleWiki material below is retained as context only. Existing shared-Auth/isolation, canonical migration and M8 cutover rules remain in force. Planning only: no data import, hosted change or code implementation is claimed.
+RepDB Free is the primary MVP exercise catalog and static-image source. Free Exercise DB is supplementary only after source-specific review; its images remain blocked until rights are documented. Follow the [self-hosted catalog implementation plan](EXERCISE_CATALOG_PLAN.md) for immutable snapshots, licenses/credits, additive schema/import, deduplication, private media storage, member-only APIs, caching, workout/custom integration and acceptance. This supersedes MuscleWiki selection, streaming/player/token/cache requirements for MVP; historical MuscleWiki material below is retained as context only. GRIND uses only its standalone Auth and migration history.
 
-## 25 October 2026 amendment: shared backend and exercise media
+## 25 October 2026 proposal — superseded; no shared backend
 
-Use BabyBoo's existing Supabase project and Auth identities for Grind, with separate Grind schema/data, native sessions, onboarding and app membership. Coordinate one migration history. Shared identity deletion must not be used for a Grind-only data deletion action. This supersedes the separate-project assumption and the single-app deletion wording below.
+An earlier proposal considered a shared Supabase project and Auth identities. It was superseded on 30 October: GRIND uses its own standalone project, Auth identities, migration history and account lifecycle. No runtime or development dependency on another app is permitted.
 
 Historical 25 October decision (superseded for MVP by the 29 October amendment): MuscleWiki was the selected demonstration provider. Cache permitted exercise text across users with bounded retention; stream videos on demand. Caching a URL does not avoid per-stream/range-request billing. The free tier is currently Playground-only. See [Exercise media module](EXERCISE_MEDIA_MODULE.md) for cache boundaries, proposed contracts, failure handling, shared-auth consequences and verification gates. Configuration is saved locally; no backend changes are deployed.
 
-## 27 October 2026 roadmap amendment: standalone backend
+## 30 October 2026 amendment: standalone project selected
 
-The shared BabyBoo Supabase project/Auth is transitional. The user requested a standalone GRIND project/database as plan point8/M8. See [the separation milestone](IMPLEMENTATION_MILESTONES.md#m8--standalone-grind-backend-plan-point-8) for data/Auth migration, independent migration ownership, validation and cutover/rollback scope. Current M0/M1 local/shared contracts remain in use until an approved separation is implemented. Adding the milestone does not authorize hosted project creation, live migration or source-data deletion.
+The user selected Supabase project `mgyzzipsqmsabptrfchw` for GRIND. GRIND’s migration stream is rooted at `supabase/migrations`. The clean standalone local replay and nine GRIND SQL suites pass. The nine hosted migrations, selected GRIND data transfer, API schema exposure and Auth callback configuration are complete. Email/password client sign-in and recovery are implemented; authenticated hosted RLS and physical-device callback acceptance remain open. See [M8](IMPLEMENTATION_MILESTONES.md#m8--standalone-grind-backend-plan-point-8) and [Supabase setup](../supabase/README.md).
 
 ## Engineering standards
 
@@ -64,7 +64,7 @@ Do not add a standalone Express/Nest server or a web dashboard for this mileston
 - Every exposed private table has RLS and explicit grants. Derive ownership from `auth.uid()`, never trust a submitted owner ID. Policies cover read, insert, update and delete, including parent ownership for child records.
 - Prevent cross-user references using ownership-aware constraints and command validation. A private exercise cannot be referenced by another user's routine/session. Global seed exercises are readable by authenticated users and cannot be edited by them.
 - Prefer security-invoker functions. Privileged functions require a fixed search path, explicit ownership checks, narrow execute grants, and tests. Restrict direct DML where it could bypass workout lifecycle, revision, snapshot or PR rules.
-- Clear account-scoped caches, drafts and timers on explicit logout/account switch. On token expiry, retain an unsent draft for the same account and require reauthentication before sending it. Grind-only data deletion uses a narrowly scoped authenticated server function and preserves shared Auth/BabyBoo data; no admin credentials on device. Full shared-account deletion is separately gated.
+- Clear account-scoped caches, drafts and timers on explicit logout/account switch. On token expiry, retain an unsent draft for the same account and require reauthentication before sending it. Account deletion uses a narrowly scoped authenticated server function; no admin credentials are stored on device.
 
 ## Data model
 
@@ -144,15 +144,15 @@ Include two complementary surfaces in MVP:
 
 Timer correctness and visible/ audible delivery are different: notification permissions, Focus modes, battery policies and Android exact-alarm access can affect delivery. Handle denial with an in-app countdown and clear settings affordance. Request exact-alarm access only if justified by the implementation and applicable distribution rules. Do not claim that Live Activity cleanup always executes at the precise deadline while the app is terminated; use OS-rendered time and verify stale/expired presentation on devices. Force-stop and reboot behavior must be tested and documented, not assumed to be guaranteed.
 
-## Local Supabase, then hosted
+## Standalone Supabase project and local development
 
-Recommendation: develop against the real Supabase stack locally, not mocks; connect a hosted development/staging project early for physical-device and email-link testing. Docker and Supabase CLI are installed here; Docker responded with server version 29.1.3 and Supabase CLI with 2.101.0 during this analysis. The project stack itself has not been initialized or started.
+GRIND's standalone project is `mgyzzipsqmsabptrfchw`. GRIND owns `supabase/migrations`; its local CLI stack is configured on ports 55520–55527. Backend tests use GRIND-owned disposable stacks and source files only.
 
-Use the existing BabyBoo migration stream as the canonical shared source. Create a sanitized disposable copy with distinct project ID/ports for local start/replay; do not initialize a competing hosted history in Grind or reset the existing BabyBoo stack. Version new forward migrations/RLS/functions, test combined local replay and generate database types. Local authentication uses the disposable mail capture service for verification/reset links. See [M0 foundation decisions](decisions/M0_FOUNDATION.md).
+The standalone migration baseline was replayed locally from empty state. On 30 October 2026 the hosted project was verified empty, the nine migrations were dry-run and applied, the selected GRIND account/data were transferred, and the project was configured to expose only `grind` (never `grind_private`) with `grind://auth/callback` allowed. Local `.env.local` contains only the selected project's public URL and publishable key; the app guard rejects any unrelated hosted origin.
 
-To move to hosted: create/select a project, link it, apply reviewed migrations, deploy any Edge Functions and secrets, configure Auth email delivery and redirects, and change app URL/publishable key. Exercise seeds require an explicit deployment step; don't assume a schema push seeds them. Local users, sessions and workout data are not automatically migrated; create fresh hosted test accounts.
+Selective migration scope was the observed GRIND member/settings plus active/completed workout history, set and command receipts. The hosted transfer matched selected rows exactly and excluded unrelated Auth users, sessions and all RepDB rows. Auth sessions were not transferred; the user signs in again. The existing workout reference uses an independently authored starter exercise included by migration. The 701 RepDB records remain out of hosted transfer until the existing license review resolves authenticated backend/API delivery. The seven independent starter exercises are seeded by the baseline migration.
 
-Simulators/emulators/physical phones need different local backend addresses; a phone cannot use the laptop's `localhost`. Use a reachable LAN address and check firewall/deep links. Hosted staging avoids dependence on the laptop for testers. Schema migration is portable; environment configuration still needs verification. Production remains separate from development and staging.
+The GRIND PostgREST endpoint accepts the exposed schema, while an unauthenticated read is denied by schema grants. Authenticated sign-in, recovery, API/RLS behavior and physical-device acceptance remain unverified. See [standalone Supabase setup](../supabase/README.md) for current evidence and the remaining cutover gate.
 
 ## Implementation order and acceptance
 

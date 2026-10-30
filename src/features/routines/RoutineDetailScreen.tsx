@@ -9,6 +9,7 @@ import { Button } from "@/components/Button";
 import { useTraining } from "@/features/training";
 import { useTheme } from "@/theme/useTheme";
 import { Copy, useCatalog } from "@/features/exercises/shared";
+import { RoutineTargets } from "./RoutineTargets";
 export function RoutineDetailScreen({ id }: { id: string }) {
   const training = useTraining();
   const catalog = useCatalog();
@@ -69,13 +70,21 @@ export function RoutineDetailScreen({ id }: { id: string }) {
             {query.data.exercises.length} exercises · version{" "}
             {query.data.version}
           </Copy>
+          <Copy>
+            {query.data.exercises.reduce(
+              (total, exercise) => total + exercise.sets.length,
+              0,
+            )} planned sets
+          </Copy>
           {query.data.exercises.map((exercise, index) => (
-            <Copy key={exercise.id}>
-              {catalog.data?.find((item) => item.id === exercise.exercise_id)
-                ?.name ?? `Exercise ${index + 1}`}{" "}
-              · {exercise.sets.length} sets · {exercise.rest_seconds}s rest
-              {exercise.notes ? ` · ${exercise.notes}` : ""}
-            </Copy>
+            <RoutineTargets
+              key={exercise.id}
+              exercise={exercise}
+              name={
+                catalog.data?.find((item) => item.id === exercise.exercise_id)
+                  ?.name ?? `Exercise ${index + 1}`
+              }
+            />
           ))}
           {error ? <Copy>{error}</Copy> : null}
           <Button

@@ -74,7 +74,7 @@ export function AuthScreen({ mode }: { mode: Mode }) {
               ? "Your next chapter."
               : "Let’s get you back in."
         }
-        subtitle="Your sign-in is shared with BabyBoo. Your Grind setup is separate."
+        subtitle="Sign in to your Grind account."
       />
       <View style={styles.field}>
         <Text style={styles.label}>Email</Text>
@@ -157,7 +157,7 @@ export function AuthScreen({ mode }: { mode: Mode }) {
       )}
       {mode === "recovery" ? (
         <Text style={styles.label}>
-          Changing your password affects both Grind and BabyBoo.
+          This resets your Grind account password.
         </Text>
       ) : null}
     </Screen>

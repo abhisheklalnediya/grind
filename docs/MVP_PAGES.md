@@ -30,7 +30,7 @@ Primary journey: Sign in → Train → Start routine or empty workout → Add ex
 | Exercise library | Search and filters, seeded and custom exercises; Open exercise | Empty search, loading/error, custom exercise creation |
 | Exercise detail | Overview / History / Records; instructions, on-demand demonstration, load convention, previous sessions, eligible bests | No history, no eligible record, media unavailable, kg/lb display, custom edit/archive |
 | Settings | Units, default rest, dark/light appearance, rest alert status, account email; Sign out | Permission denied with system settings link, save error, unsent draft before sign-out |
-| Delete Grind data | Explain Grind-only data/membership deletion, explicit confirmation; Delete Grind data | Shared BabyBoo identity/data preserved; reauthentication if required, server error, success returns to auth |
+| Delete Grind account data | Explain the GRIND-only scope, explicit confirmation; Delete account data | Reauthentication if required, server error, success returns to auth |
 
 ## Active workout interaction
 
@@ -76,4 +76,4 @@ Library rows use a still thumbnail when permitted and available, otherwise a neu
 
 Cache permitted exercise text across users; fetch missing detail once under a shared lease. A second user reuses fresh text. Media streams remain metered; video URL caching cannot guarantee a single call per play. Keep the API key server-only and use short-lived playback tokens. Do not permanently store media. Free-tier/direct-access entitlement, media-reference caching and shared backend permissions are implementation verification gates.
 
-Share BabyBoo's Supabase project/Auth, while keeping Grind data, onboarding and local sessions separate. The Settings deletion flow must distinguish Delete Grind data from deletion of the shared account affecting both apps.
+Use GRIND's standalone Supabase project for Auth, data, onboarding and local sessions. Account controls apply only to GRIND.

@@ -14,7 +14,7 @@ Advanced lifter context, gym profiles and follows, community equipment catalogs,
 ## Development and maintenance
 
 - [React Native standards](docs/engineering/REACT_NATIVE_STANDARDS.md): mandatory modularity, reusable components and meaningful tests for every executable module.
-- [Maintenance workflow](docs/MAINTENANCE.md): quality gates, dependencies, migrations, native rebuilds and documentation discipline adapted from BabyBoo.
+- [Maintenance workflow](docs/MAINTENANCE.md): quality gates, dependencies, migrations, native rebuilds and documentation discipline.
 - [Live tasks](docs/planning/TASKS.md), [test coverage and gaps](docs/engineering/TEST_COVERAGE.md), and [actual status](docs/AGENT_STATUS.md): distinguish implemented work from verified acceptance. Current tests passing does not imply coverage gates pass.
 
 ## Working in this project
@@ -29,14 +29,14 @@ Current implementation/build health is maintained in [docs/BUILD_STATUS.md](docs
 - `docs/`: architecture, requirements, roadmap and coordination status.
 - `design/`: illustrative HTML prototypes, separate from future application code.
 - `assets/branding/`: exploratory branding artwork.
-- `supabase/functions/`: ignored provider configuration; `scripts/backend/`: guarded disposable local backend harness. Canonical migrations live in the existing BabyBoo stream.
-- `.env.example`: public configuration template; `.env.local` is ignored local configuration.
+- `supabase/`: GRIND-owned standalone Supabase migrations, SQL tests and local CLI configuration. See [Supabase setup](supabase/README.md). `scripts/backend/`: GRIND-only disposable backend checks.
+- `.env.example`: public configuration template; `.env.local` is ignored local configuration. The active standalone project and migration workflow are in [`supabase/README.md`](supabase/README.md).
 
 See [the document index](docs/README.md) for reading order and decision precedence. Keep configuration secrets out of documentation and commits.
 
 ## MVP design review
 
-The designer role is defined in [agents/designer.md](agents/designer.md). Open [the clickable MVP prototype](design/mvp.html) and [design notes](design/DESIGN_NOTES.md) to review pages and interaction states using local sample data. Local implementation through M3 is authorized; M4–M8 and hosted/provider operations retain their gates.
+The designer role is defined in [agents/designer.md](agents/designer.md). Open [the clickable MVP prototype](design/mvp.html) and [design notes](design/DESIGN_NOTES.md) to review pages and interaction states using local sample data. M8 standalone migration to project `mgyzzipsqmsabptrfchw` is complete; remaining Auth/RLS/device acceptance is tracked in [Supabase setup](supabase/README.md).
 
 To serve the design locally from the GRIND root:
 
@@ -48,6 +48,6 @@ Then open `http://127.0.0.1:8765/mvp.html`. This serves only the design folder, 
 
 ## Shared backend and exercise demonstrations
 
-Grind uses the planned shared BabyBoo Auth model with separate app data and sessions. RepDB Free is selected for the self-hosted catalog and static demonstrations; Free Exercise DB is supplementary with images blocked pending rights verification. Read [the implementation plan](docs/EXERCISE_CATALOG_PLAN.md) and [shared-backend rules](docs/EXERCISE_MEDIA_MODULE.md). This adoption is planned, not imported/deployed.
+GRIND uses its standalone Supabase project for Auth, data and sessions. RepDB Free is selected for the self-hosted catalog and static demonstrations; Free Exercise DB is supplementary with images blocked pending rights verification. Read [the implementation plan](docs/EXERCISE_CATALOG_PLAN.md) and [backend rules](docs/EXERCISE_MEDIA_MODULE.md).
 
 Planned catalog credit: Exercise data by [RepDB](https://repdb.co). The implementation must also display the credit in app Settings/About.

@@ -13,9 +13,9 @@ You are the lead coordinator for GRIND. First read all existing project document
 ## GRIND product and environment boundaries
 - Build Android and iOS with React Native, Expo and strict TypeScript. Preserve Volt Lime, four tabs and the separate active workout/Resume flow. User-requested dark/light appearance belongs to M3 preferences; use consistent accessible semantic themes.
 - Supabase is authoritative. Saved means server-acknowledged; keep bounded durable drafts, stable operation IDs, retries and revision conflicts explicit. Preserve original entered units and historical snapshots.
-- Current shared BabyBoo Auth/database is transitional. Use its canonical forward-migration stream with a guarded disposable local copy; never reset/stop the existing BabyBoo stack or create competing hosted history. M8 plans standalone GRIND infrastructure and a reviewed Auth/data cutover.
+- GRIND uses only its standalone Supabase project (`mgyzzipsqmsabptrfchw`) and its own `supabase/migrations` history. Use GRIND-owned local stacks and configuration only. Do not read, import, configure, or run against another app's source, credentials, Auth, database, migrations, or local stack.
 - Local-only development through M3 and disabled live MuscleWiki calls remain current constraints. Hosted changes, spending, deployment and production data operations require explicit authorization. Never ship service-role/provider secrets or run disposable fixture/bootstrap scripts against hosted data.
-- Do not import BabyBoo's care features, theme, identifiers, credentials or historical verification claims. GRIND scope and current decisions remain authoritative.
+- Do not import another app's features, theme, identifiers, credentials or historical verification claims. GRIND scope and current decisions remain authoritative.
 
 ## Engineering and quality rules
 - Keep routes thin; separate presentation, orchestration, pure domain rules, service adapters and native timer behavior. Reuse existing components/contracts and inject testable service boundaries; avoid speculative abstractions and feature-internal cross-imports.

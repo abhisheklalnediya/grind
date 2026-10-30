@@ -18,24 +18,24 @@ Keep each fact in its owning document and link elsewhere. Update affected specif
 
 ## Current catalog decision
 
-29 October: [self-hosted catalog implementation plan](EXERCISE_CATALOG_PLAN.md) owns RepDB Free adoption and rights-gated supplementary Free Exercise DB usage. It supersedes earlier MuscleWiki MVP selection and streaming requirements; shared-backend rules remain.
+29 October: [self-hosted catalog implementation plan](EXERCISE_CATALOG_PLAN.md) owns RepDB Free adoption and rights-gated supplementary Free Exercise DB usage. It supersedes earlier MuscleWiki MVP selection and streaming requirements.
 
 ## Specification reading order
 
 1. [Architecture](ARCHITECTURE.md): system boundaries, data model, commands, recovery, timers and acceptance.
-2. [Exercise media and shared backend](EXERCISE_MEDIA_MODULE.md): 25 October shared-Auth amendment, app isolation, deletion, migration ownership and provider gates.
+2. [Exercise media and backend](EXERCISE_MEDIA_MODULE.md): current standalone backend boundary, migration ownership and provider gates.
 3. [MVP pages](MVP_PAGES.md): navigation, screens, interaction states and visual direction.
 4. [Development task](CODEX_TASK.md): complete Phase 1 scope; local implementation through M3 is authorized.
 5. [Product vision](PRODUCT_VISION.md): future roadmap, distinct from MVP.
 6. [Future data model](DATA_MODEL_FUTURE.md): future domain notes, not migrations.
 7. [Agent status](AGENT_STATUS.md): review results, unresolved decisions and current work.
-8. [Implementation milestones](IMPLEMENTATION_MILESTONES.md): M0–M8 sequence, owners, dependencies and acceptance gates; M0–M3 authorized; M4–M8 and hosted operations retain their gates.
+8. [Implementation milestones](IMPLEMENTATION_MILESTONES.md): M0–M8 sequence, owners, dependencies and acceptance gates; standalone migration is complete, with Auth/RLS/device acceptance open.
 
 9. [Local setup](SETUP.md): runtime, guarded backend commands and device/toolchain gates.
 
 ## Decision precedence and open alignment
 
-The 25 October amendment and exercise-media module supersede older separate-project and single-app deletion language. GRIND shares BabyBoo Auth identities but owns its data/membership and independent native session. GRIND-only deletion must preserve the shared identity. Current local development uses BabyBoo's existing canonical migration stream with a new forward Grind migration and a separate disposable local test copy; do not create competing hosted history.
+The 30 October standalone decision supersedes all earlier shared-project, shared-Auth and cross-app migration instructions. GRIND uses only its standalone project `mgyzzipsqmsabptrfchw`, its own Auth users and [`supabase/migrations`](../supabase/migrations/). Do not use another app's source, configuration, credentials, data or local stack for GRIND development or runtime.
 
 M0 aligned the older generic account-deletion and local initialization instructions with this amendment. Review findings and other pending decisions are tracked in AGENT_STATUS.md. Provider entitlement/terms and hosted settings have not been verified by this cleanup.
 
@@ -43,7 +43,7 @@ M0 aligned the older generic account-deletion and local initialization instructi
 
 ## Foundation decisions
 
-- [M0 contracts, tooling and shared-backend boundary](decisions/M0_FOUNDATION.md)
+- [M0 historical contracts and tooling](decisions/M0_FOUNDATION.md) (shared-backend design is superseded; do not follow it)
 
 ## Design references
 

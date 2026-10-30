@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Disposable combined Supabase stack. Never links or modifies hosted projects."""
+"""Disposable GRIND Supabase stack. Never links or modifies hosted projects."""
 from __future__ import annotations
 
 import argparse
@@ -14,8 +14,8 @@ import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = ROOT.parent / 'babyBoo' / 'supabase'
-PROJECT = 'grind_m1_disposable'
+SOURCE = ROOT / 'supabase'
+PROJECT = 'grind_disposable'
 STATE = ROOT / '.expo' / 'grind-backend.json'
 MARKER = '.grind-disposable-local'
 EXCLUDED = 'analytics,studio,meta,storage,imgproxy,realtime,edge-runtime,functions,vector'
@@ -48,7 +48,7 @@ enabled = false
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["grind://auth/callback", "littlelog://auth/callback"]
+additional_redirect_urls = ["grind://auth/callback"]
 jwt_expiry = 3600
 enable_signup = true
 minimum_password_length = 8

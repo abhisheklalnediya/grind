@@ -29,6 +29,15 @@ it("validates read ownership and uses account-bound token transport for writes",
   await expect(scopedSettings(row.user_id).save("lb", 90)).resolves.toEqual(
     row,
   );
+  rpc.mockResolvedValueOnce({
+    ...row,
+    user_id: "10000000-0000-4000-8000-000000000002",
+  });
+  await expect(
+    scopedSettings(row.user_id).save("kg", 120),
+  ).rejects.toMatchObject({
+    kind: "auth",
+  });
   expect(localTrainingTransport).toHaveBeenCalledWith(row.user_id);
   expect(rpc).toHaveBeenCalledWith("save_grind_settings", {
     p_preferred_unit: "lb",

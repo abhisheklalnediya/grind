@@ -84,7 +84,7 @@ export function AuthGate({ children }: PropsWithChildren) {
       <Screen>
         <Heading
           title="Couldn’t open your Grind account."
-          subtitle="Your shared sign-in is safe. Retry connecting to Grind."
+          subtitle="Retry connecting to your Grind account."
         />
         <Text style={{ color: colors.secondary }}>
           Check the local backend connection and membership migration.

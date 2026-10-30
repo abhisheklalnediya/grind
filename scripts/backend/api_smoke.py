@@ -119,7 +119,7 @@ try:
     assert status == 200 and rows == [], 'Cross-user settings leak.'
     status, _ = rpc('join_grind', token2)
     assert status == 200, 'Second member join failed.'
-    # A second independent login for the same shared identity models BabyBoo's session.
+    # A second independent login checks concurrent GRIND session isolation.
     status, other_app = request('/auth/v1/token?grant_type=password',
                                 {'email': email1, 'password': password1})
     assert status == 200, 'Independent shared-identity login failed.'

@@ -16,6 +16,7 @@ jest.mock("./authService", () => ({
 beforeEach(() => jest.clearAllMocks());
 it("validates before requests, normalizes email and awaits successful sign-in", async () => {
   await render(<AuthScreen mode="signin" />);
+  expect(screen.getByText("Sign in to your Grind account.")).toBeVisible();
   await fireEvent.press(screen.getByRole("button", { name: "Sign in" }));
   expect(authService.signIn).not.toHaveBeenCalled();
   expect(screen.getByRole("alert")).toBeVisible();
@@ -55,6 +56,7 @@ it("retains failed form input and never exposes provider secrets", async () => {
 it("shows recovery confirmation without claiming an account exists", async () => {
   jest.mocked(authService.recover).mockResolvedValue(undefined);
   await render(<AuthScreen mode="recovery" />);
+  expect(screen.getByText("This resets your Grind account password.")).toBeVisible();
   await fireEvent.changeText(
     screen.getByLabelText("Email"),
     "alex@example.com",
@@ -68,7 +70,7 @@ it("shows recovery confirmation without claiming an account exists", async () =>
     ).toBeVisible(),
   );
 });
-it("allows an existing shared account password shorter than the new-account policy", async () => {
+it("allows an existing account password shorter than the new-account policy", async () => {
   jest.mocked(authService.signIn).mockResolvedValue(undefined);
   await render(<AuthScreen mode="signin" />);
   await fireEvent.changeText(

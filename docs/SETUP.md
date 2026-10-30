@@ -16,11 +16,9 @@ npm test
 
 The environment inspected has Docker 29.1.3, Supabase CLI 2.101.0, Java 17, Android SDK/Android Studio and Xcode 26.2. Expo's current [SDK compatibility matrix](https://docs.expo.dev/versions/latest/#support-for-android-and-ios-versions) lists SDK 57 minimum Android 7/iOS 16.4 and Xcode 26.4+. The installed Xcode therefore remains an iOS native build-verification blocker. No system-toolchain upgrade has been performed. The user confirmed Apple signing is not configured and asked to leave iPhone native-build verification pending.
 
-## Backend safety boundary
+## GRIND disposable backend regression harness
 
-Canonical migrations live in the existing sibling BabyBoo Supabase stream. The new foundation migration is `20261025180000_grind_foundation.sql`; pre-existing migrations/config/source remain unchanged. GRIND does not maintain a competing hosted history.
-
-The local harness copies reviewed canonical SQL into a separate marked temporary workspace with project ID `grind_m1_disposable` and 554xx ports. The existing BabyBoo containers/544xx ports must remain untouched. No hosted link/push/reset/deployment is part of these commands.
+`scripts/backend/local.py` copies only GRIND migrations/tests into a guarded disposable project (`grind_disposable`) on 554xx ports. It reads from this repository's root `supabase/` directory. The primary standalone local stack uses 555xx ports.
 
 ```sh
 python3 scripts/backend/local.py prepare
@@ -29,9 +27,18 @@ python3 scripts/backend/local.py reset
 python3 scripts/backend/local.py test
 ```
 
-Run reset only through the guarded disposable harness. Never substitute a BabyBoo workdir or remote database URL. Test results and any engine/harness blockers belong in AGENT_STATUS.md; command availability does not imply every acceptance check passed.
+Run reset only through the guarded disposable harness. Never substitute another project directory or remote database URL. Test results and any harness blockers belong in AGENT_STATUS.md; command availability does not imply every acceptance check passed.
 
-The harness writes only public local endpoint/key configuration to ignored `.env.development.local` with owner-only permissions. Existing `.env.local` is preserved. Do not paste keys into chat/docs or expose the project root with a static web server. The M1 app rejects hosted endpoints before constructing its Supabase client. Provider live calls remain disabled.
+The harness writes only public local endpoint/anon-key configuration to ignored owner-only `.env.development.local`, which takes precedence during development; it does not modify `.env.local`. The app accepts local endpoints or the selected standalone GRIND origin. Keep private keys out of chat/source. Provider live calls remain disabled.
+
+
+## Standalone Supabase migration (active, 30 October 2026)
+
+GRIND's standalone project is `mgyzzipsqmsabptrfchw`; the ignored `.env.local` contains its public URL/key. Root `supabase/config.toml` uses a separate local project ID and ports 55520–55527. For local clean replay, run `SUPABASE_TELEMETRY_DISABLED=1 supabase start` and `SUPABASE_TELEMETRY_DISABLED=1 supabase db reset --local`; this touches only the new GRIND local stack. The nine transactional SQL suites pass through psql; see [supabase/README.md](../supabase/README.md) for the runner.
+
+Hosted deployment to `mgyzzipsqmsabptrfchw` is complete. The nine GRIND migrations were applied after a dry run, selected GRIND account data was transferred and compared, and `grind://auth/callback` plus the `grind` API schema are configured. The app accepts this project origin and its public publishable key through the environment variables below; never use a service-role key. Authenticated sign-in, recovery, RLS and physical-device callback behavior remain to be verified. See [current M8 evidence](../BUILD_STATUS.md) and [standalone Supabase setup](../supabase/README.md).
+
+The transferred GRIND account must sign in again because Auth sessions are not copied. The 701 RepDB records are excluded until the documented license/API delivery gate is resolved.
 
 ## App and device setup
 
@@ -43,15 +50,15 @@ npm run ios -- --port 8087 # pending Xcode/signing setup
 
 These are scaffold commands; see status for actual bundle/native-build evidence. Android/iOS development IDs are provisional `com.grind.dev`; callback scheme is `grind://auth/callback`. Final store IDs are not a prerequisite for local foundation work.
 
-The local backend defaults to `127.0.0.1:55421`. On an Android emulator or USB-connected Android device, forward that port before testing:
+The disposable regression backend uses `127.0.0.1:55421`. On an Android emulator or USB-connected Android device, forward that port before testing it:
 
 ```sh
 adb reverse tcp:55421 tcp:55421
 ```
 
-A physical iPhone cannot use the Mac's loopback address. For that device, use a reachable private LAN address with port 55421 in the ignored development environment, restart Metro, and confirm firewall/Wi-Fi reachability. The local-only environment guard permits private LAN addresses. Do not switch to hosted credentials as a connectivity workaround. A suitable Xcode/signing setup and connected device are required for native iPhone validation.
+A physical iPhone cannot use the Mac's loopback address. For that device, use a reachable private LAN address with port 55521 in the ignored development environment, restart Metro, and confirm firewall/Wi-Fi reachability. The environment guard permits private LAN addresses for local development. A suitable Xcode/signing setup and connected device are required for native iPhone validation.
 
-The disposable mail-capture UI is on local port 55424. Use fictional development accounts for verification/reset; do not use real family records. The generated local allowlist retains the existing BabyBoo callback alongside Grind's callback. Hosted email templates/redirects remain unchanged and unverified.
+The standalone local mail-capture UI is on port 55524. Use fictional development accounts for verification/reset. The hosted Auth redirect is configured for Grind's `grind://auth/callback`; email delivery and app callback behavior still require end-to-end verification.
 
 ## Scope
 
@@ -60,9 +67,9 @@ M1 delivers the application/auth/onboarding/catalog foundation. Workout logging,
 
 ## Bundle checks versus native acceptance
 
-Android/iOS JavaScript exports have passed during foundation work, and the coordinator reran typecheck, lint and all 17 suites/29 tests successfully after integration. These exports are compilation checks, not native runtime/device proof. Expo production exports load `.env.local` rather than the development override; the M1 local-only guard refuses the hosted config and shows configuration-needed instead of contacting it. Use the development Metro workflow above for local Auth testing. Do not treat a production export as a ready-to-distribute build.
+Android/iOS JavaScript exports have passed during foundation work. These exports are compilation checks, not native runtime/device proof. Expo production exports load `.env.local` rather than `.env.development.local`; verify the selected standalone URL and public publishable key before exporting. Use the development Metro workflow above for local Auth testing. Do not treat a production export as a ready-to-distribute build.
 
-The canonical combined migration replay, dedicated Grind SQL and real local Auth/API smoke tests passed. The full BabyBoo SQL regression command remains blocked by a reproducible pre-existing database engine crash; see [backend evidence](../supabase/local/README.md). To run only the independently verified Grind policy checks and HTTP Auth/API cases:
+The GRIND migration replay, SQL tests and local Auth/API smoke tests pass. Run the GRIND policy checks and HTTP Auth/API cases with:
 
 ```sh
 python3 scripts/backend/local.py test-grind
@@ -87,11 +94,11 @@ cd android
 An initial build may take several minutes while Gradle/native dependencies compile. Normal developer startup should omit CI mode to retain interactive reloads.
 
 
-## Quality policy adopted from BabyBoo — 27 October 2026
+## Engineering quality policy — 27 October 2026
 
 Follow [engineering standards](engineering/REACT_NATIVE_STANDARDS.md), [maintenance](MAINTENANCE.md) and [module/test mapping](engineering/TEST_COVERAGE.md). Required commands now include `npm run test:coverage` with all executable app/src files and enforced global/critical thresholds. Existing tests passing is not a coverage pass: the first broad measurement exposed gaps documented in the mapping. Do not lower/exclude to hide them.
 
-`.github/workflows/ci.yml` runs typecheck, strict lint, tests/coverage, preview JavaScript syntax and both JS exports, plus a separate credential-free Python harness-safety job. The workflow has been configured; no GitHub run or real SQL/API/native backend pass is implied by it. Real backend checks remain guarded and explicitly executed, and full cross-app regression remains blocked as recorded in status.
+`.github/workflows/ci.yml` runs typecheck, strict lint, tests/coverage, preview JavaScript syntax and both JS exports, plus a separate credential-free Python harness-safety job. The workflow has been configured; no GitHub run or real SQL/API/native backend pass is implied by it. Real GRIND backend checks remain guarded and explicitly executed.
 
 ### RepDB snapshot inspection (local, read-only)
 

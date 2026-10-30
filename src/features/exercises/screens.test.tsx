@@ -139,6 +139,7 @@ it("retries catalog failures", async () => {
   const { catalog } = setup({ catalogError: true });
   await mount(<ExerciseLibraryScreen />);
   await screen.findByText("Couldn’t load your saved exercises.");
+  expect(screen.queryByText("No exercises found")).toBeNull();
   catalog.mockResolvedValue([custom]);
   await fireEvent.press(screen.getByText("Retry exercises"));
   await fireEvent.changeText(

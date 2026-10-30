@@ -24,6 +24,7 @@ export function RoutineEditorScreen({ id }: { id?: string }) {
   const [busy, setBusy] = useState(false);
   const [conflict, setConflict] = useState(false);
   const allowExit = useRef(false);
+  const saving = useRef(false);
   const operation = useRef<{ payload: string; id: string } | null>(null);
   const query = useQuery({
     queryKey: ["routine", scope, id],
@@ -42,6 +43,10 @@ export function RoutineEditorScreen({ id }: { id?: string }) {
   useEffect(
     () =>
       navigation.addListener("beforeRemove", (event) => {
+        if (saving.current) {
+          event.preventDefault();
+          return;
+        }
         if (!current?.dirty || allowExit.current) return;
         event.preventDefault();
         Alert.alert(
@@ -64,7 +69,7 @@ export function RoutineEditorScreen({ id }: { id?: string }) {
     [navigation, current?.dirty, clear],
   );
   const save = async () => {
-    if (!current || !api || busy) return;
+    if (!current || !api || saving.current) return;
     const parsed = routinePayloadSchema.safeParse(current.payload);
     if (!parsed.success) {
       setError(
@@ -79,6 +84,7 @@ export function RoutineEditorScreen({ id }: { id?: string }) {
     });
     if (operation.current?.payload !== payload)
       operation.current = { payload, id: randomUUID() };
+    saving.current = true;
     setBusy(true);
     setError("");
     try {
@@ -90,6 +96,7 @@ export function RoutineEditorScreen({ id }: { id?: string }) {
       );
       await client.invalidateQueries({ queryKey: ["routines"] });
       await client.invalidateQueries({ queryKey: ["routine"] });
+      saving.current = false;
       allowExit.current = true;
       clear();
       router.back();
@@ -103,6 +110,7 @@ export function RoutineEditorScreen({ id }: { id?: string }) {
           : "Couldn’t save. Please retry.",
       );
     } finally {
+      saving.current = false;
       setBusy(false);
     }
   };
@@ -137,6 +145,8 @@ export function RoutineEditorScreen({ id }: { id?: string }) {
       ) : null}
       {!current ? (
         <Copy>Loading routine…</Copy>
+      ) : busy ? (
+        <Copy>Saving routine… Please wait before editing or leaving.</Copy>
       ) : (
         <>
           <Field

@@ -1,5 +1,33 @@
 # GRIND live task tracker
 
+## Design and implementation review — 30 October 2026
+
+**Verified — scoped software corrections; native acceptance remains Todo. Coordinator with GPT-6 Luna specialists.** User requested design/implementation checks and corrections. Preserve pre-existing standalone migration/configuration edits. No hosted changes, provider requests, spending or infrastructure operations in this review.
+
+| Task | Owner / allowed files | Acceptance / checks |
+| --- | --- | --- |
+| Exercise design and UI fixes | `luna_design`: `src/features/exercises/**`, routine detail/targets and colocated tests | Review against current design; fix concrete state/accessibility defects, focused Jest |
+| Service correctness | `luna_implementation`: `src/services/**` except pre-existing environment/Supabase changes | Review persistence/account/race behavior; regression tests for bounded corrections |
+| Independent screen review | `luna_reviewer`: read-only | Actionable screen/design findings and independent correction review |
+| Integration and evidence | Coordinator: other scoped screen/test fixes and owning docs | Typecheck, strict lint, complete tests/coverage passed; pending-save editor fix and independent final review complete. See review report linked below |
+
+
+Review findings, fixed behavior and verification: [30 October review](../reports/reviews/2026-10-30-design-implementation.md). Full native visual/device acceptance remains Todo; History row context remains a design follow-up.
+
+## M8 standalone Supabase migration — 30 October 2026
+
+**In progress — coordinator.** User authorized project `mgyzzipsqmsabptrfchw` on the BabyBoo Supabase owner account. The different-account candidate `aarofbmnnlkvdvrvhzem` is dropped from scope and was not deleted. GRIND owns the new migration history in `supabase/migrations`; the nine initial files match reviewed BabyBoo migrations and replay cleanly on the standalone local stack.
+
+**Allowed paths:** root `supabase/**`, `src/services/environment.ts` and its tests, ignored `.env.local`, and affected documentation. Do not modify BabyBoo files, touch the BabyBoo hosted project, or delete any Supabase project.
+
+**Data scope:** preserve the one observed GRIND account, settings, one active and one completed workout, their one built-in exercise reference, one set and 13 command receipts. Do not migrate Auth sessions. Exclude the 701 RepDB records because current license/release review does not yet clear hosted API delivery; the migrations carry seven independently authored starter exercises. The target is a new isolated Auth project, so the user signs in again after the URL changes.
+
+**Verified locally:** clean replay applied all nine migrations; all nine transactional SQL suites passed through psql; focused environment/client/auth tests pass (3 suites/7 tests); selective transfer of one GRIND account and its owned rows into the standalone local target passed exact comparison, excluding unrelated Auth users, sessions and RepDB data. `supabase test db` is not a valid runner for these scripts because pg_prove requires TAP plans.
+
+**Hosted migration complete:** Remote history was empty; nine reviewed migrations were dry-run and applied. The single Auth user/identity and owned Grind rows were transferred transactionally and exact-compared. Counts are 1 account/settings, 2 workouts, 2 workout exercises, 1 set and 13 receipts. No Auth sessions or RepDB rows were copied. `grind` API exposure and the exact Auth callback are configured while preserving existing Auth settings. The key in ignored `.env.local` matches the selected project. Authenticated sign-in, RLS/recovery and device verification remain open.
+
+**Acceptance:** remote history is blank or compatible; reviewed dry-run and migrations apply; private schema stays unexposed; the Grind API schema and exact Auth callback are configured; account/workout counts and snapshots match; sign-in and recovery work under the standalone Auth; old project/source data remain untouched.
+
 Task status/assignment owner: coordinator. Milestone evidence and environment limitations live in [agent status](../AGENT_STATUS.md); requirements/sequence in [milestones](../IMPLEMENTATION_MILESTONES.md). A documented task is not authorization to implement an unapproved milestone.
 
 ## Enabled exercise selection and list visibility — 29 October 2026
@@ -77,7 +105,8 @@ Current build/check evidence and acceptance limits: [BUILD_STATUS.md](../BUILD_S
 | iPhone native build | User/toolchain dependent | Deferred | User requested pending signing/Xcode setup |
 | Existing BabyBoo SQL engine regression | Separate local investigation | Blocked | Fix/retest baseline without rewriting historical migrations or touching production |
 | Recovery controller decomposition | Architect/developer, later bounded task | Deferred | Documented494line cohesion exception; preserve serialization/race coverage in future split |
-| M4–M8 | Later approved bounded tasks | Deferred | No automatic expansion beyond M3; M8 standalone Auth/data cutover requires reviewed plan |
+| M4–M7 | Later approved bounded tasks | Deferred | Native rest, records/corrections, catalog release and beta readiness remain open |
+| M8 | Coordinator | In progress | Standalone migrations/data transfer to `mgyzzipsqmsabptrfchw`; see current M8 task at top |
 
 ## Required task handoff
 

@@ -1,5 +1,11 @@
 # GRIND — maintained build and implementation status
 
+**30 October 2026 — GRIND-only Supabase/Auth configuration:** User directed removing BabyBoo coupling. The app and local harness now use GRIND-only copy, callbacks, migrations and configuration. The CLI link and ignored `.env.local` were verified as project `mgyzzipsqmsabptrfchw`; the development override targets local GRIND. Auth/settings/callback tests, Python harness-safety (10 tests), typecheck, lint and full coverage passed (57 suites/308 tests; 97.66% statements, 93.31% branches, 96.45% functions, 98.32% lines). Hosted sign-in and physical-device acceptance remain open.
+
+**30 October 2026 — design/implementation review:** GPT-6 Luna specialists and coordinator fixed misleading exercise error/empty feedback, account ownership validation on settings-save responses, loss of routine edits during pending saves, and missing per-set routine targets/total count. Independent Luna review found no remaining actionable issue in those diffs. Integration passes: typecheck, zero-warning lint, 57 suites / 308 tests with coverage (97.66% statements, 93.31% branches, 96.45% functions, 98.32% lines), unchanged global/critical gates, prototype syntax and 10 Python harness-safety tests. No database/provider/native/hosted operations were performed for this review. Current source already includes workout elapsed/Finish/keyboard controls and Train recent sessions; native visual/device acceptance remains open. See [review and evidence](reports/reviews/2026-10-30-design-implementation.md). This checkpoint supersedes older software counts below.
+
+**30 October 2026 — M8 hosted schema/data migration:** User authorized project `mgyzzipsqmsabptrfchw`. The fresh nine-migration stream applied successfully after an empty-history check and reviewed dry-run; remote history matches. The selected GRIND Auth identity and owned data were transactionally transferred and exact-compared: 1 account/settings row, 2 workouts, 2 workout-exercise rows, 1 set and 13 receipts. No sessions, unrelated Auth users or 701 RepDB rows were copied. Hosted API exposes `grind` and not `grind_private`; the exact `grind://auth/callback` is configured while preserving existing Auth MFA, site URL and email rate/OTP settings. An unauthenticated schema probe was denied by Grind schema permissions, as expected. App sign-in/recovery, authenticated API/RLS and physical-device acceptance remain open. The 701-row backend/API release remains gated on rights clarification. See [M8 task status](planning/TASKS.md) and [standalone setup](../supabase/README.md).
+
 **29 October — enabled-only exercise lists; Dumbbell and EZ Curl Bar selection:** Add Exercise and All Exercises now omit unconfigured rows using the existing `is_configured` field from the database/API. Local RepDB configuration is 204/701: Barbell 76, Smith Machine 19, Dumbbell 88 and EZ Curl Bar 21. These use external load and reps with separate conventions (“Total barbell weight,” “Smith machine displayed weight,” “Weight per dumbbell,” and “Total EZ-bar weight”). The remaining 497 RepDB entries stay unavailable; zero other equipment is configured. Applied forward migration `20261029230000_grind_dumbbell_ez_catalog_configuration.sql` to the guarded local database without reset. Grind SQL suite passes, including workout logging and routine selection; real local Auth/API pagination returns all 701 unique entries. Typecheck, lint and coverage pass (57 suites / 306 tests); focused exercise screens/catalog tests pass (29 tests). Native picker/device visual acceptance and hosted/release review remain open; no hosted changes.
 
 **29 October — Add Exercise diagnosis:** Local SQL confirms 701 active RepDB mappings, one configured for logging, and six archived seeds. The Add Exercise picker now uses the server catalog as its row source; bundled data provides details, search terms and images only for linked records. The other 700 records remain unavailable for workout selection because their logging fields are null and both app and backend enforce that boundary. Device/build state causing the reported seven selectable rows is unverified. Typecheck, lint and coverage passed (57 suites, 304 tests); native UI acceptance is pending.
@@ -16,7 +22,7 @@
 
 **29 October — exercise engine groundwork:** typecheck and lint passed; coverage suite 54 suites / 266 tests passed (98.29% statements, 95.15% branches, 98.12% functions, 99.18% lines). Catalog validator 4 tests and backend harness 4 tests passed. New catalog migration and SQL tests passed in a rolled-back guarded disposable database according to backend specialist; no hosted or native acceptance. RepDB acquisition/import, media delivery and full engine integration remain incomplete; existing library path retained until migration rollout.
 
-Last checked: **29 October 2026 (Asia/Kolkata)**
+Last checked: **30 October 2026 (Asia/Kolkata)**
 Owner: coordinator
 Authorized delivery scope: **M0–M3**, React Native/Expo, disposable local Supabase
 Overall result: **M3 CORE WORKFLOW IMPLEMENTED; DESIGN ALIGNMENT AND DEVICE ACCEPTANCE OPEN**
@@ -58,12 +64,12 @@ Jest still collects every executable app/src module, including thin routes. Thre
 | **M0 — alignment/contracts** | Implemented | React Native/local backend, four modes, Previous matching and appearance decisions recorded. Later infrastructure changes retain approval gates. |
 | **M1 — foundation/feasibility** | App/Auth/setup/backend foundation implemented | **Open:** physical-device Auth/deep-link/storage/timer proof, deferred iPhone native build and full BabyBoo regression. Android compile/install/render and automated/local API evidence exist. |
 | **M2 — reliable core workout** | Implemented; local/automated checks pass | Core commands, durable text/numeric drafts, foreground recovery, receipt/conflict handling, in-app rest, finish/summary/history implemented. Native workout → finish → History → kill/reopen journey still requires acceptance evidence. |
-| **M3 — everyday workflow** | Core workflows implemented; design alignment incomplete | Catalog/custom exercises, contextual picker, routines, exercise history, units/Previous/defaults and appearance implemented. Workout and Train layout gaps below plus native theme/keyboard/layout/accessibility/persistence acceptance remain open. |
+| **M3 — everyday workflow** | Core workflows implemented; design alignment incomplete | Catalog/custom exercises, contextual picker, routines, exercise history, units/Previous/defaults and appearance implemented. Current workout/Train source requirements are present; native theme/keyboard/layout/accessibility/persistence acceptance remains open. |
 | **M4 — production native rest** | Deferred | Scheduled alerts, OS countdown surfaces, notification permissions and production lifecycle matrix remain future work. Current timer is in-app; M1 native feasibility remains unverified. |
 | **M5 — records/corrections/data controls** | Deferred | Records, completed-workout corrections and Grind-only deletion are not implemented merely because prototype views exist. |
 | **M6 — MuscleWiki** | Deferred / gated | Entitlement unconfirmed; live calls disabled. |
 | **M7 — hosted staging/beta** | Deferred | No hosted rollout or beta-readiness claim. |
-| **M8 — standalone backend** | Planned | GRIND still uses the transitional shared model; standalone database/Auth/data cutover and rollback need reviewed execution planning. |
+| **M8 — standalone backend** | In progress | Root migration history and clean local replay are ready; hosted history review, push, selective data/Auth transfer and final cutover verification await CLI authentication. |
 
 “Implemented” and “automated checks pass” do not mean physical/native/hosted acceptance is complete.
 
@@ -71,11 +77,11 @@ Jest still collects every executable app/src module, including thin routes. Thre
 
 The React Native/Expo architecture, local-first shared Supabase boundary, later standalone M8 plan, four load modes, Previous semantics and System/Light/Dark settings match the user's decisions. We do not have evidence of actual credit consumption and cannot quantify savings or waste. Local automated/backend evidence does not establish native usability or complete M3 design acceptance.
 
-**Design gaps found by independent audit:**
+**Historical design gaps from 28 October (source rechecked 30 October):**
 
-- The active workout specification calls for elapsed time, a compact Set / Previous / load / Reps / Complete row, a top-bar Finish action and keyboard Done/Next controls. `WorkoutScreen.tsx`, `ExerciseEditor.tsx` and `SetEditor.tsx` currently use vertically stacked controls, show no elapsed time or top-bar Finish, and do not implement the specified keyboard controls.
-- Train should show recent workouts; `TrainScreen.tsx` currently links to History but does not show recent sessions.
-- The resulting native design has not had the required designer/device review. Fix these targeted M2/M3 product gaps before declaring the approved design complete or investing in additional backend architecture.
+- The earlier workout omissions are closed in current source: elapsed time, top-bar Finish, previous/load/reps/completion rows and keyboard Done/Next controls exist. Native layout/usability verification is still open.
+- Train now renders recent sessions with loading/empty/retry behavior. Device acceptance remains open.
+- Luna source/design review and scoped corrections are complete; physical/native visual, keyboard, large-text and accessibility acceptance remain open. History rows still have less context than the prototype.
 
 **Version-control checkpoint:** The four canonical GRIND migrations and SQL tests were committed in the sibling BabyBoo repository as `2021d0f`, without staging its unrelated changes. GRIND now has a local baseline commit (see `git log`); ignored environment files remain excluded. GRIND has no configured remote, so this checkpoint is local only.
 
@@ -126,20 +132,20 @@ The React Native/Expo architecture, local-first shared Supabase boundary, later 
 
 | Item | State / owner / next action |
 | --- | --- |
-| Workout/Train design alignment | **Open**, designer/developer: compact workout rows, elapsed time, top-bar Finish, keyboard controls and Train recent sessions; preserve existing recovery semantics. |
+| Workout/Train design alignment | **Implemented and source-reviewed**, elapsed time, top-bar Finish, keyboard controls and Train recent sessions present. Native visual/layout acceptance remains **Open**. |
 | Full Android native journey | **Open**, developer/device reviewer: authenticated setup → routine/empty workout → editing → finish → History → force-close/reopen, offline recovery, sign-out and both appearance modes. Initial render is not this journey. |
 | Physical-device acceptance | **Open**, device testing: Android and iPhone Auth/PKCE/keychain/keyboard/gestures/theme/large text plus native timer feasibility. User confirmed both platforms available; model/OS evidence not recorded. |
 | iPhone build | **Deferred by user**, signing/toolchain setup required. Do not re-ask the already settled deferral. |
 | Full BabyBoo regression | **Blocked separately**: unchanged anonymous onboarding-denial test caused PostgreSQL signal11 and was reproduced on the old-migration-only baseline. Dedicated GRIND checks pass; do not claim the full cross-app suite passed. |
 | Recovery controller size | **Documented maintenance exception**: serialized controller is494lines after formatting, with persistence/schema/projection extracted. Preserve its single state/queue owner for this reviewed checkpoint; any later split of hydration/replay/actions requires equivalent race tests and100branch gates. |
 | Remote/release operations | **Not performed**: GRIND has no configured remote; remote CI and release/hosted staging remain to establish before distribution. |
-| M4–M8 | **Deferred**; no notification delivery, PR records, corrections, data deletion, provider activation, hosted deployment or standalone migration is implied by M3. |
+| **M4–M7** | **Deferred**; no notification delivery, PR records, corrections, data deletion, provider activation or beta acceptance is implied by M3. M8 is separately in progress under explicit user authorization. |
 
 ## 9. Owners and next checkpoint
 
 Coordinator integrated the reviewed source and evidence. Recovery, UI fixes, Previous-contract and quality subagents completed bounded handoffs. Independent backend and final UI/recovery/runtime reviewers returned no remaining blocking software finding. Native acceptance remains assigned to developer/device reviewer; iPhone setup remains user-dependent.
 
-Next: perform a bounded designer review and align the workout/Train screens; then run one Android workout → finish → History → reopen journey. Preserve the iPhone deferral and investigate the BabyBoo baseline separately. Avoid new backend scope until these gaps are addressed.
+Next: complete native visual acceptance after the source/design review and corrections; run one Android workout → finish → History → reopen journey. Preserve the iPhone deferral and investigate the BabyBoo baseline separately. Avoid new backend scope until these gaps are addressed.
 
 ## 10. Report maintenance
 

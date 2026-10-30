@@ -175,10 +175,7 @@ function SettingsContent({
       >
         Exercise data by RepDB (repdb.co)
       </Text>
-      <Text style={styles.label}>
-        Signing out here affects Grind only. Your BabyBoo account and data stay
-        intact.
-      </Text>
+      <Text style={styles.label}>You’ll sign out of your Grind account.</Text>
       <Button
         label="Sign out of Grind"
         secondary

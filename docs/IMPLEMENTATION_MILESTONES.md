@@ -1,6 +1,10 @@
 # GRIND implementation milestones
 
-Status: sequence planned on 25 October 2026; user subsequently authorized local implementation through M3. Both device platforms are available, live provider calls remain disabled, and M4–M8 and hosted operations are not automatically authorized. Current checks and device-acceptance gaps are in [BUILD_STATUS.md](BUILD_STATUS.md).
+Status: M0–M3 software is implemented with native acceptance gaps. GRIND uses only standalone Supabase project `mgyzzipsqmsabptrfchw`, with GRIND-owned Auth, data, migrations and local backend tooling. No other project's stack, credentials, data or source is part of GRIND workflows. Current checks and blockers are in [BUILD_STATUS.md](BUILD_STATUS.md) and [Supabase setup](../supabase/README.md).
+
+## 30 October 2026 amendment — standalone backend only
+
+The earlier shared-project/Auth design and combined migration workflow are superseded. Use GRIND-only Auth accounts and root `supabase/migrations`. Do not access, configure or run against another app's Supabase resources. The hosted GRIND migration is complete; sign-in/RLS and device acceptance remain open.
 
 ## 29 October 2026 amendment — self-hosted catalog
 
@@ -24,7 +28,7 @@ Build the existing online-first iOS/Android MVP. Follow [ARCHITECTURE.md](ARCHIT
 | M5 — Records, corrections and data controls | Trustworthy records, deliberate history edits and Grind-only data deletion | M2/M3 data contracts; M4 cleanup integration |
 | M6 — Exercise demonstrations | RepDB Free catalog and self-hosted static demonstrations with safe failure handling | Rights/release gates; M3 catalog identity |
 | M7 — Beta readiness | Verified iOS/Android builds against approved hosted staging | M1–M6 and explicit hosted-change authorization |
-| M8 — Standalone GRIND backend | GRIND runs on its own Supabase project/database, separate from BabyBoo | User-approved separation/cutover plan and validated migration rehearsal |
+| M8 — Standalone GRIND backend | GRIND Auth/data run only on project `mgyzzipsqmsabptrfchw` | Migration implemented; Auth/RLS/device acceptance remains open |
 
 M2 is the first useful end-to-end logger, not the complete MVP. All M1–M7 features are required for the documented MVP. M4 and M6 can proceed alongside M3/M5 once contracts are stable and file ownership is separate. Provider integration must not block core logging development, but the self-hosted catalog/static-image acceptance gates must pass before declaring the full MVP complete; MuscleWiki entitlement is no longer an MVP dependency.
 
@@ -126,21 +130,11 @@ Acceptance: hosted schema/types match reviewed migrations; two-user/cross-app is
 
 Owners: coordinator integrates/deployment review; developer performs authorized setup/fixes; designer reviews native accessibility and visual parity; reviewer independently validates the complete acceptance matrix.
 
-## M8 — Standalone GRIND backend (plan point 8)
+## M8 — Standalone GRIND backend (implemented)
 
-Added at the user’s request on 27 October 2026. Sharing BabyBoo’s backend is transitional; the intended destination is a standalone GRIND Supabase project/database. This adds the separation milestone to the roadmap, not permission to create projects, incur costs or move live data now.
+GRIND uses its own Supabase project, Auth, data, callback and migration history. The nine hosted migrations, selected GRIND data transfer, API schema exposure and `grind://auth/callback` configuration are complete. The client accepts only local endpoints and the standalone GRIND origin. The disposable backend runner reads only this repository's GRIND migrations/tests and uses GRIND-only fictional test users.
 
-Scope:
-- Inventory GRIND-owned tables, functions, policies, seeds, provider services/secrets and dependencies on shared Auth. Establish GRIND’s own migration history from a reviewed standalone baseline without rewriting BabyBoo’s history.
-- Design the Auth transition explicitly: which GRIND users move, identity/foreign-key preservation or mapping, credential migration feasibility, session invalidation/reauthentication and recovery/email callbacks. Do not assume changing the database URL transfers accounts, passwords or sessions.
-- Rehearse selective GRIND schema/data migration into an isolated target. Exclude BabyBoo baby/care records and unrelated users; preserve GRIND workout history, custom exercises, routines, settings and ownership links.
-- Configure GRIND-only Auth, redirects/email, grants/RLS, API/Edge Functions and provider configuration. Validate cache-retention rules and regenerate client types.
-- Prepare reviewed backup, final-write reconciliation, cutover and rollback procedures; update application environment/session namespaces and verify existing installations can transition safely.
-- Remove obsolete shared-backend dependencies only after validated cutover and explicit authorization for any source cleanup. Preserve BabyBoo functionality, identities and data.
-
-Acceptance: standalone clean migration replay and restore rehearsal pass; GRIND data counts/references and historical values match the approved source scope; signup/login/recovery, ownership isolation, workouts/records/media and GRIND on both iOS and Android pass against the standalone target. BabyBoo regression passes with no GRIND runtime dependency. Cutover/rollback and any reauthentication required are documented and tested. No old data is deleted merely because the new target works.
-
-Owners: architect designs separation/Auth contracts; developer implements reviewed migration/config/client tasks; designer reviews any account-transition messaging; reviewer validates data integrity, isolation and rollback; coordinator controls integration and explicit cutover approval.
+Remaining acceptance: verify email/password login, verification/recovery callbacks, authenticated RLS and the complete sign-in journey on supported physical devices. The 701 RepDB backend release remains gated on license/API delivery review.
 
 ## Task assignment and verification
 
@@ -151,11 +145,11 @@ Each task must record scope, dependencies, exact allowed files, one owner per fi
 | Routes/features/domain/services/theme/tests/build config | Developer, split into bounded tasks; coordinator assigns shared files serially |
 | System contracts/decision records | Architect; implementation consumes reviewed contracts |
 | Prototype/design handoff and visual/state review | Designer; existing production contracts cannot be silently changed |
-| Supabase migrations/tests/config | Single backend task owner in the approved shared stream; coordinate all cross-app changes |
+| Supabase migrations/tests/config | GRIND backend task owner in root `supabase/`; use GRIND-owned local/hosted resources only |
 | Independent findings and acceptance evidence | Reviewer; returns findings rather than silently rewriting implementation |
 | Status, integration and release gates | Coordinator |
 
-Verification commands and guardrails are maintained in [SETUP.md](SETUP.md); executed results and remaining device/hosted gates are in [BUILD_STATUS.md](BUILD_STATUS.md). Reset or test databases only through the approved disposable combined backend workflow. Physical-device and hosted checks require recorded evidence beyond unit tests.
+Verification commands and guardrails are maintained in [SETUP.md](SETUP.md); executed results and remaining device/hosted gates are in [BUILD_STATUS.md](BUILD_STATUS.md). Reset or test databases only through the GRIND-owned disposable backend workflow. Physical-device and hosted checks require recorded evidence beyond unit tests.
 
 Every milestone ends with a runnable demo where applicable, relevant checks, independent review, updated status and explicit remaining limitations. Timelines will be estimated after M1 toolchain/native feasibility; no unverified delivery dates are promised.
 

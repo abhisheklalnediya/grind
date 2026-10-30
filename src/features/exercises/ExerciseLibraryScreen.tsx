@@ -271,7 +271,7 @@ export function ExerciseLibraryScreen() {
             </>
           }
           ListEmptyComponent={
-            !query.isPending ? (
+            query.isSuccess ? (
               <View style={styles.empty}>
                 <Text style={{ color: colors.text, fontWeight: "700" }}>
                   No exercises found

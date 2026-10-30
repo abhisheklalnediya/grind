@@ -1,6 +1,6 @@
 import { readEnvironment, validateEnvironment } from "./environment";
 const key = "sb_publishable_local_test_key_only";
-it("accepts loopback/emulator/LAN endpoints and rejects hosted by default", () => {
+it("accepts local endpoints and only the approved standalone hosted project", () => {
   for (const host of [
     "localhost",
     "127.0.0.1",
@@ -13,8 +13,14 @@ it("accepts loopback/emulator/LAN endpoints and rejects hosted by default", () =
       url: `http://${host}:55421`,
       key,
     });
+  expect(validateEnvironment("https://mgyzzipsqmsabptrfchw.supabase.co", key)).toEqual({
+    url: "https://mgyzzipsqmsabptrfchw.supabase.co",
+    key,
+  });
   for (const url of [
     "https://project.supabase.co",
+    "https://mgyzzipsqmsabptrfchw.supabase.co.evil.example",
+    "https://mgyzzipsqmsabptrfchw.supabase.co/private",
     "http://8.8.8.8",
     "ftp://localhost",
     "http://localhost.evil.com",

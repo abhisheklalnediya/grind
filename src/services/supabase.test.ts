@@ -16,7 +16,7 @@ jest.mock("./environment", () => ({ readEnvironment: jest.fn() }));
 jest.mock("./authCrypto", () => ({ ensureAuthCrypto: jest.fn() }));
 it("rejects invalid config before constructing client and uses native crypto and isolated secure storage", async () => {
   jest.mocked(readEnvironment).mockReturnValue(null);
-  expect(() => getSupabase()).toThrow("Hosted connections are disabled");
+  expect(() => getSupabase()).toThrow("approved GRIND project URL");
   expect(createClient).not.toHaveBeenCalled();
   expect(ensureAuthCrypto).not.toHaveBeenCalled();
   jest

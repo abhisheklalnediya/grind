@@ -90,6 +90,7 @@ it("keeps RepDB attribution available when preferences fail to load", async () =
   const open = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
   const { Wrapper } = harness();
   await render(<SettingsScreen />, { wrapper: Wrapper });
+  expect(screen.getByText("You’ll sign out of your Grind account.")).toBeVisible();
   await screen.findByText("Couldn’t load your preferences.");
   await fireEvent.press(screen.getByRole("link", { name: "Exercise data by RepDB, opens website" }));
   expect(open).toHaveBeenCalledWith("https://repdb.co");

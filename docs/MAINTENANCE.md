@@ -1,6 +1,6 @@
 # GRIND development and maintenance workflow
 
-27 October 2026. Adapted at the user's request from BabyBoo's operating and engineering guidance. [React Native standards](engineering/REACT_NATIVE_STANDARDS.md) owns mandatory source/testing rules; this document owns the maintenance procedure. [Task tracker](planning/TASKS.md) owns current assignments; [agent status](AGENT_STATUS.md) owns milestone evidence and blockers. User instructions take precedence.
+27 October 2026. Written for GRIND's operating and engineering needs. [React Native standards](engineering/REACT_NATIVE_STANDARDS.md) owns mandatory source/testing rules; this document owns the maintenance procedure. [Task tracker](planning/TASKS.md) owns current assignments; [agent status](AGENT_STATUS.md) owns milestone evidence and blockers. User instructions take precedence.
 
 ## Before work
 
@@ -34,14 +34,14 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/backend -p 'te
 
 Run focused suites during iteration and the complete required quality gates before declaring completion. The prototype syntax check is not an interaction test. Changes to preview behavior require its own focused browser/state verification; native implementation requirements come from product/design specifications, not HTML shortcuts.
 
-The configured CI workflow runs deterministic app quality checks, both-platform JS exports and Python harness-safety tests without hosted credentials. Workflow configuration is not proof of a remote CI run. The canonical backend source currently lives in the sibling BabyBoo stream: do not invent a standalone-green backend CI job without an approved reproducible source strategy. [Coverage mapping](engineering/TEST_COVERAGE.md) records current compliance and gaps.
+The configured CI workflow runs deterministic app quality checks, both-platform JS exports and Python harness-safety tests without hosted credentials. Workflow configuration is not proof of a remote CI run. GRIND backend tests stage only this repository's migration and test files. [Coverage mapping](engineering/TEST_COVERAGE.md) records current compliance and gaps.
 
 `npm run export:android` and `npm run export:ios` check JavaScript/Hermes bundles; native compilation, install, process launch, visual interaction and physical-device acceptance are separate evidence levels. Current local-only/production-export environment behavior is documented in [setup](SETUP.md).
 
 ## Dependencies and native changes
 
 - Check official current compatibility before SDK/API/package changes; keep one package manager and lockfile. Add dependencies for a concrete need, review lockfile changes and run install/compatibility checks. Never apply `audit fix --force`, incompatible overrides or unsafe workarounds just to clear a warning.
-- Record advisory/peer-dependency warnings, reproducible failures and what was actually evaluated. Do not copy BabyBoo's historical vulnerability counts or assume they apply to GRIND.
+- Record advisory/peer-dependency warnings, reproducible failures and what was actually evaluated. Do not copy another project's vulnerability counts or assume they apply to GRIND.
 - Rebuild native binaries after adding/removing native modules, config plugins, app identifiers, launcher/splash assets, widget extensions or packaged notification sounds. Metro reload/Expo Go/JS export cannot verify those changes.
 - During SDK upgrades, review any SDK-internal native/notification import paths, secure crypto/session adapters and callback handling. Run regression checks on both platforms and document unsupported versions/OS delivery limits.
 - Preserve bundle/package IDs, callback schemes, keychain/session/draft namespaces and notification identifiers during cosmetic rebranding. Intentional identifier/storage changes require migration/cleanup/rollback handling. Where Android channel sound configuration is immutable, use a reviewed channel transition rather than claiming an existing channel changed.
@@ -57,13 +57,13 @@ Native timer correctness uses a persisted deadline, not a continuously running b
 
 ## Database, provider and environment maintenance
 
-- Current local M0/M1 is local-only. Keep existing hosted .env.local unchanged; use the guarded disposable runner and ignored owner-only development configuration. Phones need an explicitly reachable local/LAN endpoint; localhost on a phone is not the Mac. Do not substitute production as a connectivity workaround.
-- The BabyBoo stream is the current canonical migration owner; add reviewed forward migrations and never rewrite deployed history. Test on a sanitized marked disposable copy with different project/ports and source/snapshot hashes. Never reset or stop the existing BabyBoo stack.
+- GRIND's active standalone target is project `mgyzzipsqmsabptrfchw`; its public client URL/key live in ignored owner-only `.env.local`. Migrations are owned by root `supabase/migrations`. Both the 555xx primary local stack and 554xx disposable regression stack use GRIND-owned files and configuration.
+- Hosted migrations and selected GRIND data transfer to this target are complete. Verify the linked project ref before future hosted operations. Keep all other app projects, credentials and data outside GRIND workflows. Do not apply the RepDB 701-row dataset while its backend API license/release gate is unresolved.
 - Do not run the minimal standalone Auth bootstrap against full Supabase or hosted databases. Use fictional disposable fixtures with exact cleanup scope and real constraints/RLS/RPC/concurrency checks. Preserve the existing baseline SQL-engine blocker as a failed/unverified check, not a pass or reason to weaken assertions.
 - Generate database types into a temporary file, verify successful nonempty output from the intended schema, review it, then replace the client-owned generated file. Runtime response validation and database constraints remain required.
 - If a future hosted operation is explicitly authorized, verify target and pending migration history/dry run, execute CLI database operations sequentially, review results and document rollback. Shared CLI temporary-login initialization may contend; retry read-only checks sequentially rather than resetting database credentials. No automatic hosted push, production fixtures, secret upload or deployment.
-- Provider permanent keys belong server-side. Live MuscleWiki calls remain disabled until authorized and entitlement/retention/budget gates clear. Do not log/persist signed playback URLs or media tokens, extend expired content lifetime on reads, or weaken BabyBoo backups for a provider cache.
-- [M8](IMPLEMENTATION_MILESTONES.md) plans standalone GRIND infrastructure, identities/data migration and cutover/rollback. Keep current separation boundaries until that work is reviewed; changing configuration alone does not migrate accounts or data.
+- Provider permanent keys belong server-side. Live MuscleWiki calls remain disabled until authorized and entitlement/retention/budget gates clear. Do not log/persist signed playback URLs or media tokens, or extend expired content lifetime on reads.
+- [M8](IMPLEMENTATION_MILESTONES.md) standalone migration is implemented. GRIND's Auth, local backend tools and deployment use GRIND-owned resources only. User sign-in/recovery, authenticated API/RLS behavior and physical-device evidence remain open.
 
 ## Documentation and task maintenance
 
@@ -73,8 +73,8 @@ Task states: **Todo** (not started), **In progress**, **Implemented** (code exis
 
 ## Adaptation boundary
 
-All 29 BabyBoo Markdown guides/specifications/history files and its lint/Jest/TypeScript/CI configuration were reviewed for reusable guidance. Primary sources are BabyBoo AGENTS.md and docs/engineering/REACT_NATIVE_STANDARDS.md; supporting guidance comes from setup/authentication/data/outbox/reminder/history/growth guides, planning/status/review docs and design/branding/template instructions.
+GRIND's engineering standards and product requirements are owned by GRIND documents and code. GRIND has no runtime, authentication or development dependency on another app.
 
 Transferred: modularity, reuse, testing/CI, security, retries, accessibility, migration/type generation, dependency/native rebuild practices, documentation ownership and honest evidence. Adapted to workout/account/environment scoping, original units/canonical kg, session revisions and rest deadlines.
 
-Excluded: baby/caregiver/care-event requirements, feeding/milk/nursing conversions, medical/reminder wording, BabyBoo visual assets/palette/mascot, callback/application/storage identifiers, project refs, credentials, historical test/audit counts and deployed-state claims. Historical 'tests not run' entries are evidence gaps, never exemptions from current testing rules. GRIND's own product decisions, provider restrictions, local-first boundary and M8 roadmap remain authoritative.
+Excluded: unrelated care-product requirements, feeding/milk/nursing conversions, medical/reminder wording, other apps' visual assets/palette/mascot, callback/application/storage identifiers, project refs, credentials, historical test/audit counts and deployed-state claims. Historical 'tests not run' entries are evidence gaps, never exemptions from current testing rules. GRIND's own product decisions, provider restrictions, local-first boundary and M8 roadmap remain authoritative.

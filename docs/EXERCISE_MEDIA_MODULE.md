@@ -1,14 +1,18 @@
 # Exercise catalog and media module
 
+## 30 October 2026 amendment — GRIND-only backend
+
+GRIND uses only project `mgyzzipsqmsabptrfchw`, root `supabase/migrations` and GRIND-owned local stacks. Do not use another app's Auth, source, credentials, data or Supabase project. The RepDB license/release gate still applies to the 701-record catalog; those records were not uploaded and remain out of the hosted API until permitted in-app delivery is resolved.
+
 ## 29 October 2026 amendment — self-hosted catalog
 
-RepDB Free is the primary MVP exercise catalog and static-image source. Free Exercise DB is supplementary only after source-specific review; its images remain blocked until rights are documented. Follow the [self-hosted catalog implementation plan](EXERCISE_CATALOG_PLAN.md) for immutable snapshots, licenses/credits, additive schema/import, deduplication, private media storage, member-only APIs, caching, workout/custom integration and acceptance. This supersedes MuscleWiki selection, streaming/player/token/cache requirements for MVP; historical MuscleWiki material below is retained as context only. Existing shared-Auth/isolation, canonical migration and M8 cutover rules remain in force. Planning only: no data import, hosted change or code implementation is claimed.
+RepDB Free is the primary MVP exercise catalog and static-image source. Free Exercise DB is supplementary only after source-specific review; its images remain blocked until rights are documented. Follow the [self-hosted catalog implementation plan](EXERCISE_CATALOG_PLAN.md) for immutable snapshots, licenses/credits, additive schema/import, deduplication, private media storage, member-only APIs, caching, workout/custom integration and acceptance. This supersedes MuscleWiki selection, streaming/player/token/cache requirements for MVP; historical MuscleWiki material below is retained as context only. GRIND's hosted migration is complete; catalog release and native verification remain open.
 
 Decision date: 25 October 2026. Status: architecture proposal; secret/configuration files prepared locally. No backend, migration, provider request, hosted secret or native player has been deployed or verified by this work.
 
 ## Decisions
 
-Use MuscleWiki as the demonstration provider. Share BabyBoo's Supabase project and Auth identities, with Grind-owned application data and lifecycle. Cache permitted exercise text across users; stream media from MuscleWiki. A database row containing a video URL does not contain the video and cannot eliminate metered streaming requests.
+Historical proposal: use MuscleWiki as the demonstration provider. GRIND now uses its own standalone Supabase project and Auth. Live MuscleWiki calls remain disabled; catalog decisions in the current amendment above take precedence.
 
 The current public offering says BASIC's 500 monthly requests are Playground-only; direct integration requires TESTING or above. Account-specific entitlement has not been tested. Do not assume the supplied key works outside the Playground or buy/upgrade automatically.
 
@@ -29,17 +33,17 @@ No additional samples are required to finish architecture. During implementation
 - [x] Define library, detail, custom exercise and workout-picker flows.
 - [x] Create interactive library design in `design/exercises.html` (illustrative data only).
 - [x] Select MuscleWiki and document sample response contracts.
-- [x] Prepare ignored local server secret and public shared-project configuration.
+- [x] Prepare ignored local server secret and standalone GRIND public configuration.
 - [x] Define shared metadata cache, backend interfaces, streaming boundary and independent Grind data/session lifecycle.
 - [ ] Verify paid direct API entitlement and measured playback cost; no automatic upgrade.
 - [ ] Resolve persisted media-reference caching permission and cache-backup retention.
 - [ ] Audit live shared backend and coordinate one migration history.
 - [ ] Implement migrations/RLS, provider adapter, cache, authenticated endpoints and native demo player.
-- [ ] Verify concurrency, expiry, failures, credential redaction, native playback and BabyBoo regression coverage.
+- [ ] Verify concurrency, expiry, failures, credential redaction and native playback if a provider is approved.
 
 ## Cache boundary and costs
 
-MuscleWiki permits exercise text/metadata caching for at most 30 days. Use a configurable 29-day fresh lifetime with an absolute 30-day retention deadline from provider retrieval. An app read does not extend either timestamp. Expired provider content must be removed from cache and not returned as stale fallback. Do not duplicate provider responses into long-lived logs, analytics, exports or backups with retention beyond the allowed window. Deployment needs a backup/retention review: use a dedicated non-backed-up cache store if the shared project's backup behavior cannot meet this requirement; do not change BabyBoo backup settings to accommodate this cache.
+MuscleWiki permits exercise text/metadata caching for at most 30 days. Use a configurable 29-day fresh lifetime with an absolute 30-day retention deadline from provider retrieval. An app read does not extend either timestamp. Expired provider content must be removed from cache and not returned as stale fallback. Do not duplicate provider responses into long-lived logs, analytics, exports or backups with retention beyond the allowed window. Deployment needs a GRIND-specific backup/retention review.
 
 Cache metadata globally by `(provider, provider_exercise_id, language, representation_version)`, never by user. The app sees only fields entitled under the configured plan. Missing tier-restricted fields remain unavailable, rather than triggering another request. This is a transient feature cache, not a bulk export or permanent copy of the provider dataset.
 
@@ -48,21 +52,6 @@ Media bytes: no storage in Supabase Storage, CDN, service-worker cache, device d
 Video URL descriptors: storing a normal on-demand response's URLs is technically distinct from storing media bytes, but the public terms specify text-only caching and prohibit mass collection of video URLs. Do not assume permanent URL storage is authorized. Default implementation persists text fields only and resolves media on demand. Before enabling shared persisted media descriptors, obtain provider confirmation that on-demand exercise-associated URL caching is allowed and agree its TTL (never beyond the metadata deadline). That optional mode stores only token-free validated paths and variant labels, never signed URLs/tokens. This is a narrow licensing question, not a technical obstacle to caching text.
 
 Provider billing includes stream requests and each HTTP Range request. A database cache hit avoids an exercise-details request only; playback is still billed. Illustration: 100 visits to Hammer Curl inside the cache lifetime need one details fetch for text, but 100 plays still need their stream requests, potentially multiple per play. In default text-only cache mode, playback also resolves the exercise media descriptors once per play session. Optional approved descriptor caching removes that extra lookup, not the streaming cost. Token mint requests should be budgeted conservatively until actual metering is measured. Do not promise one API call per video.
-
-## Shared Supabase / Auth
-
-Roadmap update, 27 October 2026: this shared-project arrangement is transitional. [M8 / plan point8](IMPLEMENTATION_MILESTONES.md#m8--standalone-grind-backend-plan-point-8) moves GRIND to a standalone backend after an explicit data/Auth migration and cutover review. The contracts below describe the current shared setup.
-
-Observed in BabyBoo source: email/password auth, native secure session storage, local-device sign-out, and owner-scoped public babies/care_events tables. Its local config exposes public/graphql_public. This is source inspection, not a live audit of the hosted project.
-
-- Use the same public Supabase URL and publishable key already configured in BabyBoo. Reuse `auth.users.id`; an existing email/password account can sign into Grind. This does not automatically sign the user into the other installed app.
-- Add a `grind` schema for application tables, API-facing functions and account membership. Use a `grind_private` schema for service-only cache, quota, fetch leases and provider operations. Expose only `grind` alongside existing schemas when implementing; never expose `grind_private`. Grant only required privileges, with RLS on every exposed table; no anonymous catalog API or blanket GRANT ALL.
-- A schema prevents naming collisions, not cross-app authorization by itself. Enable owner policies and validated Grind membership; do not trust a client-supplied app name, header or user metadata as authority. Shared project credentials and JWTs are not separate security tenants. BabyBoo RLS must remain correct even when called outside its UI.
-- User opens Grind for first time → authenticated `join_grind` creates `grind.app_accounts(user_id, created_at)` idempotently → Grind settings/setup, not BabyBoo onboarding. Never modify BabyBoo profile/baby records during this operation.
-- Keep independent SDK storage keys (proposed `grind.auth.session.v1`), native keychain scope, PKCE flow keys, query caches and drafts. Use a Grind callback scheme (proposed `grind://auth/callback`) with strict validation and add its exact redirects without removing BabyBoo callbacks. Auth provider configuration, email delivery/rates, templates and password policy are project-wide and must work for both brands.
-- Default sign-out is local to Grind's session. Password change/reset and global session revocation can affect both apps; explain that in account flows.
-- Replace the old single-app account deletion design. `delete_grind_data` removes only Grind personal data/membership and then signs out locally. It must not call Auth admin deleteUser. Full shared-account deletion is a separately named flow that explicitly covers both products, inventories all memberships/data and confirms scope. BabyBoo's existing tables and deletion behavior must be audited before enabling this shared flow.
-- Share migrations through one coordinated deployment history. Proposed owner: the existing BabyBoo Supabase migration stream, using an agreed timestamp namespace for Grind. Keep this proposal in Grind now; do not initialize a competing hosted migration history or push/reset from the documentation-only Grind folder. Use a disposable local database for combined migration/RLS tests.
 
 ## Data contracts
 
@@ -86,7 +75,7 @@ Provider-derived names/search result pages are cached under the same retention r
 - `ProviderBudgetGuard`: user/session rate limits, global concurrency limits, circuit breaker on entitlement/quota errors, configurable safety margin and kill switch. It estimates spend; direct provider range traffic is only accurately known from provider counters and measured playback. Tokens are not file-scoped, so issuance limits alone cannot enforce per-file usage.
 - Mobile `ExerciseRepository`, `ExerciseMediaGateway`, `ExerciseDemo`: search/details/query lifecycle, explicit Play, token renewal, player cleanup. UI has no provider key and imports no privileged repository.
 
-Proposed authenticated Edge Function contracts, all names prefixed `grind-` to avoid collisions in the shared project:
+Proposed authenticated Edge Function contracts, all names prefixed `grind-` within the GRIND project:
 
 1. `grind-exercise-search`: `{query, muscle?, equipment?, cursor?}` → bounded exercise summaries. Debounce search, require at least two characters, cache normalized provider query/page results across users; no per-keystroke request. Prefer independently authored Grind catalog where possible. No full-library prefetch.
 2. `grind-exercise-detail`: `{exerciseId, language:'en-us'}` → Grind identity + allowed instructions/muscles/equipment + cache/save provenance + `demoAvailable` when known. Returning `unknown` availability is preferable to fetching media solely to decorate a list.
@@ -116,18 +105,18 @@ Permanent API key stays in Edge secrets. The backend calls `POST /media/token`; 
 ## Local configuration prepared
 
 - `supabase/functions/.env`: `MUSCLEWIKI_API_KEY`, owner-read/write only, ignored. No EXPO_PUBLIC prefix.
-- `.env.local`: only BabyBoo's public Supabase URL/publishable key copied for the shared-project decision; owner-read/write only, ignored. No administrative credentials copied.
+- `.env.local`: GRIND's standalone public Supabase URL/publishable key; owner-read/write only, ignored. No administrative credentials copied.
 - `.env.example` and `supabase/functions/.env.example`: placeholders only.
 
-For deployment, the backend owner can upload just the provider secret file using `supabase secrets set --env-file <absolute-path-to-Grind>/supabase/functions/.env --project-ref <verified-shared-project-ref>`. This has not been run. Supabase secrets are project-wide and available to Edge Functions; the service module never exposes them to a client. Do not use BabyBoo's whole env file for secret upload.
+For deployment, an authorized backend owner can upload only the provider secret file using `supabase secrets set --env-file <absolute-path-to-Grind>/supabase/functions/.env --project-ref mgyzzipsqmsabptrfchw`. This has not been run. Supabase secrets are project-wide and available to Edge Functions; the service module never exposes them to a client.
 
 ## Implementation and verification gates
 
 1. Confirm direct API entitlement in the dashboard; optionally one explicit smoke request. Confirm descriptor-cache permission and cache retention versus shared backup policy. No purchase or mass import.
-2. Inventory existing hosted migration history, grants, RLS, Auth redirect/email settings and account deletion. Source was inspected; hosted state still needs verification. Coordinate migrations rather than pushing a new Grind history.
+2. If this provider work is approved, review GRIND's hosted migration history, grants, RLS, Auth redirect/email settings and account deletion only. Keep its independent migration history in root `supabase/migrations`.
 3. Implement and test client validation, RLS/cross-user isolation, single-flight concurrent misses, lease expiry/fencing, TTL purge, auth failures, provider 403/429, token redaction, URL allowlist and custom-exercise fallback.
 4. Measure actual video request counts on physical iOS/Android, including range seeks, replay, token expiry and denial. Ensure no file/CDN persistence and that player controls preserve branding.
-5. Verify existing BabyBoo sign-in/onboarding/persistence and Grind sign-in independently against the shared staging project. Test local-only logout and Grind-only deletion without touching BabyBoo data. Verify shared-account deletion separately before exposing it.
+5. Verify GRIND sign-in/onboarding/persistence against the standalone GRIND project. Test GRIND logout and account deletion using GRIND-only test users and data.
 
 ## Sources checked
 
