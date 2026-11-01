@@ -1,4 +1,4 @@
-import { View } from "react-native";
+import { Alert, View } from "react-native";
 import { Button } from "@/components/Button";
 import { LoadUnitControl } from "@/components/LoadUnitControl";
 import type {
@@ -90,11 +90,30 @@ export function SetOptions({
         label="Remove set"
         accessibilityLabel={`${context}: Remove set`}
         onPress={() => {
-          void send({
-            type: "remove_set",
-            exercise_id: exercise.id,
-            set_id: set.id,
-          });
+          const remove = () =>
+            void send({
+              type: "remove_set",
+              exercise_id: exercise.id,
+              set_id: set.id,
+            });
+          const current = latest();
+          const populated =
+            Boolean(set.completed_at) ||
+            set.entered_load !== null ||
+            set.reps !== null ||
+            (set.duration_seconds ?? null) !== null ||
+            (set.entered_distance ?? null) !== null ||
+            current.load !== "" ||
+            current.reps !== "";
+          if (!populated) return remove();
+          Alert.alert(
+            "Remove set and entered work?",
+            "This set and its completed status and entered values will be removed.",
+            [
+              { text: "Keep set", style: "cancel" },
+              { text: "Remove set", style: "destructive", onPress: remove },
+            ],
+          );
         }}
       />
     </View>

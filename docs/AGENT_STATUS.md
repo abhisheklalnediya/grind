@@ -1,5 +1,33 @@
 # GRIND agent status
 
+## 1 November — exercise catalog hosted sync direction
+
+User clarified that the RepDB catalog is delivered only through authenticated, member-scoped GRIND functionality, not a public/reusable API; the former clarification hold for this app-bound delivery was removed. The CLI session supplied by the user became available through the host-authorized command path. All nine migrations match and hosted dry run was up to date. Added guarded publisher `scripts/catalog/publish_hosted.py`, then published the content-addressed 701-record/schema-v3 archive to GRIND. Read-only hosted counts confirm 701 active catalog exercises, 204 configured/selectable (Barbell 76, Smith Machine 19, Dumbbell 88, EZ Curl Bar 21), 497 unconfigured, 701 approved source records/links, and no other configured equipment. Authenticated SQL function grants are present while `grind_private` remains inaccessible to `anon` and `authenticated`; app images remain bundled, not in Storage. Independent reviewer found a missing archive hash guard; it was fixed with a regression test and the reviewer confirmed resolution. Authenticated app/API and native device verification remain open.
+
+## 31 October — workout prototype alignment
+
+Coordinator integrated separate workout shell and exercise-card work against the prototype's 11 reviewed differences. Independent source review identified and prompted fixes to set uncompletion, narrow layout wrapping and mixed-unit visibility. The HTML prototype does not prove native fidelity; device visual acceptance remains open. Checks are recorded in [build status](BUILD_STATUS.md).
+
+## 31 October — workout review refinements
+
+Coordinator integrated bounded logging, workout-flow and timer work and independent review. Set and finish actions were compacted; workout naming, empty state, error visibility, navigation fallback and timed validation were refined. Conflict actions now require a successful server review, with failure feedback; timer completion has a single announcement. Automated results and device gaps are recorded in [build status](BUILD_STATUS.md).
+
+## 31 October — auth and workout UX implementation
+
+Coordinator integrated separate auth and workout specialists' changes and an independent review. Auth now includes field feedback, email handoff, keyboard submission, pending-request safeguards and clearer copy. Workout changes cover compact logging/rest controls, navigation, removal confirmation, clearer exercise details and finish blockers. Review findings were corrected; the mocked minimize/resume test does not establish the combined native recovery journey. Automated evidence and remaining device/hosted gaps are in [build status](BUILD_STATUS.md).
+
+## 31 October — authentication branding
+
+The user selected the lime GRIND identity on the concept board. Original vector and raster branding and launcher assets were created, and auth, recovery, setup and entry states now share the lockup. The concept board is a brand reference rather than a complete login layout. Native rebuild and device visual acceptance remain open; checks are recorded in build status.
+
+## 31 October — hosted signup and login
+
+The user reported signup was missing from hosted Auth and did not want email confirmation. The Android development override had pointed at the local 55521 stack; it now uses the selected hosted GRIND public configuration. A fictional hosted API signup returned a confirmed user and session; password sign-in and GRIND join succeeded. A second fictional account was created through the Android emulator and immediately reached setup; hosted sign-in and onboarding reached Train. The emulator was signed out afterward. The two fictional hosted accounts remain in Auth. Signup no longer directs a no-session response to email verification; it displays an error instead. Local `supabase/config.toml` now disables confirmations, but the already-running local stack has not been restarted to apply this setting. Existing local users are not hosted accounts. Password recovery, iOS and physical devices were not retested against hosted.
+
+## 30 October — Android Auth callback debugging
+
+A clean Android arm64 debug build was installed on the emulator after clearing GRIND app data and Metro cache. The first incremental build showed a Fabric initialization error; after regenerating Android build artifacts and rebuilding, the app reached sign-in. A fictional account on the standalone local stack signed in, completed setup, restored its session after force-stop, signed out, reset its password via captured local email, and signed in with the new password. Before the fix, warm email callbacks displayed an error without an exchange request. The callback screen now uses Expo Linking’s current URL hook; a fresh recovery link opened the password form and completed the reset. The local stack still requires signup email confirmation, unlike the user-reported hosted configuration. Hosted no-confirmation signup, hosted login and iOS/physical-device callbacks remain unverified. A local fictional test account remains in the standalone local database. See build status for checks.
+
 ## 30 October — uncommitted change review
 
 Coordinator and independent reviewer checked the pending standalone backend and application changes. Added coverage for a non-string Auth error code after the critical branch gate exposed a gap. Typecheck, lint, 57 suites/308 tests, coverage, prototype syntax and 10 Python harness tests pass. Docker access was denied in this session, so the SQL suites were not rerun; prior local evidence below remains historical. Native and authenticated hosted acceptance remain open. The local VS Code terminal auto-approval setting is excluded from the commit.
@@ -22,7 +50,7 @@ A new local Supabase stack uses ports 55520–55527. Its clean `supabase db rese
 
 Hosted migration is complete: remote history was empty, a dry-run listed the nine migrations, all nine applied, and the linked history now matches. A read-only precheck found no Auth users, Grind schemas or existing Grind rows. The one GRIND Auth user/email identity and owned rows were transferred in a transaction and exact-compared with source: account/settings 1, workouts 2, workout exercises 2, sets 1, receipts 13, routines 0. No Auth sessions, unrelated Auth users or RepDB rows were transferred. Hosted configuration exposes `grind`, keeps `grind_private` unexposed, and allows `grind://auth/callback`; Auth MFA, site URL and email OTP/rate settings were preserved. The publishable key was verified against the selected project. An anonymous read probe was denied at schema permissions as expected; authenticated app sign-in/RLS/recovery and physical-device acceptance remain unverified. `.env.local` points to the selected hosted project and `.env.development.local` points to the standalone 55521 local API; both are ignored and owner-only.
 
-**Open:** verify migrated account sign-in, recovery, authenticated API/RLS and physical-device behavior; complete the client cutover and record its rollback boundary. The 701 RepDB backend/API release remains gated on rights clarification. Full M8 acceptance remains open.
+**Open:** verify migrated account sign-in, recovery, authenticated API/RLS and physical-device behavior; complete the client cutover and record its rollback boundary. At this 30 October checkpoint the RepDB release was awaiting rights clarification; the user's 1 November app-bound delivery decision supersedes that gate. Full M8 acceptance remains open.
 
 ## 29 October — enabled-only exercise lists; Dumbbell and EZ Curl Bar
 

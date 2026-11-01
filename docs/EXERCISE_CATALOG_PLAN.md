@@ -1,6 +1,6 @@
 # GRIND self-hosted exercise catalog implementation plan
 
-Decision: 29 October 2026. Status: approved source direction; implementation tasks below are planned, not implemented or verified. This replaces MuscleWiki as the MVP catalog/media strategy. Static images satisfy MVP demonstrations; videos, provider tokens and metered provider calls are deferred.
+Decision: 29 October 2026. Status update 1 November: the authenticated GRIND app-bound catalog release is published and database counts verified; member-authenticated app/API and native acceptance remain open. This replaces MuscleWiki as the MVP catalog/media strategy. Static images satisfy MVP demonstrations; videos, provider tokens and metered provider calls are deferred.
 
 ## 1. Sources and release gates
 
@@ -14,7 +14,7 @@ Primary evidence checked 29 October 2026:
 
 Display a visible clickable “Exercise data by RepDB (repdb.co)” link to https://repdb.co in Settings → About/Credits and add README credit. Preserve upstream license and attribution text in private source archives. Credits must remain available when catalog requests fail; bundled text can provide offline access. Add supplementary creator, source, license links and modification notices as required by each approved asset's actual terms.
 
-Serve only authenticated Grind application functionality, not a public/reusable catalog API, raw download, dataset export, public storage listing or public source mirror. Authentication alone does not establish license compliance: before production, document review of the proposed in-app search/detail and storage delivery against term 3. If its scope remains ambiguous, obtain written clarification from RepDB before shipping the disputed delivery. Ingestion/schema/local development can proceed independently. Do not contact a vendor without user authorization. Do not ingest premium-samples, classic/paid assets or animations; do not feed RepDB images to generative models.
+**GRIND delivery decision (1 November 2026):** the user confirms the hosted Supabase catalog is reachable only through authenticated GRIND app functionality and is not a public or reusable catalog API. This app-bound delivery is approved for GRIND under the license's in-app use grant. Keep membership checks, RLS, bounded search/detail contracts, rate/size limits and no bulk-export/public-storage behavior. Do not publish a public API, raw dataset download or source mirror. This decision clears the project’s prior requirement to obtain separate written clarification solely for authenticated GRIND app delivery; it does not change any other license terms. Do not ingest premium-samples, classic/paid assets or animations; do not feed RepDB images to generative models. The source snapshot, attribution, measurement review and secure import/release checks remain required.
 
 For every Free Exercise DB image proposed for use, require an evidence record identifying original creator/source, chain of permission, exact license/version, commercial use and self-hosting permissions, derivative/attribution/share-alike duties, evidence URL or written grant, reviewer and review date. Repository-level assertions or another app's credits are insufficient. Store candidate files only in non-serving quarantine. Default pending/unclear/rejected assets to blocked; use RepDB or a neutral placeholder. Review text provenance separately before supplemental metadata is promoted. Any share-alike obligations belong to that source's reviewed assets/derivatives; do not silently relicense the combined catalog.
 
@@ -49,7 +49,7 @@ Load modes/conventions are Grind domain decisions, not inferred from image/equip
 
 ## 4. Ingestion, deduplication and publication
 
-Implement scripts/catalog/ with acquire, validate, stage, report, publish, rollback commands (new commands to be documented in SETUP.md when implemented). Require explicit local/staging target allowlists and dry-run default; hosted execution remains separately authorized. Use the existing canonical BabyBoo forward-migration stream and guarded disposable backend; do not create competing hosted migration history or reset existing stacks.
+Implement scripts/catalog/ with acquire, validate, stage, report, publish, rollback commands (new commands to be documented in SETUP.md when implemented). Require explicit local/staging target allowlists and dry-run default. The authenticated GRIND catalog release was authorized and published on 1 November via `scripts/catalog/publish_hosted.py`; this GRIND-only tool verifies project ref, migration parity and a narrow target-state allowlist before writing. Future hosted releases still require explicit authorization. Use the existing canonical GRIND forward-migration stream and guarded disposable backend; do not create competing hosted migration history or reset existing stacks.
 
 Pipeline: verify immutable source/checksums/license → validate JSON/schema/counts/IDs/paths → map taxonomy and logging modes → deduplicate → stage rows → validate/decode approved static media → upload immutable objects → verify checksums/readability → transactionally activate release/content references → emit reconciliation report. Publication is atomic at DB visibility, not a cross-system transaction: uploaded but unpublished objects are harmless and collected later. Any error preserves the active catalog; retry resumes safely without duplicate rows/assets.
 
@@ -88,11 +88,11 @@ User-created exercises remain owner_id scoped in the same table, with stable UUI
 
 ## 8. Sequenced implementation handoff
 
-All rows below are Todo; this planning change does not authorize deployment/imports or declare M6 complete. Assign exact canonical migration filenames after inspecting that owning repository.
+This is the original sequenced plan, not a current status table. The 1 November hosted metadata release is implemented and verified; task states and remaining acceptance gates are tracked in `docs/planning/TASKS.md` and `docs/BUILD_STATUS.md`. It does not declare all of M6 complete. Assign canonical migration filenames through the GRIND-owned `supabase/migrations` stream.
 
 | Task | Owner / allowed paths | Dependencies and acceptance |
 | --- | --- | --- |
-| C1 rights/release lock | Catalog maintainer; private source evidence, scripts/catalog manifests, credits spec | Resolve actual commit/checksums; approved RepDB terms/delivery review; supplementary media remains blocked without evidence |
+| C1 source/release lock | Catalog maintainer; private source evidence, scripts/catalog manifests, credits spec | Hosted archive pinned by SHA-256 and validated at 701 records/1,217 images; preserve required attribution/license evidence; authenticated GRIND app-bound delivery approved by user's 1 Nov decision; supplementary media remains blocked without evidence |
 | C2 schema/adapters | Backend developer; assigned new canonical migration/tests, src/types/database.ts, src/domain/exercises/** | C1; additive migration/replay, stable identities, grants/RLS, taxonomy/load mapping; no historical rewrite |
 | C3 importer/storage | Catalog developer; scripts/catalog/** and tests, assigned storage policy migration | C2; deterministic dry run, idempotency/resume, rights gate, staging/report, atomic activation/rollback |
 | C4 search/services/cache | Service developer; src/services/exercises/**, assigned RPC migration/tests, query keys | C2/C3; bounded app-only contracts, stable pagination/indexes, tenant isolation, no upstream runtime traffic |

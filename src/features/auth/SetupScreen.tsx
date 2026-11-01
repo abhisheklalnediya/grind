@@ -2,8 +2,8 @@ import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import { Screen } from "@/components/Screen";
-import { Heading } from "@/components/Heading";
 import { Button } from "@/components/Button";
+import { AuthBrandHeader } from "./AuthBrandHeader";
 import { useTheme } from "@/theme/useTheme";
 import type { ThemeColors } from "@/theme/tokens";
 import { saveSettings } from "@/services/grindAccount";
@@ -31,7 +31,7 @@ export function SetupScreen() {
   };
   return (
     <Screen>
-      <Heading
+      <AuthBrandHeader
         title="Make it yours."
         subtitle="Two quick choices. You can change these anytime."
       />

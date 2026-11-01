@@ -45,7 +45,7 @@ export function subscribeVerifiedSession(
         notify({
           session: null,
           error:
-            "Couldn’t verify your session. Check the local connection and retry.",
+            "Couldn’t verify your session. Check your connection and try again.",
           recovery: false,
         });
     }

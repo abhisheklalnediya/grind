@@ -80,10 +80,20 @@ it("recovers unblurred name, notes and rest, blocks finish, then clears drafts o
       </QueryClientProvider>,
     );
   const first = await mount();
-  await screen.findByLabelText("Workout name");
+  await screen.findByRole("button", { name: "Edit workout name, Workout" });
+  await fireEvent.press(
+    screen.getByRole("button", { name: "Edit workout name, Workout" }),
+  );
   await fireEvent.changeText(
     screen.getByLabelText("Workout name"),
     "Unblurred workout",
+  );
+  await fireEvent.changeText(
+    screen.getByLabelText("Bench set 1 Weight (kg)"),
+    "72.",
+  );
+  await fireEvent.press(
+    screen.getByRole("button", { name: "Options for Bench" }),
   );
   await fireEvent.changeText(
     screen.getByLabelText("Bench notes"),
@@ -93,13 +103,32 @@ it("recovers unblurred name, notes and rest, blocks finish, then clears drafts o
   await waitFor(() =>
     expect(JSON.stringify([...data.values()])).toContain("Unblurred notes"),
   );
+  await waitFor(() =>
+    expect(JSON.stringify([...data.values()])).toContain("72."),
+  );
   expect(api.apply).not.toHaveBeenCalled();
   await first.unmount();
   await mount();
+  await fireEvent.press(
+    screen.getByRole("button", {
+      name: "Edit workout name, Unblurred workout",
+    }),
+  );
   await waitFor(() =>
     expect(screen.getByLabelText("Workout name").props.value).toBe(
       "Unblurred workout",
     ),
+  );
+  expect(screen.getByLabelText("Bench set 1 Weight (kg)").props.value).toBe(
+    "72.",
+  );
+  await fireEvent.changeText(
+    screen.getByLabelText("Bench set 1 Weight (kg)"),
+    "72",
+  );
+  await fireEvent(screen.getByLabelText("Bench set 1 Weight (kg)"), "blur");
+  await fireEvent.press(
+    screen.getByRole("button", { name: "Options for Bench" }),
   );
   expect(screen.getByLabelText("Bench notes").props.value).toBe(
     "Unblurred notes",
@@ -108,11 +137,15 @@ it("recovers unblurred name, notes and rest, blocks finish, then clears drafts o
   expect(screen.getByText("Finish and save")).toBeDisabled();
   await fireEvent(screen.getByLabelText("Workout name"), "blur");
   await fireEvent(screen.getByLabelText("Bench notes"), "blur");
-  await waitFor(() => expect(api.apply).toHaveBeenCalledTimes(2));
+  await fireEvent.press(
+    screen.getByRole("button", { name: "Bench set 1: Complete set" }),
+  );
+  await waitFor(() => expect(api.apply).toHaveBeenCalledTimes(4));
   await waitFor(() =>
     expect(screen.getByText("Finish and save")).toBeEnabled(),
   );
   expect(server.name).toBe("Unblurred workout");
+  expect(server.exercises[0]?.sets[0]?.entered_load).toBe("72");
   expect(server.exercises[0]?.notes).toBe("Unblurred notes");
   expect(server.exercises[0]?.rest_seconds).toBe(90);
   await act(async () => {});

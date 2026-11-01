@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { Screen } from "@/components/Screen";
-import { Heading } from "@/components/Heading";
 import { Button } from "@/components/Button";
+import { AuthBrandHeader } from "./AuthBrandHeader";
 import { getSupabase } from "@/services/supabase";
 import { callbackCode } from "./authCallback";
 export function CallbackScreen() {
-  const url = Linking.useURL();
+  const url = Linking.useLinkingURL();
   const request = useRef<{ url: string; promise: Promise<void> } | null>(null);
   const [error, setError] = useState(false);
   useEffect(() => {
@@ -38,7 +38,7 @@ export function CallbackScreen() {
   }, [url]);
   return (
     <Screen>
-      <Heading
+      <AuthBrandHeader
         title={error ? "This link couldn’t be opened." : "Checking your link…"}
         subtitle={
           error

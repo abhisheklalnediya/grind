@@ -9,6 +9,7 @@ import { AuthScreen } from "./AuthScreen";
 import { authService } from "./authService";
 jest.mock("expo-router", () => ({
   router: { replace: jest.fn(), push: jest.fn() },
+  useLocalSearchParams: jest.fn(() => ({})),
 }));
 jest.mock("./authService", () => ({
   authService: { signIn: jest.fn(), signUp: jest.fn(), recover: jest.fn() },
@@ -19,7 +20,8 @@ it("validates before requests, normalizes email and awaits successful sign-in", 
   expect(screen.getByText("Sign in to your Grind account.")).toBeVisible();
   await fireEvent.press(screen.getByRole("button", { name: "Sign in" }));
   expect(authService.signIn).not.toHaveBeenCalled();
-  expect(screen.getByRole("alert")).toBeVisible();
+  expect(screen.getByText("Enter a valid email address.")).toBeVisible();
+  expect(screen.getByText("Enter your password.")).toBeVisible();
   await fireEvent.changeText(
     screen.getByLabelText("Email"),
     "  Alex@Example.com ",
@@ -56,7 +58,7 @@ it("retains failed form input and never exposes provider secrets", async () => {
 it("shows recovery confirmation without claiming an account exists", async () => {
   jest.mocked(authService.recover).mockResolvedValue(undefined);
   await render(<AuthScreen mode="recovery" />);
-  expect(screen.getByText("This resets your Grind account password.")).toBeVisible();
+  expect(screen.getByText("Reset your Grind account password.")).toBeVisible();
   await fireEvent.changeText(
     screen.getByLabelText("Email"),
     "alex@example.com",
@@ -91,7 +93,8 @@ it('validates new accounts, toggles password visibility and preserves exact succ
   jest.mocked(authService.signUp).mockResolvedValue({ session: null, user: null });
   await render(<AuthScreen mode="signup" />);
   await fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
-  expect(screen.getByText('Enter a valid email and a password with at least 8 characters.')).toBeVisible();
+  expect(screen.getByText('Enter a valid email address.')).toBeVisible();
+  expect(screen.getByText('Use at least 8 characters. Passwords can be up to 256 characters.')).toBeVisible();
   await fireEvent.changeText(screen.getByLabelText('Email'), ' New@Example.com ');
   await fireEvent.changeText(screen.getByLabelText('Password'), ' exact password ');
   expect(screen.getByLabelText('Password')).toHaveProp('secureTextEntry', true);
@@ -99,10 +102,15 @@ it('validates new accounts, toggles password visibility and preserves exact succ
   expect(screen.getByLabelText('Password')).toHaveProp('secureTextEntry', false);
   await fireEvent.press(screen.getByRole('button', { name: 'Hide password' }));
   await fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
-  await waitFor(() => expect(router.push).toHaveBeenCalledWith({ pathname: '/auth/verify', params: { email: 'new@example.com' } }));
+  await waitFor(() => expect(screen.getByText(/You’re not signed in yet/)).toBeVisible());
+  expect(router.push).not.toHaveBeenCalled();
   expect(authService.signUp).toHaveBeenCalledWith('new@example.com', ' exact password ');
-  await fireEvent.press(screen.getByRole('button', { name: 'Back to sign in' }));
-  expect(router.replace).toHaveBeenCalledWith('/auth/sign-in');
+  expect(screen.getByText('Create your Grind account, then complete a short setup.')).toBeVisible();
+  expect(screen.getByText('Use 8–256 characters. Your password is not trimmed.')).toBeVisible();
+  await fireEvent.press(screen.getByRole('button', { name: 'Try signing in' }));
+  expect(router.replace).toHaveBeenCalledWith({ pathname: '/auth/sign-in', params: { email: ' New@Example.com ' } });
+  await fireEvent.press(screen.getByRole('button', { name: 'Request password reset' }));
+  expect(router.replace).toHaveBeenCalledWith({ pathname: '/auth/recovery', params: { email: ' New@Example.com ' } });
 });
 
 it('routes an immediately authenticated signup into the protected account gate', async () => {
@@ -120,24 +128,67 @@ it('validates recovery addresses and provides explicit sign-in navigation', asyn
   expect(screen.getByText('Enter a valid email address.')).toBeVisible();
   expect(authService.recover).not.toHaveBeenCalled();
   await fireEvent.press(screen.getByRole('button', { name: 'Back to sign in' }));
-  expect(router.replace).toHaveBeenCalledWith('/auth/sign-in');
+  expect(router.replace).toHaveBeenCalledWith({ pathname: '/auth/sign-in', params: {} });
 });
 
-it('links sign-in to signup and recovery and locks form fields during a pending request', async () => {
+it('links sign-in with email only, supports keyboard next/submit and locks during pending requests', async () => {
   let finish: () => void = () => {};
   jest.mocked(authService.signIn).mockImplementation(() => new Promise(resolve => { finish = resolve; }));
   await render(<AuthScreen mode="signin" />);
+  await fireEvent.changeText(screen.getByLabelText('Email'), 'a@example.com');
   await fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
-  expect(router.push).toHaveBeenCalledWith('/auth/sign-up');
+  expect(router.push).toHaveBeenCalledWith({ pathname: '/auth/sign-up', params: { email: 'a@example.com' } });
   await fireEvent.press(screen.getByRole('button', { name: 'Forgot password?' }));
-  expect(router.push).toHaveBeenCalledWith('/auth/recovery');
+  expect(router.push).toHaveBeenCalledWith({ pathname: '/auth/recovery', params: { email: 'a@example.com' } });
+  await fireEvent.changeText(screen.getByLabelText('Password'), 'password');
+  expect(screen.getByLabelText('Email')).toHaveProp('returnKeyType', 'next');
+  expect(screen.getByLabelText('Password')).toHaveProp('returnKeyType', 'done');
+  await fireEvent(screen.getByLabelText('Email'), 'submitEditing');
+  await fireEvent(screen.getByLabelText('Password'), 'submitEditing');
+  await fireEvent(screen.getByLabelText('Password'), 'submitEditing');
+  expect(authService.signIn).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole('button', { name: 'Please wait…' })).toBeDisabled();
+  finish(); await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/'));
+});
+
+it('opens signup without putting an absent email or password in the route', async () => {
+  await render(<AuthScreen mode="signin" />);
+  await fireEvent.changeText(screen.getByLabelText('Password'), 'private-password');
+  await fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
+  expect(router.push).toHaveBeenCalledWith({ pathname: '/auth/sign-up', params: {} });
+  expect(router.push).not.toHaveBeenCalledWith(expect.objectContaining({ params: expect.objectContaining({ password: expect.anything() }) }));
+});
+
+it('shows field-specific validation and transfers only email when opened with route parameters', async () => {
+  const { useLocalSearchParams } = jest.requireMock('expo-router') as { useLocalSearchParams: jest.Mock };
+  useLocalSearchParams.mockReturnValue({ email: 'alex@example.com' });
+  await render(<AuthScreen mode="signup" />);
+  expect(screen.getByLabelText('Email')).toHaveDisplayValue('alex@example.com');
+  await fireEvent.changeText(screen.getByLabelText('Email'), 'invalid-address');
+  await fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
+  expect(screen.getByText('Enter a valid email address.')).toBeVisible();
+  expect(screen.getByText('Use at least 8 characters. Passwords can be up to 256 characters.')).toBeVisible();
+  expect(authService.signUp).not.toHaveBeenCalled();
+});
+
+it('does not navigate or update a stale form after an auth request settles on another screen', async () => {
+  let finish: () => void = () => {};
+  jest.mocked(authService.signIn).mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  const view = await render(<AuthScreen mode="signin" />);
   await fireEvent.changeText(screen.getByLabelText('Email'), 'a@example.com');
   await fireEvent.changeText(screen.getByLabelText('Password'), 'password');
   await fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
-  expect(screen.getByRole('button', { name: 'Please wait…' })).toBeDisabled();
-  expect(screen.getByLabelText('Email')).toHaveProp('editable', false);
-  expect(screen.getByLabelText('Password')).toHaveProp('editable', false);
-  await fireEvent.press(screen.getByRole('button', { name: 'Please wait…' }));
-  expect(authService.signIn).toHaveBeenCalledTimes(1);
-  finish(); await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/'));
+  await view.unmount();
+  finish();
+  await new Promise<void>(resolve => setImmediate(resolve));
+  expect(router.replace).not.toHaveBeenCalled();
+});
+
+it('requires only a valid email in recovery and submits from the email keyboard action', async () => {
+  jest.mocked(authService.recover).mockResolvedValue(undefined);
+  await render(<AuthScreen mode="recovery" />);
+  await fireEvent.changeText(screen.getByLabelText('Email'), 'alex@example.com');
+  await fireEvent(screen.getByLabelText('Email'), 'submitEditing');
+  await waitFor(() => expect(screen.getByText('If an account exists, a reset link is on its way.')).toBeVisible());
+  expect(authService.recover).toHaveBeenCalledWith('alex@example.com');
 });

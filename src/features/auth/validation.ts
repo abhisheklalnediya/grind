@@ -12,17 +12,18 @@ export const credentialsSchema = z.object({
 });
 const authErrorMessages: Record<string, string> = {
   email_address_not_authorized:
-    "GRIND can’t send verification email to this address yet. Configure SMTP for the GRIND Supabase project, then try again.",
+    "We couldn’t send an email right now. Check the address and try again later.",
   email_address_invalid: "Enter a valid email address.",
   email_provider_disabled:
-    "Email and password sign-up is disabled for the GRIND project.",
-  signup_disabled: "New account creation is disabled for the GRIND project.",
+    "Email sign-up is temporarily unavailable. Try again later.",
+  signup_disabled:
+    "New account creation is temporarily unavailable. Try signing in instead.",
   over_email_send_rate_limit:
     "Too many verification emails were requested. Wait a while, then try again.",
   over_request_rate_limit:
     "Too many requests were made. Wait a few minutes, then try again.",
   weak_password:
-    "Choose a stronger password that meets the GRIND project’s password rules.",
+    "Choose a stronger password and try again.",
   email_exists:
     "We couldn’t create that account. Try signing in or request a password reset.",
   user_already_exists:
@@ -30,13 +31,6 @@ const authErrorMessages: Record<string, string> = {
 };
 export function getAuthError(error: unknown) {
   // Never reflect provider details, request URLs, tokens or credentials in the UI.
-  if (
-    error instanceof Error &&
-    error.message.startsWith("Configure a ") &&
-    error.message.includes("Supabase URL") &&
-    error.message.includes("public publishable key")
-  )
-    return error.message;
   if (typeof error === "object" && error !== null && "code" in error) {
     const code = error.code;
     if (typeof code === "string") {

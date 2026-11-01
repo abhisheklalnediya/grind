@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { randomUUID } from "expo-crypto";
 import { Button } from "@/components/Button";
@@ -24,6 +24,7 @@ export function ExerciseEditor({
   const defaults = useTrainingDefaults();
   const { colors, scope } = useTheme();
   const [error, setError] = useState("");
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const notes = useWorkoutDraft(
     `${exercise.id}:notes`,
     exercise.notes,
@@ -76,48 +77,81 @@ export function ExerciseEditor({
   const position =
     training.session?.exercises.findIndex((item) => item.id === exercise.id) ??
     0;
+  const enteredUnits = new Set(exercise.sets.map((set) => set.entered_unit));
+  const loadHeading =
+    enteredUnits.size === 1
+      ? ([...enteredUnits][0]?.toUpperCase() ?? defaults.unit.toUpperCase())
+      : "LOAD";
   return (
-    <View style={styles.group}>
-      <Text
-        accessibilityRole="header"
-        style={{ color: colors.text, fontSize: 24 }}
-      >
-        {exercise.name}
-      </Text>
-      <Text style={{ color: colors.secondary }}>
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: colors.surface, borderColor: colors.border },
+      ]}
+    >
+      <View style={styles.exerciseHead}>
+        <Text
+          accessibilityRole="header"
+          style={{
+            color: colors.text,
+            fontSize: 20,
+            fontWeight: "700",
+            flex: 1,
+          }}
+        >
+          {exercise.name}
+        </Text>
+        <Button
+          secondary
+          label="•••"
+          selected={detailsOpen}
+          accessibilityLabel={`Options for ${exercise.name}`}
+          onPress={() => setDetailsOpen(!detailsOpen)}
+        />
+      </View>
+      <Text style={{ color: colors.secondary, fontSize: 12 }}>
         {exercise.tracking_type === "duration"
           ? "Duration"
           : exercise.tracking_type === "distance_duration"
             ? "Duration and distance"
             : `${loadFieldLabel(exercise.load_mode, defaults.unit)} · ${exercise.load_convention}`}
+        {` · Rest ${Math.floor(exercise.rest_seconds / 60)}:${String(exercise.rest_seconds % 60).padStart(2, "0")}`}
       </Text>
-      <TextInput
-        accessibilityLabel={`${exercise.name} notes`}
-        value={notes.value}
-        maxLength={2000}
-        multiline
-        onChangeText={notes.change}
-        onBlur={saveDetails}
-        style={{
-          minHeight: 48,
-          color: colors.text,
-          borderColor: colors.border,
-          borderWidth: 1,
-        }}
-      />
-      <TextInput
-        accessibilityLabel={`${exercise.name} rest seconds`}
-        value={rest.value}
-        keyboardType="number-pad"
-        onChangeText={rest.change}
-        onBlur={saveDetails}
-        style={{ minHeight: 48, color: colors.text }}
-      />
       {error ? (
         <Text accessibilityRole="alert" style={{ color: colors.error }}>
           {error}
         </Text>
       ) : null}
+      {detailsOpen && (
+        <>
+          <Text style={{ color: colors.secondary }}>Exercise notes</Text>
+          <TextInput
+            accessibilityLabel={`${exercise.name} notes`}
+            value={notes.value}
+            maxLength={2000}
+            multiline
+            onChangeText={notes.change}
+            onBlur={saveDetails}
+            style={{
+              minHeight: 48,
+              color: colors.text,
+              borderColor: colors.border,
+              borderWidth: 1,
+            }}
+          />
+          <Text style={{ color: colors.secondary }}>
+            Rest duration (seconds)
+          </Text>
+          <TextInput
+            accessibilityLabel={`${exercise.name} rest seconds`}
+            value={rest.value}
+            keyboardType="number-pad"
+            onChangeText={rest.change}
+            onBlur={saveDetails}
+            style={{ minHeight: 48, color: colors.text }}
+          />
+        </>
+      )}
       {previous.isError ? (
         <Button
           secondary
@@ -127,6 +161,46 @@ export function ExerciseEditor({
           }}
         />
       ) : null}
+      <View style={styles.tableHeader} accessibilityRole="summary">
+        <Text style={[styles.headerSet, { color: colors.secondary }]}>SET</Text>
+        <Text style={[styles.headerPrevious, { color: colors.secondary }]}>
+          PREVIOUS
+        </Text>
+        {exercise.tracking_type && exercise.tracking_type !== "reps" ? (
+          <>
+            <Text style={[styles.headerMetric, { color: colors.secondary }]}>
+              DURATION
+            </Text>
+            {exercise.tracking_type === "distance_duration" ? (
+              <Text style={[styles.headerMetric, { color: colors.secondary }]}>
+                DISTANCE
+              </Text>
+            ) : null}
+          </>
+        ) : (
+          <>
+            {exercise.load_mode !== "bodyweight" ? (
+              <Text style={[styles.headerMetric, { color: colors.secondary }]}>
+                {loadHeading}
+              </Text>
+            ) : null}
+            <Text style={[styles.headerMetric, { color: colors.secondary }]}>
+              REPS
+            </Text>
+          </>
+        )}
+        <Text
+          style={[
+            styles.headerDone,
+            exercise.tracking_type && exercise.tracking_type !== "reps"
+              ? styles.headerTimedDone
+              : null,
+            { color: colors.secondary },
+          ]}
+        >
+          DONE
+        </Text>
+      </View>
       {exercise.sets.map((set, index) => {
         const earlier =
           training.session?.exercises
@@ -212,33 +286,104 @@ export function ExerciseEditor({
           });
         }}
       />
-      <Button
-        secondary
-        label="Move exercise up"
-        disabled={position === 0}
-        onPress={() => {
-          void send({
-            type: "reorder_exercises",
-            ids: moved(
-              training.session?.exercises.map((item) => item.id) ?? [],
-              position,
-              -1,
-            ),
-          });
-        }}
-      />
-      <Button
-        secondary
-        label="Remove exercise"
-        onPress={() => {
-          void send({
-            type: "remove_exercise",
-            exercise_id: exercise.id,
-          });
-        }}
-      />
+      {detailsOpen && (
+        <>
+          <Button
+            secondary
+            label="Move exercise up"
+            disabled={position === 0}
+            onPress={() => {
+              void send({
+                type: "reorder_exercises",
+                ids: moved(
+                  training.session?.exercises.map((item) => item.id) ?? [],
+                  position,
+                  -1,
+                ),
+              });
+            }}
+          />
+          <Button
+            secondary
+            label="Remove exercise"
+            onPress={() => {
+              const hasLocalInput = Object.keys(training.raw).some((key) =>
+                key.startsWith(`${exercise.id}:`),
+              );
+              const populated =
+                hasLocalInput ||
+                exercise.notes.trim().length > 0 ||
+                exercise.rest_seconds !== 120 ||
+                exercise.sets.some(
+                  (set) =>
+                    Boolean(set.completed_at) ||
+                    (set.entered_load ?? null) !== null ||
+                    (set.reps ?? null) !== null ||
+                    (set.duration_seconds ?? null) !== null ||
+                    (set.entered_distance ?? null) !== null,
+                );
+              const remove = () =>
+                void send({
+                  type: "remove_exercise",
+                  exercise_id: exercise.id,
+                });
+              if (!populated) return remove();
+              Alert.alert(
+                "Remove exercise and entered work?",
+                "Its sets, completed status, entered values, notes, and rest setting will be removed from this active workout.",
+                [
+                  { text: "Keep exercise", style: "cancel" },
+                  {
+                    text: "Remove exercise",
+                    style: "destructive",
+                    onPress: remove,
+                  },
+                ],
+              );
+            }}
+          />
+        </>
+      )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({ group: { gap: 12 } });
+const styles = StyleSheet.create({
+  card: { gap: 8, padding: 12, borderWidth: 1, borderRadius: 16 },
+  exerciseHead: { flexDirection: "row", alignItems: "center", gap: 8 },
+  tableHeader: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 6,
+    minHeight: 24,
+    paddingHorizontal: 2,
+  },
+  headerSet: {
+    width: 32,
+    textAlign: "center",
+    fontSize: 9,
+    letterSpacing: 0.4,
+  },
+  headerPrevious: {
+    flex: 1.2,
+    minWidth: 42,
+    textAlign: "center",
+    fontSize: 9,
+    letterSpacing: 0.4,
+  },
+  headerMetric: {
+    flex: 1,
+    minWidth: 42,
+    textAlign: "center",
+    fontSize: 9,
+    letterSpacing: 0.4,
+  },
+  headerDone: {
+    width: 102,
+    textAlign: "center",
+    fontSize: 9,
+    letterSpacing: 0.4,
+  },
+  headerTimedDone: { width: 52 },
+});

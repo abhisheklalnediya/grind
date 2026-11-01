@@ -90,9 +90,11 @@ it('allows public/callback pages and completed accounts but keeps startup and er
   view = await gateAt(['auth', 'callback'], signedIn);
   expect(screen.getByText('Allowed page')).toBeVisible(); await view.unmount();
   view = await gateAt(['auth', 'sign-in'], { ...base, initializing: true });
-  expect(screen.queryByText('Allowed page')).toBeNull(); expect(screen.getByText('Opening Grind…')).toBeVisible(); await view.unmount();
+  expect(screen.queryByText('Allowed page')).toBeNull(); expect(screen.getByText('Opening Grind…')).toBeVisible();
+  expect(screen.getByLabelText('GRIND Gym Logger')).toBeVisible(); await view.unmount();
   view = await gateAt(['auth', 'sign-in'], { ...base, error: 'Connection unavailable' });
   expect(screen.getByText('Connection unavailable')).toBeVisible();
+  expect(screen.getByLabelText('GRIND Gym Logger')).toBeVisible();
   await fireEvent.press(screen.getByRole('button', { name: 'Retry' })); expect(base.retry).toHaveBeenCalled(); await view.unmount();
   jest.mocked(joinGrind).mockResolvedValue(account);
   view = await gateAt(['(tabs)'], signedIn);
@@ -129,4 +131,24 @@ it('retains membership errors behind a retry/sign-out gate instead of opening pr
   await waitFor(() => expect(screen.getByRole('button', { name: 'Sign out of Grind' })).toBeVisible());
   await fireEvent.press(screen.getByRole('button', { name: 'Sign out of Grind' }));
   await waitFor(() => expect(base.retry).toHaveBeenCalled());
+});
+
+it('sends a newly authenticated signup through setup and then into Train', async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
+  jest.mocked(useSegments).mockReturnValue(['auth', 'sign-up'] as never);
+  jest.mocked(useAuth).mockReturnValue(signedIn);
+  jest.mocked(joinGrind).mockResolvedValue({ ...account, setup_completed_at: null });
+  const view = await render(
+    <QueryClientProvider client={client}><AuthGate><Text>Signed-in area</Text></AuthGate></QueryClientProvider>,
+  );
+  await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/auth/setup'));
+  expect(screen.queryByText('Signed-in area')).toBeNull();
+
+  jest.mocked(useSegments).mockReturnValue(['auth', 'setup'] as never);
+  client.setQueryData(['grind-account', 'user'], account);
+  await view.rerender(
+    <QueryClientProvider client={client}><AuthGate><Text>Signed-in area</Text></AuthGate></QueryClientProvider>,
+  );
+  await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/'));
+  expect(screen.queryByText('Signed-in area')).toBeNull();
 });

@@ -1,5 +1,61 @@
 # GRIND live task tracker
 
+## Authentication branding — 31 October 2026
+
+**Implemented — coordinator with asset and auth specialists; device acceptance Todo.** Apply the selected lime GRIND concept to auth and related screens, and configure launcher assets. Automated checks are recorded in build status. Rebuild native binaries and verify auth layouts, accessibility and launcher icons on supported devices.
+
+### Login review follow-up
+
+**Implemented — coordinator and auth specialist; device and hosted verification Todo.** The form and flow changes below are implemented and automated checks passed; see [build status](../BUILD_STATUS.md). The concept board establishes the GRIND identity but does not specify a complete login layout.
+
+| Stage | Scope and ownership | Acceptance |
+| --- | --- | --- |
+| Form usability | Auth specialist: `src/features/auth/**` and colocated tests; shared components only if needed | Reduce the lockup's vertical footprint; make Sign in the primary action and distinguish account creation and recovery; put an accessible show/hide control alongside the password field with a 48px target; provide field-specific, announced validation while preserving input. Check small screens and larger text. |
+| Flow polish | Auth specialist: auth screens, validation and colocated tests | Use task-specific signup/recovery copy; handle navigation and stale responses during pending requests; support email-to-password and password-to-submit keyboard actions; replace technical user-facing errors with actionable language. Preserve existing auth and recovery behavior. |
+| Device acceptance | Coordinator/device reviewer: native builds and verification evidence | Rebuild binaries for launcher assets; inspect login and related flows on Android and iOS, including small screens, keyboard, larger text, screen readers, light/dark appearance and launcher masks. Record device/OS, results and remaining gaps in build status. |
+
+Run focused auth tests during implementation, then typecheck, strict lint and full tests/coverage at integration. Review changes independently and record results without treating automated tests as device acceptance. Design direction is captured in [design notes](../../design/DESIGN_NOTES.md).
+
+#### Sign-in and signup flow improvements
+
+**Implemented — coordinator and auth specialist; item 7 remains Todo.** The following expands the stages above. Automated journey tests cover the gate transition; native and hosted acceptance remain separate.
+
+1. **Simplify the form.** Reduce the branding footprint; make the primary action prominent; place password visibility alongside the field and recovery near the password. Keep accessible labels and 48px targets.
+2. **Give precise feedback.** Display field-specific email and password errors near their inputs; show signup password requirements before submission; replace technical backend messages with clear, actionable language without exposing sensitive details.
+3. **Reduce repeated typing.** Carry the entered email between sign-in, signup and recovery without transferring the password. Support password-manager autofill and keyboard Next/Submit actions: Next on the email field moves to the password field where present; Enter/Submit on the final field submits the relevant sign-in, signup or recovery form using the same validation and pending-request safeguards as its button. Preserve entered values after failures and test keyboard submission.
+4. **Make the journey predictable.** Explain that signup leads to a short setup. For a signup response without a session, offer useful next actions without claiming the account was created. Keep recovery confirmation neutral about whether an account exists.
+5. **Harden request handling.** Prevent duplicate submissions; define navigation during pending requests; ensure late responses cannot cause stale navigation or misleading feedback; retain drafts after failures. Add tests for these behaviors.
+6. **Improve the post-login transition.** Show a concise loading state during session and membership checks. Replace backend/migration terminology with a user-facing error and retain Retry and Sign out paths.
+7. **Verify on devices.** Rebuild native binaries for launcher assets; check Android and iOS on small screens, with keyboards, large text, screen readers, light/dark appearance and password managers. Exercise slow connections and offline-to-online recovery, and inspect launcher masks. Record device/OS, evidence and gaps in build status.
+8. **Strengthen journey tests.** Cover navigation during requests, late responses, email transfer and signup through setup to Train. Run focused tests and the required integration gates; track hosted and physical-device verification separately from mocked tests.
+
+## Active workout UI and UX review follow-up — 31 October 2026
+
+### Prototype alignment rebuild
+
+**Implemented — coordinator with shell and exercise-card specialists; native visual acceptance Todo.** The 11 identified areas were rebuilt against `design/mvp.html`, while retaining accessible controls, semantic themes, durable drafts, server acknowledgement and conflict/removal safeguards. Independent review identified and prompted fixes for invalid-draft uncompletion, narrow row wrapping and visible per-set units. Typecheck, strict lint and coverage passed; see [build status](../BUILD_STATUS.md). Pixel-level alignment and narrow/large-text rendering have not been verified on native devices.
+
+### Latest workout review — high and medium priorities
+
+**Implemented — coordinator with logging, workout-flow and timer specialists; native acceptance Todo.** Compact set controls, sticky recovery/timer and completion announcement, minimize fallback and durable-draft regression, empty-state and name editing fixes, visible exercise errors, timed validation and compact finish review are implemented. Independent review identified a conflict-review regression; it was corrected and re-reviewed. Typecheck, strict lint and coverage passed; see [build status](../BUILD_STATUS.md). Android/iOS layout, screen-reader, keyboard and physical-device recovery acceptance remain open.
+
+**Implemented — coordinator and workout specialist; native acceptance Todo.** The scoped interface and behavior changes below are implemented and automated checks passed; see [build status](../BUILD_STATUS.md). Server-acknowledged save semantics, durable input, original units, recovery and conflict behavior remain required.
+
+1. **Compact logging hierarchy.** Present set number, previous performance, inputs and completion together in a readable row; move less frequent exercise and set actions into clearly labelled options. Retain accessible labels and 48px targets, including on narrow screens and with larger text.
+2. **Return and resume.** Provide an explicit back/minimize action that leaves the workout active, returns to the originating area and supports the existing Resume flow. Verify drafts and pending changes remain intact.
+3. **Protect entered work.** Confirm removal of exercises or sets when entered or completed data would be lost, or provide a reliable undo. Explain the consequence and preserve the existing finish-review safeguards.
+4. **Separate rest from recovery.** Present an active rest countdown and quick actions compactly; distinguish these from save, retry and conflict controls. Preserve timer behavior and accessible status.
+5. **Guide an empty workout.** Add a clear empty state that directs the user to add the first exercise.
+6. **Clarify workout naming.** Avoid an unexplained duplicate name display; provide an explicit edit affordance or visible label, with understandable validation and save feedback.
+7. **Clarify exercise details.** Visibly label notes and rest; consider placing editing under exercise options while showing configured rest in the exercise summary.
+8. **Show completed sets clearly.** Add a restrained visual distinction with a non-color cue and an accessible completion state, retaining Undo.
+9. **Refine timed and distance sets.** Use a compact hierarchy consistent with rep-based sets and evaluate more legible duration entry without changing stored duration or distance/unit semantics.
+10. **Make finish blockers specific.** Identify the actual reasons finishing is blocked, with counts and direct paths to resolve them. Retain explicit confirmation before discarding entered rows and require server acknowledgement before claiming completion.
+11. **Make recovery reachable.** Keep save status understandable and make retry/recovery accessible near affected work or via a persistent control, including on long workouts. Never label pending input saved.
+12. **Clarify rest adjustment.** Initialize rest adjustment from the relevant current or configured duration and distinguish restarting from extending time.
+
+**Verification:** focused tests, independent review, typecheck, strict lint and full coverage passed. The minimize/resume test uses a mocked draft; durable recovery has separate integration coverage, but the combined native journey remains Todo. Rebuild for the previously changed launcher assets and inspect a populated workout on Android and iOS with keyboard open, narrow screens, larger text, screen readers and light/dark appearance; record device/OS and unresolved gaps in [build status](../BUILD_STATUS.md).
+
 ## Design and implementation review — 30 October 2026
 
 **Verified — scoped software corrections; native acceptance remains Todo. Coordinator with GPT-6 Luna specialists.** User requested design/implementation checks and corrections. Preserve pre-existing standalone migration/configuration edits. No hosted changes, provider requests, spending or infrastructure operations in this review.
@@ -34,6 +90,8 @@ Task status/assignment owner: coordinator. Milestone evidence and environment li
 
 **Implemented, local only:** Add Exercise and All Exercises now filter to enabled/configured records using the existing `is_configured` flag; unconfigured RepDB rows no longer appear. User approved Barbell, Smith Machine, Dumbbell and EZ Curl Bar for weight-and-rep logging. Local counts: 204/701 selectable (76, 19, 88 and 21 respectively), 497 remain unavailable, and zero other equipment is configured. Conventions are distinct: Total barbell weight, Smith machine displayed weight, Weight per dumbbell, Total EZ-bar weight. No new boolean/schema column was needed. Typecheck, lint, coverage (57 suites/306 tests), Android/iOS JS exports, focused picker/library tests (29), Grind SQL suite and authenticated local API smoke pass. Native UI acceptance remains Todo; no hosted changes.
 
+**1 November hosted sync — published:** User clarified that catalog access stays inside authenticated GRIND app functionality and is not a public/reusable API. All nine local and hosted migration versions matched; linked migration dry run reported up to date. Added guarded publisher `scripts/catalog/publish_hosted.py`, which requires the linked project ref to equal `mgyzzipsqmsabptrfchw`, accepts only safe fresh/staged/imported catalog states, pins the approved archive SHA-256, stages and imports the exact archive, runs Barbell/Smith/Dumbbell/EZ configuration functions and verifies final counts. Dry run and 30 catalog Python tests passed. Hosted read-only verification reports 701 active records, 204 configured (Barbell 76, Smith Machine 19, Dumbbell 88, EZ Curl Bar 21), 497 unconfigured, 701 approved source links/records, one active release, zero other configured equipment. `authenticated` has execute grants for catalog projection/search; `anon` and `authenticated` lack `grind_private` schema access. No images or user fixtures were uploaded. An authenticated app API request and native acceptance remain open.
+
 ## RepDB barbell and Smith machine selection — 29 October 2026
 
 **Implemented, local only (earlier checkpoint):** At the user's direction, active RepDB entries with equipment `Barbell` or `Smith Machine` were enabled for external-load/repetition logging. These now form part of the 204 enabled entries summarized above. The existing bench-press UUID and convention remain unchanged.
@@ -48,11 +106,11 @@ User requested replacing the existing server seed catalog with RepDB, avoiding d
 
 Dependencies: GRIND references UUIDs while RepDB IDs are slugs; retain stable UUIDs and source mappings. The isolated local database has six archived seed rows and one active bench-press seed mapped to RepDB; its UUID is referenced by an existing workout and must be retained. Its disposable SQL snapshot was updated using the reviewed forward-only local migration workflow; do not reset it. RepDB includes timed stretches and cardio; duration/distance requires changes to workout and routine contracts, persistence, validation, recovery, history and UI before those exercises can be logged correctly. Replace the duplicate bundled/server presentation as part of integration.
 
-Acceptance: idempotent reviewed import with unique source mappings; preserve referenced history/custom exercises; one selectable entry per global exercise; appropriate duration/distance and existing weight/repetition logging; scoped database/API checks and full app typecheck, lint, tests and coverage. No hosted operations are authorized.
+Acceptance: idempotent reviewed import with unique source mappings; preserve referenced history/custom exercises; one selectable entry per global exercise; appropriate duration/distance and existing weight/repetition logging; scoped database/API checks and full app typecheck, lint, tests and coverage. Hosted release is now user-authorized for authenticated GRIND app use; public/reusable API and raw dataset export remain out of scope.
 
 ## Catalog plan — 29 October 2026
 
-Documentation updated: [catalog implementation plan](../EXERCISE_CATALOG_PLAN.md). C1–C6 remain partially in progress: rights/snapshot lock → additive schema → importer/storage → search/cache → UI/logging/credits → verification. The 701-page archive is imported locally, and 204 barbell/Smith/dumbbell/EZ bar entries are configured; other entries remain blocked pending reviewed semantics. RepDB Free is primary; supplementary images remain blocked pending rights evidence. No hosted operation or M6 acceptance is claimed.
+Documentation updated: [catalog implementation plan](../EXERCISE_CATALOG_PLAN.md). The 701-page archive is now published to hosted GRIND through the guarded app-bound release path. 204 barbell/Smith/dumbbell/EZ bar entries are configured; 497 entries remain unconfigured pending reviewed logging semantics. Supplementary images remain blocked pending rights evidence. Hosted release is implemented, while authenticated app/API and native acceptance remain open; M6 is not fully accepted.
 
 ## Exercise engine implementation — 29 October 2026
 

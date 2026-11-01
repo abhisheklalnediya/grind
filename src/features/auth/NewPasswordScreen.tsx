@@ -2,8 +2,8 @@ import { useState } from "react";
 import { router } from "expo-router";
 import { StyleSheet, Text, TextInput } from "react-native";
 import { Screen } from "@/components/Screen";
-import { Heading } from "@/components/Heading";
 import { Button } from "@/components/Button";
+import { AuthBrandHeader } from "./AuthBrandHeader";
 import { useTheme } from "@/theme/useTheme";
 import type { ThemeColors } from "@/theme/tokens";
 import { authService } from "./authService";
@@ -38,7 +38,7 @@ export function NewPasswordScreen() {
   if (!auth.session || !auth.recovery)
     return (
       <Screen>
-        <Heading title="Open a recovery link first." />
+        <AuthBrandHeader title="Open a recovery link first." />
         <Button
           label="Request reset link"
           onPress={() => router.replace("/auth/recovery")}
@@ -47,7 +47,7 @@ export function NewPasswordScreen() {
     );
   return (
     <Screen>
-      <Heading
+      <AuthBrandHeader
         title="Choose a new password."
         subtitle="Choose a new password for your Grind account."
       />

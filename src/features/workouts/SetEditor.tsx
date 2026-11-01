@@ -53,6 +53,20 @@ export function SetEditor({
       });
   };
   const save = async (complete = false) => {
+    if (complete && set.completed_at) {
+      try {
+        await training.command({
+          type: "complete_set",
+          exercise_id: exercise.id,
+          set_id: set.id,
+          completed: false,
+        });
+        setMessage("");
+      } catch {
+        setMessage("Change is pending. Use Retry above.");
+      }
+      return;
+    }
     const input = editedSet(
       set,
       exercise.load_mode,
@@ -94,13 +108,20 @@ export function SetEditor({
     { color: colors.text, borderColor: colors.border },
   ];
   return (
-    <View style={[styles.row, { borderColor: colors.border }]}>
+    <View
+      style={[
+        styles.row,
+        {
+          borderColor: colors.border,
+          backgroundColor: set.completed_at ? colors.surface : "transparent",
+        },
+      ]}
+    >
       <View style={styles.loggingRow}>
         <View style={styles.setColumn}>
-          <Text style={{ color: colors.secondary }}>Set</Text>
           <Text
             accessibilityLabel={`Set ${index + 1} · ${set.set_type}`}
-            style={{ color: colors.text, fontSize: 20 }}
+            style={{ color: colors.text, fontSize: 15, textAlign: "center" }}
           >
             {set.set_type === "warmup"
               ? "W"
@@ -110,12 +131,21 @@ export function SetEditor({
           </Text>
         </View>
         <View style={styles.previousColumn}>
-          <Text style={{ color: colors.secondary }}>Previous: {previous}</Text>
+          <Text
+            numberOfLines={2}
+            style={{
+              color: colors.secondary,
+              textAlign: "center",
+              fontSize: 11,
+            }}
+          >
+            {previous}
+          </Text>
         </View>
         {exercise.load_mode !== "bodyweight" && (
           <View style={styles.inputColumn}>
-            <Text style={{ color: colors.secondary }}>
-              {loadFieldLabel(exercise.load_mode, set.entered_unit)}
+            <Text style={{ color: colors.secondary, fontSize: 10, textAlign: "center" }}>
+              {set.entered_unit}
             </Text>
             <TextInput
               accessibilityLabel={`${exercise.name} set ${index + 1} ${loadFieldLabel(exercise.load_mode, set.entered_unit)}`}
@@ -134,7 +164,6 @@ export function SetEditor({
           </View>
         )}
         <View style={styles.inputColumn}>
-          <Text style={{ color: colors.secondary }}>Reps</Text>
           <TextInput
             ref={repsInput}
             accessibilityLabel={`${exercise.name} set ${index + 1} reps`}
@@ -156,13 +185,22 @@ export function SetEditor({
           />
         </View>
         <View style={styles.completeColumn}>
-          <Button
-            label={set.completed_at ? "Undo" : "Done"}
-            accessibilityLabel={`${context}: ${set.completed_at ? "Mark incomplete" : "Complete set"}`}
-            onPress={() => {
-              void save(true);
-            }}
-          />
+          <View style={styles.setActions}>
+            <Button
+              label={set.completed_at ? "✓" : "○"}
+              selected={Boolean(set.completed_at)}
+              accessibilityLabel={`${context}: ${set.completed_at ? "Mark incomplete" : "Complete set"}`}
+              onPress={() => {
+                void save(true);
+              }}
+            />
+            <Button
+              secondary
+              label={options ? "×" : "•••"}
+              accessibilityLabel={`${context}: ${options ? "Hide set options" : "Set options"}`}
+              onPress={() => setOptions(!options)}
+            />
+          </View>
         </View>
       </View>
       {focused && (
@@ -187,12 +225,6 @@ export function SetEditor({
           />
         </View>
       )}
-      <Button
-        secondary
-        label={options ? "Hide set options" : "Set options"}
-        accessibilityLabel={`${context}: ${options ? "Hide set options" : "Set options"}`}
-        onPress={() => setOptions(!options)}
-      />
       {options && (
         <SetOptions
           exercise={exercise}

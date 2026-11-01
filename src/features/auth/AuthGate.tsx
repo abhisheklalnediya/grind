@@ -4,11 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Text } from "react-native";
 import { joinGrind } from "@/services/grindAccount";
 import { Screen } from "@/components/Screen";
-import { Heading } from "@/components/Heading";
 import { Button } from "@/components/Button";
 import { useTheme } from "@/theme/useTheme";
 import { useAuth } from "./AuthProvider";
 import { authService } from "./authService";
+import { AuthBrandHeader } from "./AuthBrandHeader";
 export function AuthGate({ children }: PropsWithChildren) {
   const { colors } = useTheme();
   const auth = useAuth();
@@ -66,7 +66,7 @@ export function AuthGate({ children }: PropsWithChildren) {
   if (auth.error)
     return (
       <Screen>
-        <Heading title="Connection setup needed" subtitle={auth.error} />
+        <AuthBrandHeader title="Connection setup needed" subtitle={auth.error} />
         <Button label="Retry" onPress={auth.retry} />
       </Screen>
     );
@@ -76,18 +76,18 @@ export function AuthGate({ children }: PropsWithChildren) {
   )
     return (
       <Screen>
-        <Heading title="Opening Grind…" />
+        <AuthBrandHeader title="Opening Grind…" />
       </Screen>
     );
   if (auth.session && membership.isError && !auth.recovery && !callback)
     return (
       <Screen>
-        <Heading
+        <AuthBrandHeader
           title="Couldn’t open your Grind account."
           subtitle="Retry connecting to your Grind account."
         />
         <Text style={{ color: colors.secondary }}>
-          Check the local backend connection and membership migration.
+          Check your connection and try again.
         </Text>
         <Button
           label="Retry"
@@ -107,7 +107,7 @@ export function AuthGate({ children }: PropsWithChildren) {
   if (!callback && (needsSignIn || needsRecovery || needsSetup || needsTrain))
     return (
       <Screen>
-        <Heading title="Opening Grind…" />
+        <AuthBrandHeader title="Opening Grind…" />
       </Screen>
     );
   return children;

@@ -3,6 +3,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,19 +12,17 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Button } from "@/components/Button";
-import { Heading } from "@/components/Heading";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTraining } from "@/features/training";
 import { useTheme } from "@/theme/useTheme";
-import { WorkoutElapsed } from "./WorkoutElapsed";
 import { ExerciseEditor } from "./ExerciseEditor";
 import { useWorkoutDraft } from "./useWorkoutDraft";
 import { RecoveryControls } from "./RecoveryControls";
-const pendingFailure = () => {};
 export function WorkoutScreen() {
   const training = useTraining();
   const { colors } = useTheme();
   const [error, setError] = useState("");
+  const [editingName, setEditingName] = useState(false);
   const name = useWorkoutDraft(
     `workout:${training.session?.id}:name`,
     training.session?.name ?? "",
@@ -39,31 +38,16 @@ export function WorkoutScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <View style={styles.topBar}>
+          <Button
+            secondary
+            label="Back"
+            accessibilityLabel="Minimize workout"
+            onPress={() =>
+              router.canGoBack() ? router.back() : router.replace("/(tabs)")
+            }
+          />
           <View style={styles.title}>
-            <Heading title={training.session?.name ?? "Active workout"} />
-            {training.session && (
-              <WorkoutElapsed startedAt={training.session.started_at} />
-            )}
-          </View>
-          {training.session?.status === "active" && (
-            <Button
-              label="Finish"
-              onPress={() => router.push("/workout/finish")}
-            />
-          )}
-        </View>
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.content}
-        >
-          <RecoveryControls />
-          {error ? (
-            <Text accessibilityRole="alert" style={{ color: colors.error }}>
-              {error}
-            </Text>
-          ) : null}
-          {training.session?.status === "active" && (
-            <>
+            {editingName ? (
               <TextInput
                 accessibilityLabel="Workout name"
                 value={name.value}
@@ -76,34 +60,113 @@ export function WorkoutScreen() {
                         type: "rename_workout",
                         name: name.latest.current.trim(),
                       })
-                      .catch(pendingFailure);
+                      .catch(() =>
+                        setError(
+                          "Workout name was not saved. Retry changes above.",
+                        ),
+                      );
                 }}
-                style={{ minHeight: 48, color: colors.text }}
+                style={[
+                  styles.nameInput,
+                  { color: colors.text, borderColor: colors.border },
+                ]}
               />
-              {training.session.exercises.map((exercise) => (
-                <ExerciseEditor key={exercise.id} exercise={exercise} />
-              ))}
-              <Button
-                label="Add exercise"
-                onPress={() => router.push("/exercise-picker?target=workout")}
-              />
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Edit workout name, ${name.value || "Workout"}`}
+                onPress={() => setEditingName(true)}
+                style={styles.namePressable}
+              >
+                <Text
+                  accessibilityRole="header"
+                  numberOfLines={1}
+                  style={[styles.nameText, { color: colors.text }]}
+                >
+                  {name.value || "Workout"}
+                </Text>
+              </Pressable>
+            )}
+          </View>
+          {training.session?.status === "active" && (
+            <Button
+              label="Finish"
+              onPress={() => router.push("/workout/finish")}
+            />
+          )}
+        </View>
+        <RecoveryControls elapsedStartedAt={training.session?.started_at} />
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.content}
+        >
+          {error ? (
+            <Text accessibilityRole="alert" style={{ color: colors.error }}>
+              {error}
+            </Text>
+          ) : null}
+          {training.session?.status === "active" && (
+            <>
+              {editingName ? (
+                <Button
+                  secondary
+                  label="Done editing name"
+                  onPress={() => setEditingName(false)}
+                />
+              ) : null}
+              {training.session.exercises.length === 0 ? (
+                <View style={styles.empty}>
+                  <Text
+                    accessibilityRole="header"
+                    style={{ color: colors.text, fontSize: 20 }}
+                  >
+                    Start your workout
+                  </Text>
+                  <Text style={{ color: colors.secondary }}>
+                    Add an exercise to begin logging sets. Your workout stays
+                    active when minimized.
+                  </Text>
+                  <Button
+                    secondary
+                    label="Add your first exercise"
+                    onPress={() =>
+                      router.push("/exercise-picker?target=workout")
+                    }
+                  />
+                </View>
+              ) : (
+                training.session.exercises.map((exercise) => (
+                  <ExerciseEditor key={exercise.id} exercise={exercise} />
+                ))
+              )}
+              {training.session.exercises.length > 0 ? (
+                <Button
+                  secondary
+                  label="＋ Add exercise"
+                  onPress={() => router.push("/exercise-picker?target=workout")}
+                />
+              ) : null}
               <Button
                 secondary
-                label="Cancel workout"
+                label="Discard workout"
                 onPress={() =>
                   Alert.alert(
-                    "Cancel workout?",
+                    "Discard workout?",
                     "This workout will not appear in completed history.",
                     [
                       { text: "Keep workout", style: "cancel" },
                       {
-                        text: "Cancel workout",
+                        text: "Discard workout",
                         style: "destructive",
                         onPress: () => {
                           void training
                             .cancel()
                             .then(() => router.replace("/(tabs)"))
-                            .catch(pendingFailure);
+                            .catch(() =>
+                              setError(
+                                "Workout could not be cancelled. Retry changes above.",
+                              ),
+                            );
                         },
                       },
                     ],
@@ -122,11 +185,21 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: 16, gap: 16, paddingBottom: 32 },
   topBar: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 8,
     flexDirection: "row",
-    flexWrap: "wrap",
     alignItems: "center",
-    gap: 12,
+    gap: 8,
   },
-  title: { flexGrow: 1, flexShrink: 1 },
+  title: { flex: 1, minWidth: 0, justifyContent: "center" },
+  nameText: { fontSize: 18, fontWeight: "700" },
+  namePressable: { minHeight: 48, justifyContent: "center" },
+  nameInput: {
+    minHeight: 48,
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+  },
+  empty: { gap: 12, padding: 20, borderWidth: 1, borderRadius: 12 },
 });

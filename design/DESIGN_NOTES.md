@@ -6,6 +6,12 @@ Open [mvp.html](mvp.html) directly, or serve this design directory locally. The 
 
 ## Direction
 
+### Authentication follow-up direction — 31 October
+
+The selected left-hand GRIND concept board supplies the lime barbell mark, wordmark and dark visual identity; it does not depict a complete login page. The native auth refinement uses a compact lockup, prominent primary action, password visibility beside its field, distinct secondary actions and field-level feedback. The active workout refinement groups secondary options, uses compact rest and recovery controls, protects entered data on removal and summarizes finish blockers. Conflict resolution requires loading the server version before its actions become available. Both appearances and native keyboard, layout and accessibility behavior still require device verification; work and acceptance criteria are tracked in [tasks](../docs/planning/TASKS.md#login-review-follow-up).
+
+The 31 October native workout rebuild follows this prototype's compact header, status line, exercise cards, shared set headings, completion and add actions, empty state and finish receipt. Native timer, conflict, timed/distance and original-unit behaviors remain explicit extensions of the illustrative prototype. Device fidelity and accessibility acceptance remain open.
+
 GRIND / Volt Lime follows the existing dark-first tokens: #111418 background, #1B2026 surface, #30363E borders, #F1F1F1 text, #A5AFBB secondary text, #E8F84C accent and #FF9999 errors. Keep color purposeful: primary action, selection, completed sets and timer. Strong page titles, generous touch bounds and compact numeric rows prioritize logging rather than decoration.
 
 Four bottom tabs contain Train, History, Exercises and Settings. Active workouts sit outside the tabs, with a Resume strip while browsing. Routine and exercise details use ordinary back navigation. The desktop review panel is separate from product UI and stacks above the phone on narrow viewports.

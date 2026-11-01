@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { StyleSheet, Text } from "react-native";
 import { Screen } from "@/components/Screen";
-import { Heading } from "@/components/Heading";
 import { Button } from "@/components/Button";
+import { AuthBrandHeader } from "./AuthBrandHeader";
 import { useTheme } from "@/theme/useTheme";
 import type { ThemeColors } from "@/theme/tokens";
 import { getSupabase } from "@/services/supabase";
@@ -46,7 +46,7 @@ export function VerifyScreen() {
   };
   return (
     <Screen>
-      <Heading
+      <AuthBrandHeader
         title="Check your inbox."
         subtitle="Open the verification link on this device. Return to sign in if the link has expired."
       />

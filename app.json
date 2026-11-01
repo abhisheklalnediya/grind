@@ -5,9 +5,16 @@
     "version": "0.1.0",
     "scheme": "grind",
     "orientation": "portrait",
+    "icon": "./assets/branding/grind-app-icon.png",
     "userInterfaceStyle": "automatic",
     "ios": { "supportsTablet": false, "bundleIdentifier": "com.grind.dev" },
-    "android": { "package": "com.grind.dev" },
+    "android": {
+      "package": "com.grind.dev",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/branding/grind-android-foreground.png",
+        "backgroundColor": "#090C0B"
+      }
+    },
     "plugins": ["expo-router", "expo-secure-store"],
     "experiments": { "typedRoutes": true }
   }

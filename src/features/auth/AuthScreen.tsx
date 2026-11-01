@@ -1,72 +1,110 @@
-import { useState } from "react";
-import { router } from "expo-router";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { StyleSheet, Text, View } from "react-native";
 import { Screen } from "@/components/Screen";
 import { Button } from "@/components/Button";
-import { Heading } from "@/components/Heading";
 import { useTheme } from "@/theme/useTheme";
 import type { ThemeColors } from "@/theme/tokens";
 import { authService } from "./authService";
+import { AuthBrandHeader } from "./AuthBrandHeader";
+import { AuthFields } from "./AuthFields";
 import {
   credentialsSchema,
   emailSchema,
   getAuthError,
   signInSchema,
 } from "./validation";
+
 type Mode = "signin" | "signup" | "recovery";
+
 export function AuthScreen({ mode }: { mode: Mode }) {
   const { colors } = useTheme();
   const styles = makeStyles(colors);
-  const [email, setEmail] = useState("");
+  const params = useLocalSearchParams<{ email?: string | string[] }>();
+  const initialEmail = Array.isArray(params.email) ? params.email[0] : params.email;
+  const [email, setEmail] = useState(initialEmail ?? "");
   const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const mounted = useRef(false);
+  const submitting = useRef(false);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
   const submit = async () => {
-    const parsed =
+    if (submitting.current) return;
+    const parsedEmail = emailSchema.safeParse(email.trim());
+    const parsedPassword =
+      mode === "signin"
+        ? signInSchema.shape.password.safeParse(password)
+        : credentialsSchema.shape.password.safeParse(password);
+    const nextEmailError = parsedEmail.success ? "" : "Enter a valid email address.";
+    const nextPasswordError =
       mode === "recovery"
-        ? emailSchema.safeParse(email.trim())
-        : (mode === "signin" ? signInSchema : credentialsSchema).safeParse({
-            email,
-            password,
-          });
-    if (!parsed.success) {
-      setError(
-        mode === "recovery"
-          ? "Enter a valid email address."
+        ? ""
+        : parsedPassword.success
+          ? ""
           : mode === "signin"
-            ? "Enter a valid email and your password."
-            : "Enter a valid email and a password with at least 8 characters.",
-      );
-      return;
-    }
-    setPending(true);
+            ? "Enter your password."
+            : "Use at least 8 characters. Passwords can be up to 256 characters.";
+    setEmailError(nextEmailError);
+    setPasswordError(nextPasswordError);
     setError("");
     setMessage("");
+    if (!parsedEmail.success || (mode !== "recovery" && !parsedPassword.success))
+      return;
+
+    submitting.current = true;
+    setPending(true);
     try {
-      const address = email.trim().toLowerCase();
+      const address = parsedEmail.data;
       if (mode === "recovery") {
         await authService.recover(address);
-        setMessage("If an account exists, a reset link is on its way.");
+        if (mounted.current)
+          setMessage("If an account exists, a reset link is on its way.");
       } else if (mode === "signup") {
         const data = await authService.signUp(address, password);
+        if (!mounted.current) return;
         if (data.session) router.replace("/");
         else
-          router.push({ pathname: "/auth/verify", params: { email: address } });
+          setMessage(
+            "You’re not signed in yet. Try signing in or request a password reset.",
+          );
       } else {
         await authService.signIn(address, password);
-        router.replace("/");
+        if (mounted.current) router.replace("/");
       }
     } catch (err) {
-      setError(getAuthError(err));
+      if (mounted.current) setError(getAuthError(err));
     } finally {
-      setPending(false);
+      submitting.current = false;
+      if (mounted.current) setPending(false);
     }
   };
+
+  const transferEmail = (pathname: "/auth/sign-up" | "/auth/recovery") =>
+    router.push({ pathname, params: email ? { email } : {} });
+  const changeEmail = (value: string) => {
+    setEmail(value);
+    if (emailError) setEmailError("");
+  };
+  const changePassword = (value: string) => {
+    setPassword(value);
+    if (passwordError) setPasswordError("");
+  };
+
   return (
     <Screen>
-      <Heading
+      <AuthBrandHeader
         title={
           mode === "signin"
             ? "Welcome back."
@@ -74,41 +112,34 @@ export function AuthScreen({ mode }: { mode: Mode }) {
               ? "Your next chapter."
               : "Let’s get you back in."
         }
-        subtitle="Sign in to your Grind account."
+        subtitle={
+          mode === "signin"
+            ? "Sign in to your Grind account."
+            : mode === "signup"
+              ? "Create your Grind account, then complete a short setup."
+              : "Reset your Grind account password."
+        }
       />
-      <View style={styles.field}>
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          accessibilityLabel="Email"
-          autoCapitalize="none"
-          autoComplete="email"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-          style={styles.input}
-          editable={!pending}
+      <AuthFields
+        mode={mode}
+        email={email}
+        password={password}
+        emailError={emailError}
+        passwordError={passwordError}
+        pending={pending}
+        visible={visible}
+        onEmailChange={changeEmail}
+        onPasswordChange={changePassword}
+        onSubmit={() => void submit()}
+        onToggleVisibility={() => setVisible((current) => !current)}
+      />
+      {mode === "signin" ? (
+        <Button
+          label="Forgot password?"
+          secondary
+          disabled={pending}
+          onPress={() => transferEmail("/auth/recovery")}
         />
-      </View>
-      {mode !== "recovery" ? (
-        <View style={styles.field}>
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            accessibilityLabel="Password"
-            secureTextEntry={!visible}
-            autoComplete={
-              mode === "signup" ? "new-password" : "current-password"
-            }
-            value={password}
-            onChangeText={setPassword}
-            style={styles.input}
-            editable={!pending}
-          />
-          <Button
-            label={visible ? "Hide password" : "Show password"}
-            secondary
-            onPress={() => setVisible(!visible)}
-          />
-        </View>
       ) : null}
       {error ? (
         <Text accessibilityRole="alert" style={styles.error}>
@@ -119,6 +150,20 @@ export function AuthScreen({ mode }: { mode: Mode }) {
         <Text accessibilityLiveRegion="polite" style={styles.label}>
           {message}
         </Text>
+      ) : null}
+      {mode === "signup" && message ? (
+        <View style={styles.actions}>
+          <Button
+            label="Try signing in"
+            secondary
+            onPress={() => router.replace({ pathname: "/auth/sign-in", params: { email } })}
+          />
+          <Button
+            label="Request password reset"
+            secondary
+            onPress={() => router.replace({ pathname: "/auth/recovery", params: { email } })}
+          />
+        </View>
       ) : null}
       <Button
         label={
@@ -131,51 +176,36 @@ export function AuthScreen({ mode }: { mode: Mode }) {
                 : "Send reset link"
         }
         disabled={pending}
-        onPress={() => {
-          void submit();
-        }}
+        onPress={() => void submit()}
       />
       {mode === "signin" ? (
-        <>
-          <Button
-            label="Create account"
-            secondary
-            onPress={() => router.push("/auth/sign-up")}
-          />
-          <Button
-            label="Forgot password?"
-            secondary
-            onPress={() => router.push("/auth/recovery")}
-          />
-        </>
-      ) : (
+        <Button
+          label="Create account"
+          secondary
+          disabled={pending}
+          onPress={() => transferEmail("/auth/sign-up")}
+        />
+      ) : mode !== "signup" || !message ? (
         <Button
           label="Back to sign in"
           secondary
-          onPress={() => router.replace("/auth/sign-in")}
+          disabled={pending}
+          onPress={() => router.replace({ pathname: "/auth/sign-in", params: email ? { email } : {} })}
         />
-      )}
+      ) : null}
       {mode === "recovery" ? (
-        <Text style={styles.label}>
-          This resets your Grind account password.
+        <Text style={styles.helper}>
+          We won’t tell anyone whether this email has a Grind account.
         </Text>
       ) : null}
     </Screen>
   );
 }
+
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    field: { gap: 8 },
     label: { color: colors.secondary, fontSize: 16, lineHeight: 24 },
-    input: {
-      minHeight: 52,
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderWidth: 1,
-      borderRadius: 12,
-      padding: 14,
-      color: colors.text,
-      fontSize: 16,
-    },
-    error: { color: colors.error, fontSize: 16 },
+    helper: { color: colors.secondary, fontSize: 14, lineHeight: 21 },
+    actions: { gap: 8 },
+    error: { color: colors.error, fontSize: 16, lineHeight: 23 },
   });

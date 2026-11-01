@@ -4,13 +4,13 @@ import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { CallbackScreen } from "./CallbackScreen";
 import { getSupabase } from "@/services/supabase";
-jest.mock("expo-linking", () => ({ useURL: jest.fn() }));
+jest.mock("expo-linking", () => ({ useLinkingURL: jest.fn() }));
 jest.mock("expo-router", () => ({ router: { replace: jest.fn() } }));
 jest.mock("@/services/supabase", () => ({ getSupabase: jest.fn() }));
 beforeEach(() => jest.clearAllMocks());
 it("exchanges a one-use PKCE code once and navigates after StrictMode effect replay", async () => {
   jest
-    .mocked(Linking.useURL)
+    .mocked(Linking.useLinkingURL)
     .mockReturnValue("grind://auth/callback?code=one-use");
   const exchangeCodeForSession = jest.fn(async () => ({ error: null }));
   jest
@@ -28,7 +28,7 @@ it("exchanges a one-use PKCE code once and navigates after StrictMode effect rep
 });
 it("shows invalid/expired-link recovery without echoing codes", async () => {
   jest
-    .mocked(Linking.useURL)
+    .mocked(Linking.useLinkingURL)
     .mockReturnValue("grind://auth/callback?error=expired");
   await render(<CallbackScreen />);
   await waitFor(() =>
@@ -38,14 +38,14 @@ it("shows invalid/expired-link recovery without echoing codes", async () => {
 });
 
 it('waits for an incoming URL and suppresses navigation after unmount', async () => {
-  jest.mocked(Linking.useURL).mockReturnValue(null);
+  jest.mocked(Linking.useLinkingURL).mockReturnValue(null);
   const view = await render(<CallbackScreen />);
   expect(screen.getByText('Checking your link…')).toBeVisible();
   expect(getSupabase).not.toHaveBeenCalled();
   let finish: (value: { error: null }) => void = () => {};
   const exchangeCodeForSession = jest.fn(() => new Promise(resolve => { finish = resolve; }));
   jest.mocked(getSupabase).mockReturnValue({ auth: { exchangeCodeForSession } } as unknown as ReturnType<typeof getSupabase>);
-  jest.mocked(Linking.useURL).mockReturnValue('grind://auth/callback?code=one-use');
+  jest.mocked(Linking.useLinkingURL).mockReturnValue('grind://auth/callback?code=one-use');
   await view.rerender(<CallbackScreen />);
   await view.unmount(); finish({ error: null });
   await new Promise<void>(resolve => setImmediate(resolve));
@@ -53,7 +53,7 @@ it('waits for an incoming URL and suppresses navigation after unmount', async ()
 });
 
 it('handles SDK exchange rejection and offers a safe route to sign-in', async () => {
-  jest.mocked(Linking.useURL).mockReturnValue('grind://auth/callback?code=private');
+  jest.mocked(Linking.useLinkingURL).mockReturnValue('grind://auth/callback?code=private');
   jest.mocked(getSupabase).mockReturnValue({ auth: { exchangeCodeForSession: jest.fn(async () => ({ error: Error('private') })) } } as unknown as ReturnType<typeof getSupabase>);
   await render(<CallbackScreen />);
   await waitFor(() => expect(screen.getByText('This link couldn’t be opened.')).toBeVisible());

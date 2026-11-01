@@ -130,7 +130,7 @@ it('rejects missing, unconfirmed and server-rejected identities without exposing
     auth.getUser = jest.fn(async () => result);
     const notify = jest.fn(); const stop = subscribeVerifiedSession(auth, notify); await flush();
     expect(notify).toHaveBeenLastCalledWith({ session: null, recovery: false,
-      error: 'Couldn’t verify your session. Check the local connection and retry.' });
+      error: 'Couldn’t verify your session. Check your connection and try again.' });
     stop();
   }
   const { auth } = fixture();
