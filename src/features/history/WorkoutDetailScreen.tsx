@@ -1,4 +1,4 @@
-import { Text } from "react-native";
+import { Text, View } from "react-native";
 import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/Button";
@@ -24,18 +24,37 @@ export function WorkoutDetailScreen({
     },
     enabled: !!training.api && id.length > 0,
   });
+  const recordedAt = workout.data
+    ? new Intl.DateTimeFormat(undefined, {
+        timeZone: workout.data.timezone,
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(new Date(workout.data.finished_at ?? workout.data.started_at))
+    : undefined;
   return (
     <Screen>
       {!summary && (
         <Button secondary label="Back" onPress={() => router.back()} />
       )}
-      <Heading
-        title={
-          summary && workout.data?.status === "completed"
-            ? "Workout saved"
-            : (workout.data?.name ?? "Workout details")
-        }
-      />
+      {summary && workout.data?.status === "completed" ? (
+        <View style={{ gap: 8 }}>
+          <Text
+            accessibilityRole="header"
+            style={{ color: colors.accentText, fontWeight: "800" }}
+          >
+            ✓ WORKOUT SAVED
+          </Text>
+          <Heading
+            title="Work, recorded."
+            subtitle={`${workout.data.name} · ${recordedAt}`}
+          />
+        </View>
+      ) : (
+        <Heading
+          title={workout.data?.name ?? "Workout details"}
+          {...(recordedAt ? { subtitle: recordedAt } : {})}
+        />
+      )}
       {workout.isPending ? (
         <Text style={{ color: colors.text }}>
           {training.api ? "Loading workout…" : "Sign in to view this workout."}

@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { Linking, Text } from "react-native";
-import { isConfiguredExercise } from "@/domain/training";
+import { Linking, Text, View } from "react-native";
+import { useState } from "react";
+import { isConfiguredExercise, setTypeLabels } from "@/domain/training";
 import { Screen } from "@/components/Screen";
 import { Heading } from "@/components/Heading";
 import { Button } from "@/components/Button";
@@ -10,13 +11,22 @@ import { useTheme } from "@/theme/useTheme";
 import { ExerciseHistory } from "./ExerciseHistory";
 import { Copy } from "./fields";
 import { loadModes, useCatalog } from "./catalog";
+import { ExerciseDetailTabs } from "./ExerciseDetailTabs";
 export function ExerciseDetailScreen({ id }: { id: string }) {
+  const [tab, setTab] = useState<"overview" | "history">("overview");
   const catalog = useCatalog();
   const exercise = catalog.data?.find((item) => item.id === id);
   const { api } = useTraining();
   const { scope, colors } = useTheme();
   const previous = useQuery({
-    queryKey: ["exercise-previous", scope, id, exercise?.load_mode],
+    queryKey: [
+      "exercise-previous",
+      scope,
+      id,
+      exercise?.load_mode,
+      exercise?.load_convention,
+      exercise?.tracking_type ?? "reps",
+    ],
     queryFn: () => {
       if (!api || !exercise || !isConfiguredExercise(exercise))
         throw new Error("Exercise unavailable.");
@@ -32,6 +42,9 @@ export function ExerciseDetailScreen({ id }: { id: string }) {
   return (
     <Screen>
       <Heading title={exercise?.name ?? "Exercise"} />
+      {exercise ? (
+        <ExerciseDetailTabs selected={tab} onSelect={setTab} />
+      ) : null}
       {catalog.isPending ? <Copy>Loading exercise…</Copy> : null}
       {catalog.isError ? (
         <Button
@@ -45,7 +58,13 @@ export function ExerciseDetailScreen({ id }: { id: string }) {
         <Copy>This exercise is unavailable for new workouts.</Copy>
       ) : null}
       {exercise ? (
-        <>
+        <View
+          role="tabpanel"
+          testID="exercise-detail-panel"
+          aria-labelledby={`exercise-detail-tab-${tab}`}
+        >
+          {tab === "overview" ? (
+            <>
           <Copy>
             {exercise.primary_muscle} · {exercise.equipment} ·{" "}
             {exercise.category}
@@ -98,15 +117,26 @@ export function ExerciseDetailScreen({ id }: { id: string }) {
               ) : null}
               {previous.data?.sets.map((set) => (
                 <Copy key={`${set.set_type}-${set.ordinal}`}>
-                  {set.set_type === "warmup" ? "Warm-up" : "Working"}{" "}
+                  {setTypeLabels[set.set_type]}{" "}
                   {set.ordinal + 1}:{" "}
-                  {set.entered_load === null
-                    ? "Bodyweight"
-                    : `${set.entered_load} ${set.entered_unit}`}{" "}
-                  × {set.reps} reps
+                  {exercise.tracking_type &&
+                  exercise.tracking_type !== "reps" ? (
+                    <>
+                      {set.duration_seconds ?? "—"} seconds
+                      {exercise.tracking_type === "distance_duration"
+                        ? ` · ${set.entered_distance ?? "—"} ${set.distance_unit ?? ""}`
+                        : ""}
+                    </>
+                  ) : (
+                    <>
+                      {set.entered_load === null
+                        ? "Bodyweight"
+                        : `${set.entered_load} ${set.entered_unit}`}{" "}
+                      × {set.reps ?? "—"} reps
+                    </>
+                  )}
                 </Copy>
               ))}
-              <ExerciseHistory exercise={exercise} />
             </>
           ) : null}
           <Copy>Personal records will be available in a later milestone.</Copy>
@@ -118,7 +148,13 @@ export function ExerciseDetailScreen({ id }: { id: string }) {
               }
             />
           ) : null}
-        </>
+            </>
+          ) : isConfiguredExercise(exercise) ? (
+            <ExerciseHistory exercise={exercise} />
+          ) : (
+            <Copy>History is available after this exercise is configured.</Copy>
+          )}
+        </View>
       ) : null}
     </Screen>
   );

@@ -529,6 +529,7 @@ export type Database = {
         Returns: Json
       }
       get_routine: { Args: { p_routine_id: string }; Returns: Json }
+      get_supported_set_types: { Args: never; Returns: Json }
       get_workout: { Args: { p_session_id: string }; Returns: Json }
       join_grind: {
         Args: never

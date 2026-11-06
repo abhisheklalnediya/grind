@@ -1,5 +1,58 @@
 # GRIND agent status
 
+## 6 November — repository and documentation cleanup
+
+Coordinator consolidated the current milestone sequence, added a current-priorities view, marked earlier handoffs as historical, corrected stale standalone/catalog/remote guidance and checked Markdown links. A Luna reviewer independently sampled the uncommitted auth, recovery, set-type and UI changes; no confirmed blocker was found within that limited review. Local editor auto-approval settings remain ignored. Checks and remaining device/hosted limits are in [build status](BUILD_STATUS.md).
+
+## 6 November — launch-readiness check
+
+Coordinator ran current quality gates and launched the Android development client. The user reported a sign-in failure; an old restored process showed a generic error. After loading the current bundle, the user confirmed sign-in worked and Train was observed. The original error's root cause remains unknown. Added sanitized development-only sign-in failure diagnostics and tests; full authenticated workout acceptance remains open. See [build status](BUILD_STATUS.md) and [MVP checklist](planning/MVP_CHECKLIST.md) for evidence and outstanding release gates.
+
+## 3 November — set-type choice confirmed
+
+User selected Drop and Failure as the additional set types. The selector and capability response now expose Warm-up, Working, Drop and Failure. The previously introduced local `rest_pause` storage value remains readable/editable for compatibility but is not offered as a new choice. A second forward migration was rehearsed, applied and tested on the GRIND local stack; hosted dry run lists both pending set-type migrations and no hosted change was made. See [build status](BUILD_STATUS.md).
+
+
+## 3 November — set-entry and set-type refinement
+
+At the user’s request, removed per-row Next/Done controls and added a compact set-type selector shared by workout and routine editing. The initial proposed choices were superseded by the confirmed choices above; exact type is preserved through server contracts, previous matching and history. The selector confirms changes to completed sets. A capability RPC gates new types on migrated servers, with safe legacy fallback. Independent review covered type persistence, timer cancellation, capability behavior and local migration; local verification and hosted dry-run evidence are in [build status](BUILD_STATUS.md). Hosted deployment and native software-keyboard/accessibility acceptance remain open. Existing M5 record eligibility was not changed.
+
+
+## 1 November — MVP remediation and remaining contracts
+
+User requested fixing all checklist items. Coordinator integrated exercise detail Overview/History tabs with shared controls and recorded workout timestamp; independent review identified missing tab semantics, which were corrected and re-reviewed. The populated repetition workout was observed on Android emulator in dark mode. Architect drafted [M4/M5 completion proposal](planning/MVP_COMPLETION_PROPOSAL.md); independent review corrected weighted-bodyweight record semantics and deletion must verify the actual foreign-key graph. These major contracts remain for user approval before implementation. Physical devices, iOS build and hosted changes remain outside the evidence from this slice. Checks: [build status](BUILD_STATUS.md); page states: [MVP checklist](planning/MVP_CHECKLIST.md).
+
+
+## 1 November — MVP checklist and exercise history
+
+Created the maintained [MVP check status](planning/MVP_CHECKLIST.md), linked to owning task and build evidence. Coordinator and Luna specialists fixed timed/distance previous and history display and tracking-type matching, and reused account-scoped exercise history on mapped RepDB details. Independent review found no confirmed identity or account-isolation regression. Device acceptance and remaining MVP work stay open in the checklist; checks are recorded in build status.
+
+
+## 1 November — MVP page-by-page comparison
+
+Coordinator opened all 21 prototype pages and integrated bounded Luna reviews and changes; per-page source comparison, remaining gaps and evidence limits are in [review record](reports/reviews/2026-11-01-mvp-page-alignment.md). Independent review found the initial History empty CTA and signed-in recovery gate needed corrections; both were fixed. Android emulator visually inspected Train, History empty, Exercises, RepDB detail and Settings, preserving the active workout. Other implemented native pages/states were not all opened; visual acceptance remains incomplete. See build status for integration checks.
+
+
+## 1 November — workout set-control follow-up
+
+Coordinator reused a shared set-number options control for repetition and timed/distance rows, exposed the distance unit beside its input and aligned completed timed-input styling. Independent review found no further confirmed regression. Android emulator focus was inspected without entering data; the emulator showed a hardware-keyboard accessory rather than a normal software keyboard. System dark-mode and narrow-size capture attempts did not produce a verified changed view; original emulator settings were restored. Dark, narrow, large-text, screen-reader, software-keyboard, iOS and physical-device acceptance remain Todo.
+
+
+## 1 November — workout screenshot alignment
+
+User confirmed signup/login worked after the prior reload and supplied workout screenshots. Coordinator compared the active workout with the MVP, integrated Luna-owned shell work, revised set rows and shared button treatment, and corrected a timed-column alignment finding from independent review. Set options remain accessible through each set number; mixed-unit labels remain visible. Elapsed time is wall-clock time and now displays hours. The current Android emulator showed the updated light-mode populated workout without changing its data; keyboard, dark mode, timed sets, accessibility services and physical/iOS devices remain unverified. See build status for checks.
+
+
+## 1 November — signup and sign-in investigation
+
+User reported the generic auth request error. The Android emulator was running an older bundle without a listening development server; Metro was restarted and the current app reloaded with the GRIND hosted configuration. The emulator resolves and reaches the Auth host, and the host receives an HTTP response, but the original request failure has not been isolated. An independent review found eager navigation before session verification; the sign-in and signup forms now wait for AuthGate, with an escape from the waiting state. Authenticated signup/login and the complete provider-to-gate handoff remain unverified in this investigation. No hosted account was created.
+
+
+## 1 November — Train prototype alignment
+
+Coordinator compared Train source with the MVP prototype and implemented the session hero, routine cards and inline section actions, retaining bounded recent history and recovery/error states. Independent reviewer identified missing card summaries in accessibility labels; the coordinator fixed them. The Android emulator launched the app at sign-in; no authenticated Train view was available, so native visual acceptance remains open. See build status for checks.
+
+
 ## 1 November — exercise catalog hosted sync direction
 
 User clarified that the RepDB catalog is delivered only through authenticated, member-scoped GRIND functionality, not a public/reusable API; the former clarification hold for this app-bound delivery was removed. The CLI session supplied by the user became available through the host-authorized command path. All nine migrations match and hosted dry run was up to date. Added guarded publisher `scripts/catalog/publish_hosted.py`, then published the content-addressed 701-record/schema-v3 archive to GRIND. Read-only hosted counts confirm 701 active catalog exercises, 204 configured/selectable (Barbell 76, Smith Machine 19, Dumbbell 88, EZ Curl Bar 21), 497 unconfigured, 701 approved source records/links, and no other configured equipment. Authenticated SQL function grants are present while `grind_private` remains inaccessible to `anon` and `authenticated`; app images remain bundled, not in Storage. Independent reviewer found a missing archive hash guard; it was fixed with a regression test and the reviewer confirmed resolution. Authenticated app/API and native device verification remain open.
@@ -100,7 +153,9 @@ The user authorized implementation. A local snapshot validator, additive canonic
 
 User supplied `Data/repdb-free.zip` and its extracted directory. Archive inspection found schema 3, generated 27 October, 701 records and 1,217 flat images; SHA-256 `afa162bf10bb23cadd9c3588be6ab84e56691fa328abcefabb4371cdeb47cb16`. License and attribution were inspected; archive and extracted English JSON/license/attribution matched. The app provides a read-only archive browser with search, filters and text details; archive entries are not workout-selectable until reviewed server import. No image delivery or hosted data changes. Data directory is ignored; optional resolver uses an empty fallback when absent. Backend import foundations and archive-hash identities were locally tested in rolled-back disposable transactions; no archive data was published. See BUILD_STATUS.md for checks and planning/TASKS.md for remaining work.
 
-## Current milestone
+## Historical checkpoint — 28 October
+
+The following records describe the state and authorization at that checkpoint. Later standalone-backend decisions and current status above supersede their shared-backend, remote and task-state descriptions.
 
 **28 October — committed checkpoint and UI follow-up:** Local GRIND baseline `6be0532`; canonical BabyBoo GRIND migration/tests `2021d0f` (unrelated BabyBoo changes excluded). GRIND has no configured remote. Independent native subagents are assigned workout-screen alignment, Train recent sessions, and a read-only designer handoff. Existing scope and device gates remain unchanged.
 

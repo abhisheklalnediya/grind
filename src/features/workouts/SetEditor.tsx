@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Keyboard, Text, TextInput, View } from "react-native";
 import { SetOptions } from "./SetOptions";
+import { SetTypeSelector } from "@/components/SetTypeSelector";
 import { Button } from "@/components/Button";
 import {
   isSetCompleteable,
+  setTypeLabels,
+  setTypeShortLabel,
+  setTypeSchema,
+  type SetType,
   loadFieldLabel,
   type TrainingSession,
   type TrainingSet,
@@ -18,17 +23,20 @@ export function SetEditor({
   exercise,
   set,
   previous = "—",
+  showUnit = false,
+  supportedTypes = ["warmup", "working"],
 }: {
   exercise: Exercise;
   set: TrainingSet;
   previous?: string;
+  showUnit?: boolean;
+  supportedTypes?: SetType[];
 }) {
   const training = useTraining();
   const { colors } = useTheme();
   const [message, setMessage] = useState("");
   const [options, setOptions] = useState(false);
   const repsInput = useRef<TextInput>(null);
-  const [focused, setFocused] = useState<"load" | "reps" | null>(null);
   const send = (command: Parameters<typeof training.command>[0]) =>
     training
       .command(command)
@@ -105,7 +113,13 @@ export function SetEditor({
   const context = `${exercise.name} set ${index + 1}`;
   const inputStyle = [
     styles.input,
-    { color: colors.text, borderColor: colors.border },
+    {
+      color: colors.text,
+      borderColor: colors.border,
+      backgroundColor: set.completed_at
+        ? colors.disabledSurface
+        : colors.background,
+    },
   ];
   return (
     <View
@@ -118,18 +132,52 @@ export function SetEditor({
       ]}
     >
       <View style={styles.loggingRow}>
-        <View style={styles.setColumn}>
-          <Text
-            accessibilityLabel={`Set ${index + 1} · ${set.set_type}`}
-            style={{ color: colors.text, fontSize: 15, textAlign: "center" }}
-          >
-            {set.set_type === "warmup"
-              ? "W"
-              : exercise.sets
-                  .slice(0, index + 1)
-                  .filter((row) => row.set_type === "working").length}
-          </Text>
-        </View>
+        <SetTypeSelector
+          context={context}
+          completed={Boolean(set.completed_at)}
+          value={set.set_type}
+          currentOption={{
+            value: set.set_type,
+            label: `${setTypeLabels[set.set_type]} set`,
+            shortLabel: setTypeShortLabel(set.set_type, 0),
+          }}
+          options={Array.from(
+            new Set([
+              ...supportedTypes.filter((type) => type !== "rest_pause"),
+              ...(set.set_type === "rest_pause" ? [] : [set.set_type]),
+            ]),
+          ).map((type) => ({
+            value: type,
+            label: `${setTypeLabels[type]} set`,
+            shortLabel: setTypeShortLabel(
+              type,
+              exercise.sets
+                .slice(0, index + 1)
+                .filter((row) => row.set_type === "working").length,
+            ),
+          }))}
+          onSelect={(value) => {
+            const type = setTypeSchema.safeParse(value);
+            if (!type.success || type.data === set.set_type) return;
+            const input = editedSet(
+              set,
+              exercise.load_mode,
+              latest.current.load,
+              latest.current.reps,
+            );
+            if (!input) {
+              setMessage("Fix the entered values before changing set type.");
+              return;
+            }
+            void send({
+              type: "upsert_set",
+              exercise_id: exercise.id,
+              set: { ...input, set_type: type.data },
+            });
+          }}
+          onMore={() => setOptions(!options)}
+          moreLabel={options ? "Hide set actions" : "More set actions"}
+        />
         <View style={styles.previousColumn}>
           <Text
             numberOfLines={2}
@@ -144,20 +192,26 @@ export function SetEditor({
         </View>
         {exercise.load_mode !== "bodyweight" && (
           <View style={styles.inputColumn}>
-            <Text style={{ color: colors.secondary, fontSize: 10, textAlign: "center" }}>
-              {set.entered_unit}
-            </Text>
+            {showUnit ? (
+              <Text
+                style={{
+                  color: colors.secondary,
+                  fontSize: 10,
+                  textAlign: "center",
+                }}
+              >
+                {set.entered_unit}
+              </Text>
+            ) : null}
             <TextInput
               accessibilityLabel={`${exercise.name} set ${index + 1} ${loadFieldLabel(exercise.load_mode, set.entered_unit)}`}
               style={inputStyle}
               value={load}
               keyboardType="decimal-pad"
               returnKeyType="next"
-              onFocus={() => setFocused("load")}
               onSubmitEditing={() => repsInput.current?.focus()}
               onChangeText={(value) => update("load", value)}
               onBlur={() => {
-                setFocused((current) => (current === "load" ? null : current));
                 void save();
               }}
             />
@@ -171,15 +225,12 @@ export function SetEditor({
             value={reps}
             keyboardType="number-pad"
             returnKeyType="done"
-            onFocus={() => setFocused("reps")}
             onSubmitEditing={() => {
               Keyboard.dismiss();
-              setFocused(null);
               void save();
             }}
             onChangeText={(value) => update("reps", value)}
             onBlur={() => {
-              setFocused((current) => (current === "reps" ? null : current));
               void save();
             }}
           />
@@ -188,43 +239,16 @@ export function SetEditor({
           <View style={styles.setActions}>
             <Button
               label={set.completed_at ? "✓" : "○"}
+              secondary={!set.completed_at}
               selected={Boolean(set.completed_at)}
               accessibilityLabel={`${context}: ${set.completed_at ? "Mark incomplete" : "Complete set"}`}
               onPress={() => {
                 void save(true);
               }}
             />
-            <Button
-              secondary
-              label={options ? "×" : "•••"}
-              accessibilityLabel={`${context}: ${options ? "Hide set options" : "Set options"}`}
-              onPress={() => setOptions(!options)}
-            />
           </View>
         </View>
       </View>
-      {focused && (
-        <View style={styles.tools}>
-          {focused === "load" && (
-            <Button
-              secondary
-              label="Next: reps"
-              accessibilityLabel={`${context}: Next, reps`}
-              onPress={() => repsInput.current?.focus()}
-            />
-          )}
-          <Button
-            secondary
-            label="Done editing set"
-            accessibilityLabel={`${context}: Done editing set`}
-            onPress={() => {
-              Keyboard.dismiss();
-              setFocused(null);
-              void save();
-            }}
-          />
-        </View>
-      )}
       {options && (
         <SetOptions
           exercise={exercise}

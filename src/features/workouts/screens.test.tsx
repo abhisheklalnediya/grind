@@ -98,6 +98,12 @@ async function mount(child: React.ReactNode) {
   });
   return view;
 }
+async function openSetActions(context: string, typeLabel = "Working set") {
+  await fireEvent.press(
+    screen.getByRole("button", { name: `${context}: Set type: ${typeLabel}` }),
+  );
+  await fireEvent.press(screen.getByRole("button", { name: "More set actions" }));
+}
 beforeEach(() => {
   jest.clearAllMocks();
   mockTraining.status = "saved";
@@ -163,10 +169,8 @@ it("keeps invalid inputs incomplete and supports structural edits", async () => 
   expect(
     screen.getByText("Enter a complete valid load and reps."),
   ).toBeTruthy();
-  await fireEvent.press(screen.getByText("Add set"));
-  await fireEvent.press(
-    screen.getByRole("button", { name: /Bench set 1: Set options/ }),
-  );
+  await fireEvent.press(screen.getByRole("button", { name: "Add set" }));
+  await openSetActions("Bench set 1");
   await fireEvent.press(screen.getByText("Remove set"));
   await fireEvent.press(
     screen.getByRole("button", { name: "Options for Bench" }),
@@ -252,6 +256,34 @@ it("minimizes to Train when no prior route exists", async () => {
   );
   expect(mockReplace).toHaveBeenCalledWith("/(tabs)");
 });
+it("keeps back and finish in the top row, with an editable heading and quiet discard action", async () => {
+  const alert = jest
+    .spyOn(Alert, "alert")
+    .mockImplementation((_title, _message, buttons) =>
+      buttons?.at(-1)?.onPress?.(),
+    );
+  await mount(<WorkoutScreen />);
+  expect(screen.getByRole("button", { name: "Minimize workout" })).toBeTruthy();
+  await fireEvent.press(screen.getByText("Finish"));
+  expect(mockPush).toHaveBeenCalledWith("/workout/finish");
+
+  await fireEvent.press(
+    screen.getByRole("button", { name: "Edit workout name, Workout" }),
+  );
+  const name = screen.getByLabelText("Workout name");
+  await fireEvent.changeText(name, "Upper body");
+  await fireEvent(name, "blur");
+  expect(mockCommand).toHaveBeenCalledWith({
+    type: "rename_workout",
+    name: "Upper body",
+  });
+
+  const discard = screen.getByRole("button", { name: "Discard workout" });
+  expect(discard).toHaveStyle({ minHeight: 48 });
+  await fireEvent.press(discard);
+  expect(mockTraining.cancel).toHaveBeenCalled();
+  alert.mockRestore();
+});
 it("keeps only one exercise picker action while the workout is empty", async () => {
   mockTraining.session = { ...session, exercises: [] };
   await mount(<WorkoutScreen />);
@@ -329,7 +361,8 @@ it("shows actual summary and snapshot details", async () => {
   await waitFor(() =>
     expect(screen.getByText("0 working sets · 60 minutes")).toBeTruthy(),
   );
-  expect(screen.getByText("Workout saved")).toBeTruthy();
+  expect(screen.getByText("Work, recorded.")).toBeTruthy();
+  expect(screen.getByText("✓ WORKOUT SAVED")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
   await fireEvent.press(screen.getByRole("button", { name: "Done" }));
   expect(mockReplace).toHaveBeenCalledWith("/(tabs)");
@@ -337,10 +370,13 @@ it("shows actual summary and snapshot details", async () => {
 it("shows history empty state and refresh", async () => {
   await mount(<HistoryScreen />);
   await waitFor(() =>
-    expect(
-      screen.getByText("Your completed workouts will appear here."),
-    ).toBeTruthy(),
+    expect(screen.getByText("Your story starts here.")).toBeTruthy(),
   );
+  expect(screen.getByText("Every session builds on the last.")).toBeTruthy();
+  await fireEvent.press(
+    screen.getByRole("button", { name: "Start a workout" }),
+  );
+  expect(mockPush).toHaveBeenCalledWith("/(tabs)");
   await act(async () => {
     await fireEvent.press(screen.getByText("Refresh history"));
     await new Promise((resolve) => setTimeout(resolve, 20));
@@ -351,6 +387,8 @@ it("shows completed history detail", async () => {
   await waitFor(() =>
     expect(screen.getByText("Bench · external")).toBeTruthy(),
   );
+  expect(screen.getByText("Oct 27, 2026, 1:00 PM")).toBeTruthy();
+  expect(screen.getByText("0 working sets · 60 minutes")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Done" })).toBeNull();
   await fireEvent.press(screen.getByRole("button", { name: "Back" }));
   expect(mockBack).toHaveBeenCalledTimes(1);
@@ -442,12 +480,8 @@ it("records duration and distance in a timed workout set", async () => {
   expect(mockCommand).toHaveBeenCalledWith(
     expect.objectContaining({ type: "complete_set", completed: true }),
   );
-  await fireEvent.press(
-    screen.getByRole("button", { name: /Bench set 1: Set options/ }),
-  );
-  await fireEvent.press(
-    screen.getByRole("button", { name: "Bench set 1: Make warm-up" }),
-  );
+  await fireEvent.press(screen.getByRole("button", { name: "Bench set 1: Set type: Working set" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Warm-up set" }));
   expect(mockCommand).toHaveBeenCalledWith(
     expect.objectContaining({
       type: "upsert_set",
@@ -514,9 +548,7 @@ it("does not change distance units after text is entered before the draft rerend
     screen.getByLabelText("Bench set 1 distance"),
     "5",
   );
-  await fireEvent.press(
-    screen.getByRole("button", { name: /Bench set 1: Set options/ }),
-  );
+  await openSetActions("Bench set 1");
   await fireEvent.press(
     screen.getByRole("button", { name: "Bench set 1 distance unit" }),
   );
@@ -546,8 +578,12 @@ it("uses working-set ordinals after warm-up rows in timed logging", async () => 
     ],
   };
   await mount(<WorkoutScreen />);
-  expect(screen.getByLabelText("Bench set 1 · warmup")).toHaveTextContent("W");
-  expect(screen.getByLabelText("Bench set 2 · working")).toHaveTextContent("1");
+  expect(
+    screen.getByRole("button", { name: "Bench set 1: Set type: Warm-up set" }),
+  ).toHaveTextContent(/^W/);
+  expect(
+    screen.getByRole("button", { name: "Bench set 2: Set type: Working set" }),
+  ).toHaveTextContent(/^1/);
 });
 it("confirms removal of a timed set with a raw partial duration", async () => {
   mockTraining.session = {
@@ -566,9 +602,7 @@ it("confirms removal of a timed set with a raw partial duration", async () => {
     screen.getByLabelText("Bench set 1 duration seconds"),
     "3.",
   );
-  await fireEvent.press(
-    screen.getByRole("button", { name: /Bench set 1: Set options/ }),
-  );
+  await openSetActions("Bench set 1");
   await fireEvent.press(screen.getByText("Remove set"));
   expect(alert).toHaveBeenCalledWith(
     "Remove set and entered work?",
@@ -590,10 +624,9 @@ it("edits type, unit, ordering and workout name without completing", async () =>
   await mount(<WorkoutScreen />);
   expect(screen.getByText("Workout")).toBeTruthy();
   expect(screen.queryByLabelText("Workout name")).toBeNull();
-  await fireEvent.press(
-    screen.getByRole("button", { name: /Bench set 1: Set options/ }),
-  );
-  await fireEvent.press(screen.getByText("Make warm-up"));
+  await fireEvent.press(screen.getByRole("button", { name: "Bench set 1: Set type: Working set" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Warm-up set" }));
+  await openSetActions("Bench set 1");
   await fireEvent.press(screen.getByText("View in lb"));
   const load = screen.getByLabelText("Bench set 1 Weight (kg)");
   await fireEvent(load, "blur");
@@ -696,17 +729,30 @@ it("shows query errors and retries for previous, detail and history", async () =
   await fireEvent.press(screen.getByText("Retry history"));
 });
 it("pages and opens actual completed history records", async () => {
-  mockTraining.api.history.mockResolvedValueOnce({
-    items: [
-      { ...session, status: "completed", finished_at: "2026-10-27T13:00:00Z" },
+  const completedSession: TrainingSession = {
+    ...session,
+    status: "completed",
+    finished_at: "2026-10-27T13:00:00Z",
+    exercises: [
+      {
+        ...exercise,
+        sets: [{ ...makeSet(), completed_at: "2026-10-27T12:30:00Z" }],
+      },
     ],
+  };
+  mockTraining.api.history.mockResolvedValueOnce({
+    items: [completedSession],
     next_cursor: { finished_at: "2026-10-27T13:00:00Z", id: session.id },
   });
   await mount(<HistoryScreen />);
   await waitFor(() =>
     expect(screen.getByText("Load more workouts")).toBeTruthy(),
   );
-  await fireEvent.press(screen.getByText("Workout"));
+  expect(screen.getByText("1 hr · 1 exercise · 1 set")).toBeTruthy();
+  const card = screen.getByRole("button", {
+    name: /Workout, .+, 1 hr, 1 exercise, 1 completed set/,
+  });
+  await fireEvent.press(card);
   expect(mockPush).toHaveBeenCalledWith(`/history-detail?id=${session.id}`);
   await fireEvent.press(screen.getByText("Load more workouts"));
 });
@@ -819,8 +865,8 @@ it("moves a later exercise and set and reports detail save failures", async () =
   const secondExercise = moveExercises[1];
   if (!secondExercise) throw new Error("Missing later exercise");
   await fireEvent.press(secondExercise);
-  for (const options of screen.getAllByRole("button", { name: /Set options/ }))
-    await fireEvent.press(options);
+  await openSetActions("Bench set 1");
+  await openSetActions("Bench set 2");
   const moveSets = screen.getAllByText("Move set up");
   const secondSet = moveSets[1];
   if (!secondSet) throw new Error("Missing later set");
@@ -884,7 +930,7 @@ it("renders bodyweight previous and noncompleted detail without a saved claim", 
       screen.getByText("This workout has not been completed."),
     ).toBeTruthy(),
   );
-  expect(screen.queryByText("Workout saved")).toBeNull();
+  expect(screen.queryByText("✓ WORKOUT SAVED")).toBeNull();
   expect(screen.queryByRole("button", { name: "Done" })).toBeNull();
   await detail.unmount();
   mockTraining.api.previous.mockResolvedValueOnce({
@@ -954,64 +1000,16 @@ it("groups completed sessions by their recorded local day", async () => {
   await waitFor(() => expect(screen.getByText("Evening")).toBeTruthy());
   expect(screen.getAllByText("October 27, 2026")).toHaveLength(1);
 });
-it("keeps Finish outside scrolling rows and exposes numeric keyboard controls", async () => {
+it("keeps Finish and set options reachable without per-row keyboard buttons", async () => {
   await mount(<WorkoutScreen />);
   expect(screen.getByText("Finish")).toBeTruthy();
-  expect(screen.queryByText("Remove set")).toBeNull();
   const load = screen.getByLabelText("Bench set 1 Weight (kg)");
   await fireEvent(load, "focus");
-  expect(screen.getByText("Next: reps")).toBeTruthy();
-  await fireEvent.press(screen.getByText("Next: reps"));
-  await fireEvent(screen.getByLabelText("Bench set 1 reps"), "focus");
   expect(screen.queryByText("Next: reps")).toBeNull();
-  await fireEvent.press(screen.getByText("Done editing set"));
   expect(screen.queryByText("Done editing set")).toBeNull();
-  await fireEvent.press(
-    screen.getByRole("button", { name: /Bench set 1: Set options/ }),
-  );
+  expect(load).toHaveProp("returnKeyType", "next");
+  await openSetActions("Bench set 1");
   expect(screen.getByText("Remove set")).toBeTruthy();
-  await fireEvent.press(
-    screen.getByRole("button", { name: /Bench set 1: Hide set options/ }),
-  );
-  expect(screen.queryByText("Remove set")).toBeNull();
-});
-it("clears per-row keyboard controls on blur and preserves load-to-reps focus", async () => {
-  mockTraining.session = {
-    ...session,
-    exercises: [
-      {
-        ...exercise,
-        sets: [makeSet(), { ...makeSet(), id: trainingId(33), position: 1 }],
-      },
-    ],
-  };
-  await mount(<WorkoutScreen />);
-  for (const ordinal of [1, 2])
-    expect(
-      screen.getByRole("button", {
-        name: `Bench set ${ordinal}: Complete set`,
-      }),
-    ).toBeTruthy();
-  const load = screen.getByLabelText("Bench set 1 Weight (kg)");
-  const reps = screen.getByLabelText("Bench set 1 reps");
-  await fireEvent(load, "focus");
-  expect(
-    screen.getByRole("button", { name: "Bench set 1: Next, reps" }),
-  ).toBeTruthy();
-  // Native focus/blur events can arrive in either order during a field transition.
-  await fireEvent(reps, "focus");
-  await fireEvent(load, "blur");
-  expect(
-    screen.getByRole("button", { name: "Bench set 1: Done editing set" }),
-  ).toBeTruthy();
-  await fireEvent(reps, "blur");
-  await fireEvent(screen.getByLabelText("Bench set 2 reps"), "focus");
-  expect(
-    screen.queryByRole("button", { name: "Bench set 1: Done editing set" }),
-  ).toBeNull();
-  expect(
-    screen.getByRole("button", { name: "Bench set 2: Done editing set" }),
-  ).toBeTruthy();
 });
 it("identifies set actions across exercises without verbose visible labels", async () => {
   mockTraining.session = {
@@ -1027,10 +1025,10 @@ it("identifies set actions across exercises without verbose visible labels", asy
       screen.getByRole("button", { name: `${name} set 1: Complete set` }),
     ).toBeTruthy();
     await fireEvent.press(
-      screen.getByRole("button", { name: `${name} set 1: Set options` }),
+      screen.getByRole("button", { name: `${name} set 1: Set type: Working set` }),
     );
+    await fireEvent.press(screen.getByRole("button", { name: "More set actions" }));
     for (const action of [
-      "Make warm-up",
       "Move set up",
       "Remove set",
       "View in lb",

@@ -12,7 +12,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useTraining } from "@/features/training";
-import type { TrainingExercise } from "@/domain/training";
+import type { TrainingExercise, TrainingSession } from "@/domain/training";
 import {
   makeCatalogExercise,
   makeSession,
@@ -170,6 +170,13 @@ it("renders real previous sets without claiming records or playback and permits 
         entered_unit: "kg",
         reps: 5,
       },
+      ...(["drop", "failure", "rest_pause"] as const).map((set_type) => ({
+        set_type,
+        ordinal: 0,
+        entered_load: "15",
+        entered_unit: "kg" as const,
+        reps: 3,
+      })),
     ],
   });
   await mount(<ExerciseDetailScreen id={custom.id} />);
@@ -187,6 +194,9 @@ it("renders real previous sets without claiming records or playback and permits 
   expect(open).toHaveBeenCalledWith("https://repdb.co");
   open.mockRestore();
   expect(screen.getByText("Warm-up 1: Bodyweight × 5 reps")).toBeTruthy();
+  expect(screen.getByText("Drop 1: 15 kg × 3 reps")).toBeTruthy();
+  expect(screen.getByText("Failure 1: 15 kg × 3 reps")).toBeTruthy();
+  expect(screen.getByText("Rest-pause 1: 15 kg × 3 reps")).toBeTruthy();
   await fireEvent.press(screen.getByText("Edit exercise"));
   expect(router.push).toHaveBeenCalledWith({
     pathname: "/custom-exercise",
@@ -202,6 +212,79 @@ it("shows no history and unavailable definitions honestly", async () => {
   await cleanup();
   await mount(<ExerciseDetailScreen id="missing" />);
   await screen.findByText("This exercise is unavailable for new workouts.");
+});
+it("separates custom exercise overview from its real, empty history", async () => {
+  setup();
+  await mount(<ExerciseDetailScreen id={custom.id} />);
+  await screen.findByText("Latest performance");
+  expect(screen.getByTestId("exercise-detail-panel").props.role).toBe(
+    "tabpanel",
+  );
+  expect(
+    screen.getByRole("link", {
+      name: "Exercise data by RepDB, opens website",
+    }),
+  ).toBeTruthy();
+  expect(
+    screen.getByRole("tab", { name: "Overview" }).props.accessibilityState,
+  ).toEqual({ selected: true });
+  await fireEvent.press(screen.getByRole("tab", { name: "History" }));
+  await screen.findByText(
+    "No completed history for this exercise, load mode and convention.",
+  );
+  expect(
+    screen.getByTestId("exercise-detail-panel").props["aria-labelledby"],
+  ).toBe("exercise-detail-tab-history");
+  expect(
+    screen.getByRole("button", { name: "Refresh exercise history" }),
+  ).toBeTruthy();
+  expect(screen.queryByText("Latest performance")).toBeNull();
+  await fireEvent.press(screen.getByRole("tab", { name: "Overview" }));
+  expect(screen.getByText("Latest performance")).toBeTruthy();
+});
+it("shows each set type with an ordinal counted within that type in exercise history", async () => {
+  const { api } = setup();
+  const history = jest.spyOn(api, "history");
+  const past = {
+    ...makeSession(),
+    status: "completed",
+    name: "Past workout",
+    finished_at: "2026-10-28T12:00:00.000Z",
+    exercises: [
+      {
+        id: trainingId(70),
+        exercise_id: custom.id,
+        position: 0,
+        name: custom.name,
+        load_mode: custom.load_mode,
+        load_convention: custom.load_convention,
+        tracking_type: "reps",
+        notes: "",
+        rest_seconds: 120,
+        sets: (["warmup", "working", "drop", "failure", "rest_pause", "working"] as const).map(
+          (set_type, position) => ({
+            id: trainingId(80 + position),
+            position,
+            set_type,
+            entered_load: "20",
+            entered_unit: "kg" as const,
+            reps: 5,
+            completed_at: "2026-10-28T12:00:00.000Z",
+          }),
+        ),
+      },
+    ],
+  } as TrainingSession;
+  history.mockResolvedValue({ items: [past], next_cursor: null });
+  await mount(<ExerciseDetailScreen id={custom.id} />);
+  await screen.findByText("Latest performance");
+  await fireEvent.press(screen.getByRole("tab", { name: "History" }));
+  expect(await screen.findByText("Warm-up 1: 20 kg × 5 reps")).toBeTruthy();
+  expect(screen.getByText("Working 1: 20 kg × 5 reps")).toBeTruthy();
+  expect(screen.getByText("Drop 1: 20 kg × 5 reps")).toBeTruthy();
+  expect(screen.getByText("Failure 1: 20 kg × 5 reps")).toBeTruthy();
+  expect(screen.getByText("Rest-pause 1: 20 kg × 5 reps")).toBeTruthy();
+  expect(screen.getByText("Working 2: 20 kg × 5 reps")).toBeTruthy();
 });
 it("validates custom definition, supports all load modes and saves only its payload", async () => {
   const { save } = setup();
@@ -268,13 +351,22 @@ it("keeps mutation errors visible for retry and blocks edits to built-in exercis
   await mount(<CustomExerciseScreen id={exercise.id} />);
   await screen.findByText("This exercise cannot be edited.");
 });
-it("keeps picker selection across search and adds stable workout commands", async () => {
+it("keeps picker selection across scope and search changes and adds stable workout commands", async () => {
   const { command } = setup({ session: true });
   await mount(<ExercisePickerScreen target="workout" />);
   await screen.findByText("Bench press");
   await fireEvent.press(screen.getByText("Bench press"));
-  await fireEvent.changeText(screen.getByLabelText("Search exercises"), "pull");
+  await fireEvent.press(screen.getByText("My exercises"));
+  expect(screen.queryByText("Bench press")).toBeNull();
+  expect(screen.getByText("1 selected")).toBeTruthy();
+  expect(
+    screen.getByRole("button", { name: "My exercises" }).props
+      .accessibilityState,
+  ).toEqual({ selected: true });
   await fireEvent.press(screen.getByRole("button", { name: "Custom pull-up" }));
+  await fireEvent.press(screen.getByText("All exercises"));
+  await fireEvent.changeText(screen.getByLabelText("Search exercises"), "pull");
+  expect(screen.getByText("2 selected")).toBeTruthy();
   await fireEvent.press(screen.getByText("Add 2 exercises"));
   await waitFor(() => expect(command).toHaveBeenCalledTimes(2));
   expect(command).toHaveBeenCalledWith(
@@ -335,7 +427,9 @@ it("retries picker catalog, deselects an item, retains filters and navigates to 
   await mount(<ExercisePickerScreen target="routine" />);
   await screen.findByText("Retry exercises");
   expect(
-    screen.getByText("Couldn’t load exercises. Check your connection and retry."),
+    screen.getByText(
+      "Couldn’t load exercises. Check your connection and retry.",
+    ),
   ).toBeTruthy();
   catalog.mockResolvedValue([exercise]);
   await fireEvent.press(screen.getByText("Retry exercises"));
@@ -423,7 +517,10 @@ it("rejects a selected exercise archived by a refreshed catalog", async () => {
   await mount(<ExercisePickerScreen target="workout" />, client);
   await screen.findByText("Bench press");
   await fireEvent.press(screen.getByText("Bench press"));
-  const queryKey = client.getQueryCache().getAll().find((query) => query.queryKey[0] === "catalog")?.queryKey;
+  const queryKey = client
+    .getQueryCache()
+    .getAll()
+    .find((query) => query.queryKey[0] === "catalog")?.queryKey;
   if (!queryKey) throw new Error("Catalog query was not created");
   await act(async () => {
     client.setQueryData(queryKey, [
@@ -535,6 +632,9 @@ it("shows one mapped RepDB entry in the library with its image and available det
     screen.queryByText(/Import is required before adding this exercise/),
   ).toBeNull();
   expect(screen.getByTestId("exercise-detail-image")).toBeTruthy();
+  expect(
+    screen.getByText("Load convention · Total barbell weight"),
+  ).toBeTruthy();
 });
 
 it("selects the mapped server UUID from a single RepDB picker row", async () => {
@@ -620,4 +720,57 @@ it("shows unavailable logging on an imported exercise detail without fetching pr
     "Logging unavailable until this exercise is configured.",
   );
   expect(api.previous).not.toHaveBeenCalled();
+});
+
+it("shows timed previous performance with its saved distance and unit", async () => {
+  const timed = { ...exercise, tracking_type: "distance_duration" as const };
+  const { api } = setup({ items: [timed] });
+  jest.spyOn(api, "previous").mockResolvedValue({
+    session_id: trainingId(1),
+    finished_at: "2026-10-27T12:00:00.000Z",
+    sets: [
+      {
+        set_type: "working",
+        ordinal: 0,
+        entered_load: null,
+        entered_unit: "kg",
+        reps: null,
+        duration_seconds: 125,
+        entered_distance: "1.5",
+        distance_unit: "mi",
+      },
+    ],
+  });
+  await mount(<ExerciseDetailScreen id={timed.id} />);
+  expect(
+    await screen.findByText("Working 1: 125 seconds · 1.5 mi"),
+  ).toBeVisible();
+  expect(screen.queryByText(/Bodyweight ×/)).toBeNull();
+  expect(api.previous).toHaveBeenCalledWith(
+    timed.id,
+    timed.load_mode,
+    timed.load_convention,
+    "distance_duration",
+  );
+});
+
+it("shows duration-only previous performance without a distance", async () => {
+  const timed = { ...exercise, tracking_type: "duration" as const };
+  const { api } = setup({ items: [timed] });
+  jest.spyOn(api, "previous").mockResolvedValue({
+    session_id: trainingId(1),
+    finished_at: "2026-10-27T12:00:00.000Z",
+    sets: [
+      {
+        set_type: "working",
+        ordinal: 0,
+        entered_load: null,
+        entered_unit: "kg",
+        reps: null,
+        duration_seconds: 45,
+      },
+    ],
+  });
+  await mount(<ExerciseDetailScreen id={timed.id} />);
+  expect(await screen.findByText("Working 1: 45 seconds")).toBeVisible();
 });

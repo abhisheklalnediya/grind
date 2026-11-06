@@ -7,6 +7,7 @@ import {
   routinePayloadSchema,
   routineSchema,
   sessionSchema,
+  setTypeSchema,
   workoutCommandSchema,
   type CustomExercisePayload,
   type LoadMode,
@@ -156,6 +157,19 @@ export function createTrainingApi(transport: TrainingTransport) {
         },
         previousSchema,
       ),
+    supportedSetTypes: () =>
+      rpc<{ set_types: z.infer<typeof setTypeSchema>[] }>(
+        "get_supported_set_types",
+        {},
+        z
+          .object({
+            set_types: z.array(setTypeSchema).max(5).refine(
+              (setTypes) => new Set(setTypes).size === setTypes.length,
+              "Supported set types must be unique.",
+            ),
+          })
+          .strict(),
+      ).then((result) => result.set_types),
     searchCatalog: (input: {
       query: string;
       muscle?: string;

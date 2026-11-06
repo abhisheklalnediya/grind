@@ -6,6 +6,8 @@ type Props = {
   onPress: () => void;
   disabled?: boolean;
   secondary?: boolean;
+  tertiary?: boolean;
+  muted?: boolean;
   selected?: boolean;
 };
 export function Button({
@@ -14,19 +16,27 @@ export function Button({
   onPress,
   disabled = false,
   secondary = false,
+  tertiary = false,
+  muted = false,
   selected = false,
 }: Props) {
   const { colors } = useTheme();
   const backgroundColor = disabled
     ? colors.disabledSurface
-    : secondary
-      ? colors.surface
-      : colors.accent;
+    : tertiary
+      ? "transparent"
+      : secondary
+        ? colors.surface
+        : colors.accent;
   const color = disabled
     ? colors.disabledText
-    : secondary
-      ? colors.text
-      : colors.onAccent;
+    : tertiary
+      ? muted
+        ? colors.secondary
+        : colors.accentText
+      : secondary
+        ? colors.text
+        : colors.onAccent;
   return (
     <Pressable
       accessibilityRole="button"
@@ -38,7 +48,11 @@ export function Button({
         styles.button,
         {
           backgroundColor,
-          borderColor: secondary ? colors.border : backgroundColor,
+          borderColor: tertiary
+            ? "transparent"
+            : secondary
+              ? colors.border
+              : backgroundColor,
         },
       ]}
     >

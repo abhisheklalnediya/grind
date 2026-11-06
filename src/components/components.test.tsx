@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react-native";
 import { Button } from "./Button";
 import { Heading } from "./Heading";
 import { Screen } from "./Screen";
+import { Panel } from "./Panel";
 import { ThemeContext, type ThemeState } from "@/theme/useTheme";
 import { darkColors, lightColors } from "@/theme/tokens";
 afterEach(() => jest.restoreAllMocks());
@@ -112,4 +113,34 @@ it("allows concise button text with a contextual accessible name", async () => {
     screen.getByRole("button", { name: "Bench set 2: Complete set" }),
   );
   expect(press).toHaveBeenCalledTimes(1);
+});
+
+it("renders a quiet text action with an accessible target", async () => {
+  const press = jest.fn();
+  await render(<Button label="Add set" tertiary onPress={press} />);
+  expect(screen.getByRole("button", { name: "Add set" })).toHaveStyle({
+    minHeight: 50,
+    backgroundColor: "transparent",
+  });
+  expect(screen.getByText("Add set")).toHaveStyle({
+    color: darkColors.accentText,
+  });
+  await fireEvent.press(screen.getByRole("button", { name: "Add set" }));
+  expect(press).toHaveBeenCalled();
+});
+
+it("supports a muted quiet navigation action", async () => {
+  await render(<Button label="Back" tertiary muted onPress={() => {}} />);
+  expect(screen.getByText("Back")).toHaveStyle({ color: darkColors.secondary });
+});
+
+it("renders panel content using the active theme", async () => {
+  await render(
+    <ThemeContext.Provider value={theme("light")}>
+      <Panel>
+        <Text>Routine exercise</Text>
+      </Panel>
+    </ThemeContext.Provider>,
+  );
+  expect(screen.getByText("Routine exercise")).toBeVisible();
 });

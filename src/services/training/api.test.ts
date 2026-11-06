@@ -109,6 +109,51 @@ it("validates routine/custom exercise saves, archive and previous/history reads"
     }),
   );
 });
+it("serializes all exact set types and accepts them in acknowledged session data", async () => {
+  const { port, api } = setup();
+  const setTypes = ["warmup", "working", "drop", "failure", "rest_pause"] as const;
+  const base = makeSession();
+  for (const set_type of setTypes) {
+    const set = {
+      id: trainingId(8),
+      position: 0,
+      set_type,
+      entered_load: "20",
+      entered_unit: "kg" as const,
+      reps: 8,
+    };
+    const acknowledged = {
+      ...base,
+      exercises: [{
+        id: trainingId(7),
+        exercise_id: trainingId(6),
+        position: 0,
+        load_mode: "external" as const,
+        notes: "",
+        rest_seconds: 120,
+        name: "Bench press",
+        load_convention: "Total barbell weight",
+        sets: [{ ...set, completed_at: null }],
+      }],
+    };
+    jest.mocked(port.rpc).mockResolvedValue(acknowledged);
+    const result = await api.apply(trainingId(9), base.id, 0, {
+      type: "upsert_set",
+      exercise_id: trainingId(7),
+      set,
+    });
+    expect(result.exercises[0]?.sets[0]?.set_type).toBe(set_type);
+    expect(port.rpc).toHaveBeenLastCalledWith(
+      "apply_workout_command",
+      expect.objectContaining({
+        p_command: expect.objectContaining({
+          type: "upsert_set",
+          set: expect.objectContaining({ set_type }),
+        }),
+      }),
+    );
+  }
+});
 it("rejects unsafe response shapes and invalid drafts instead of claiming saved", async () => {
   const { port, api } = setup();
   jest.mocked(port.rpc).mockResolvedValue({ id: "wrong" });
@@ -154,4 +199,27 @@ it("requests previous values for the same tracking type", async () => {
     "get_previous_performance",
     expect.objectContaining({ p_tracking_type: "duration" }),
   );
+});
+it("reads exact supported set types and rejects malformed or unavailable capabilities", async () => {
+  const { port, api } = setup();
+  const supported = ["warmup", "working", "drop", "failure", "rest_pause"];
+  jest.mocked(port.rpc).mockResolvedValue({ set_types: supported });
+  expect(await api.supportedSetTypes()).toEqual(supported);
+  expect(port.rpc).toHaveBeenLastCalledWith("get_supported_set_types", {});
+
+  for (const malformed of [
+    { set_types: ["warmup", "unknown"] },
+    { set_types: ["working", "working"] },
+    { set_types: "warmup" },
+    ["warmup", "working"],
+    null,
+  ]) {
+    jest.mocked(port.rpc).mockResolvedValue(malformed);
+    await expect(api.supportedSetTypes()).rejects.toMatchObject({
+      kind: "response",
+    });
+  }
+  const unavailable = new Error("RPC unavailable");
+  jest.mocked(port.rpc).mockRejectedValue(unavailable);
+  await expect(api.supportedSetTypes()).rejects.toBe(unavailable);
 });

@@ -1,5 +1,8 @@
 # GRIND MVP design · 02
 
+3 November: Set rows use a compact set-type selector (W, working number, D, F), with other set actions available in the same menu. Per-row Next/Done buttons were removed at the user’s request; direct field selection and drag-to-dismiss remain. Additional types require a compatible backend. Keyboard and accessibility acceptance on physical devices remains open.
+
+
 Status: first complete design pass, 25 October 2026. Reviewable prototype only; no application/backend implementation, account operation, provider request or persistence.
 
 Open [mvp.html](mvp.html) directly, or serve this design directory locally. The prototype has no external assets, dependencies or network calls. Earlier [screen board](mvp-preview.html) and [exercise exploration](exercises.html) are preserved.

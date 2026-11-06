@@ -75,7 +75,9 @@ it("shows acknowledged routines, resumes active workout and retries recovery", a
   routines.mockResolvedValue([routine]);
   await setup({ session: makeSession(), error: "Connection lost" });
   await fireEvent.press(
-    await screen.findByRole("button", { name: routine.name }),
+    await screen.findByRole("button", {
+      name: `${routine.name} · 0 exercises · 0 sets`,
+    }),
   );
   expect(router.push).toHaveBeenCalledWith({
     pathname: "/routine",
@@ -227,4 +229,21 @@ it("scopes recent history cache by account", async () => {
     await screen.findByRole("button", { name: /Account B workout/ }),
   ).toBeVisible();
   view.unmount();
+});
+
+it("presents the session card and routine counts for the current state", async () => {
+  const routine = makeRoutine();
+  routines.mockResolvedValue([routine]);
+  await setup();
+  expect(screen.getByText("YOUR NEXT SESSION")).toBeVisible();
+  expect(screen.getByText("Make it count.")).toBeVisible();
+  expect(await screen.findByText("0 exercises · 0 sets")).toBeVisible();
+});
+
+it("presents the active session card when a workout is in progress", async () => {
+  await setup({ session: makeSession() });
+  expect(screen.getByText("PICK UP WHERE YOU LEFT OFF")).toBeVisible();
+  await screen.findByText("Completed workouts will appear here.");
+  expect(screen.getByText("Keep it moving.")).toBeVisible();
+  expect(screen.getByRole("button", { name: /Resume/ })).toBeVisible();
 });

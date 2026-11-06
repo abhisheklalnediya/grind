@@ -19,7 +19,8 @@ export type RpcName =
   | "get_routine"
   | "save_custom_exercise"
   | "archive_custom_exercise"
-  | "get_previous_performance";
+  | "get_previous_performance"
+  | "get_supported_set_types";
 export type RpcParameters = Record<string, unknown>;
 export interface TrainingTransport {
   rpc(name: RpcName, parameters: RpcParameters): Promise<unknown>;

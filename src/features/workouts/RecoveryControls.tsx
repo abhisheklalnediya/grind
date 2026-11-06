@@ -102,7 +102,15 @@ export function RecoveryControls({
         ) : null}
         <Text
           accessibilityLiveRegion="polite"
-          style={[styles.status, { color: colors.secondary }]}
+          style={[
+            styles.status,
+            {
+              color:
+                training.status === "saved" && !training.hasLocalChanges
+                  ? colors.accentText
+                  : colors.secondary,
+            },
+          ]}
         >
           {training.status === "saved"
             ? training.hasLocalChanges
@@ -411,11 +419,11 @@ const styles = StyleSheet.create({
   statusRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "flex-start",
+    justifyContent: "space-between",
     alignItems: "center",
     gap: 8,
   },
-  status: { flex: 1, fontSize: 13 },
+  status: { flexShrink: 1, textAlign: "right", fontSize: 13 },
   timerRow: {
     flexDirection: "row",
     flexWrap: "wrap",

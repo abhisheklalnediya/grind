@@ -34,7 +34,7 @@ Primary journey: Sign in → Train → Start routine or empty workout → Add ex
 
 ## Active workout interaction
 
-The workout is the design priority. Use columns Set / Previous / kg or lb / Reps / Complete. Keep numeric inputs large, use decimal keyboard for weight and integer keyboard for reps, and keep entered raw text while editing. Do not prefill last performance as a completed result. Show warm-up sets as W; working sets use numbered labels. Tap completion only after valid values exist. Uncompleting a set clears its completion state and reconciles its associated timer.
+The workout is the design priority. Use columns Set / Previous / kg or lb / Reps / Complete. Keep numeric inputs large, use decimal keyboard for weight and integer keyboard for reps, and keep entered raw text while editing. Do not prefill last performance as a completed result. Show warm-up sets as W and working sets as numbered labels. A set-type selector also supports Drop (D) and Failure (F) where the connected backend advertises support. Changing a completed set type requires confirmation because the set becomes incomplete and its associated rest timer is cancelled. Tap completion only after valid values exist. Uncompleting a set clears its completion state and reconciles its associated timer.
 
 Completing a set starts its configured rest timer. Present a persistent in-app timer strip with remaining time, +30 seconds, and Skip. A timer sheet supports duration adjustment and restart. Ask for notification permission when the user first enables rest alerts; denial keeps the in-app timer usable. Provide OS countdown surfaces on supported devices and clear them when the workout finishes or is discarded.
 
@@ -51,7 +51,7 @@ Discard workout is a secondary menu action behind confirmation. Leaving the work
 - System sans-serif; strong 30–32 px page titles, 16 px body, tabular numeric input. Use sentence case and short action labels.
 - 16–20 px outer gutters, 12–16 px card radii, 8 px spacing rhythm. Minimum 48 px interactive targets. Avoid tiny icon-only completion targets.
 - Support dynamic type, screen reader labels including exercise/set context, reduced motion, visible focus and sufficient contrast. Let set cards reflow at larger text sizes.
-- Numeric keyboard must not cover the active row or timer controls. Keep Finish in the top bar and expose accessible Done/Next input controls.
+- Numeric keyboard must not cover the active row or timer controls. Keep Finish in the top bar. At the user’s 3 November request, avoid per-row Next/Done buttons; fields remain directly selectable, supported keyboard submit actions move focus or dismiss, and dragging the workout dismisses the keyboard. Native keyboard, large-text and screen-reader acceptance remains open.
 - No charts on Train, fabricated readiness score, social feed, AI prompts, gym selection or billing in this MVP.
 
 ## Appearance addition — 27 October 2026

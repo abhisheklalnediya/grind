@@ -1,5 +1,10 @@
 # M2–M3 training contract
 
+## 3 November 2026 — set-type extension
+
+Forward GRIND migrations extend storage to accept `warmup|working|drop|failure|rest_pause` while preserving existing values. The user selected only `warmup|working|drop|failure` for the selector; `rest_pause` is retained solely for compatibility with any earlier local data and is not offered as a new choice. Previous-performance ordinals remain partitioned by exact type. The client queries `get_supported_set_types()`, filters out `rest_pause`, and falls back to warm-up/working when the backend lacks the RPC, so newer types are not offered against an older server. A type change on a completed set clears completion and its associated timer through the existing upsert semantics; the UI confirms this. No M5 record-eligibility policy is changed: current summary working-set counts retain their existing definition. Deployment of the migration to hosted GRIND requires separate authorization.
+
+
 27 October 2026. Frozen coordination contract accepted by coordinator after user answers. Local-only implementation; no provider/hosted work. API names/keys below are shared across SQL, services, durable drafts and native features. Domain schemas live in `src/domain/training/`; generated database types remain integrator-owned.
 
 ## User decisions and numeric interpretation
@@ -26,7 +31,7 @@ WorkoutSession {
  source_routine_id: uuid|null,
  exercises: [{ id, exercise_id: catalogUUID, position, name,
    load_convention, load_mode, notes, rest_seconds,
-   sets: [{ id, position, set_type: warmup|working,
+   sets: [{ id, position, set_type: warmup|working|drop|failure (plus preserved legacy rest_pause),
      entered_load: decimalString|null, entered_unit: kg|lb,
      reps: integer|null, completed_at: timestamp|null }] }]
 }
@@ -61,7 +66,7 @@ All RPCs use `.schema('grind')`. Mutation receipts and changes commit atomically
 | `archive_custom_exercise`  | `p_operation_id uuid`, `p_exercise_id uuid`                                              | CatalogExercise with archived_at; no hard delete                                            |
 | `get_previous_performance` | `p_exercise_id uuid`, `p_load_mode text`, `p_load_convention text` default null                                                 | `{session_id,finished_at,sets:[{set_type,ordinal,entered_load,entered_unit,reps}]}` or null |
 
-Catalog browsing uses RLS-protected exercises SELECT, excluding archived definitions for new selection; never load provider data. Historical references remain readable. Previous uses the latest completed noncancelled session with the same stable catalog exercise ID, chosen mode and **requested workout snapshot load convention**. Native callers pass the active exercise snapshot convention explicitly. Omitted/null convention retains the current catalog convention for legacy callers; changing a custom definition must not change the comparison convention of an already active workout. Match working and warmup ordinals separately, flattened by exercise position/set position if the exercise occurred more than once. Include only completed eligible sets for that mode; unmatched ordinals show no Previous value. Previous is displayed only, never a completed prefill.
+Catalog browsing uses RLS-protected exercises SELECT, excluding archived definitions for new selection; never load provider data. Historical references remain readable. Previous uses the latest completed noncancelled session with the same stable catalog exercise ID, chosen mode and **requested workout snapshot load convention**. Native callers pass the active exercise snapshot convention explicitly. Omitted/null convention retains the current catalog convention for legacy callers; changing a custom definition must not change the comparison convention of an already active workout. Match ordinals separately for each exact set type, including preserved legacy rest_pause, flattened by exercise position/set position if the exercise occurred more than once. Include only completed eligible sets for that mode; unmatched ordinals show no Previous value. Previous is displayed only, never a completed prefill.
 
 ## Workout command payloads
 

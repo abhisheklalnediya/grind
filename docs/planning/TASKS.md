@@ -1,5 +1,63 @@
 # GRIND live task tracker
 
+## Current priorities — 6 November 2026
+
+| Task | Status | Owner / next acceptance |
+| --- | --- | --- |
+| Android core journey and recovery | Todo | Coordinator/device tester: verify workout entry → finish → History → restart and interruption recovery without disturbing existing work. |
+| iOS and physical-device acceptance | Deferred | Device tester: resolve the documented iOS toolchain/signing dependency, then test Auth, keyboard, accessibility, timer and recovery on both platforms. |
+| M4/M5 rest, records, correction and deletion | Deferred | Coordinator/architect: review [completion proposal](MVP_COMPLETION_PROPOSAL.md) and agree required contracts before implementation. |
+| Exercise catalog acceptance | In progress | Catalog owner: review remaining logging semantics, release/rights and native verification in [catalog plan](../EXERCISE_CATALOG_PLAN.md). |
+| Hosted set types and release | Deferred | Coordinator: inspect migration history and obtain explicit hosted rollout authorization before any deployment. |
+| Progression guidance and machine-specific history | Todo | Product/architect: define and validate selected product hypotheses before planning implementation. |
+| Test warning cleanup | Todo | Test owner: investigate the intermittent VirtualizedList `act(...)` warning observed in the 6 November coverage run without hiding failures or reducing coverage. |
+
+The [milestone roadmap](../IMPLEMENTATION_MILESTONES.md) gives the ordered plan. Current check results and blockers are in [build status](../BUILD_STATUS.md); page-level acceptance is in the [MVP checklist](MVP_CHECKLIST.md).
+
+## Earlier task handoffs — historical
+
+Entries below preserve scope and evidence at the time of each handoff. Their individual state labels may have been superseded by later entries or the current priorities above; they are not new authorization.
+
+## Set-entry and set-type refinement — 3 November 2026
+
+**Implemented locally; hosted rollout and native acceptance Todo — coordinator with UI, domain and SQL specialists.** User requested removing the per-row Next/Done buttons and a compact set-type selector, including Drop and additional kinds. User confirmed warm-up, working, drop and failure as the selectable labels; a previously introduced rest-pause value remains readable for compatibility but is not offered as a choice. Previous performance matches types separately. Record eligibility is not changed. Scope: workout/routine set UI and tests, shared selector, training contracts/services, an additive GRIND migration and local SQL tests, affected docs. Preserve drafts, units, existing options, active workouts and pre-existing work. New backend capability check falls back to warm-up/working on older servers. Local rollback-only SQL rehearsals and post-migration tests passed; both migrations are applied on the GRIND local stack. Hosted dry run lists the two set-type migrations; no hosted migration applied. Independent review and full app gates passed; native keyboard/accessibility/device review remains Todo.
+
+
+## MVP checklist remediation — 1 November 2026
+
+**Implemented for current UI slice; native acceptance and M4/M5 planning remain open — coordinator, exercise-detail and history specialists.** User requested all open checklist work. Current scope: EXERCISE-4 Overview/History presentation and shared controls under `src/features/exercises/**`/tests; HISTORY-2 saved timestamp in `src/features/history/**` and history screen integration tests; coordinator owns docs and integration. Preserve existing uncommitted work, account scope, server snapshots and deferred records semantics. Acceptance: focused tests, independent review, typecheck, lint, tests and coverage; device review separately. The [M4/M5 architecture proposal](MVP_COMPLETION_PROPOSAL.md) is ready for review before major implementation choices; no hosted or cross-app operations.
+
+
+## MVP checklist and exercise-history correction — 1 November 2026
+
+**Implemented; native acceptance Todo — coordinator and exercise-history developer.** Maintain [MVP check status](MVP_CHECKLIST.md) as the page/state acceptance view while this tracker owns assignment/status and build status owns evidence. Scope: checklist/index, exercise detail/history/RepDB UI and colocated tests; preserve real units, account-scoped pagination and current history contracts. Acceptance: timed/distance history and previous performance display saved measurements and match the correct tracking type; linked RepDB detail exposes existing history using the mapped server identity; focused tests, independent review, typecheck, lint and coverage. No hosted or native configuration changes.
+
+
+## MVP page-by-page alignment — 1 November 2026
+
+**In progress — coordinator and bounded Luna specialists.** All 21 prototype selector pages opened and compared with implementation source; detailed page disposition is in [review record](../reports/reviews/2026-11-01-mvp-page-alignment.md). Scope: current UI and colocated tests in history, routines, exercises, auth/settings and reusable components; preserve user data and existing draft/recovery behavior. History cards/empty state, saved summary, routine panels, picker scope, mapped exercise load convention and Settings recovery are implemented. Full native comparison and device verification remain Todo. Rest notifications (M4), records/corrections/deletion (M5), unified exercise-detail behavior and optional save-as-routine remain unfinished and require their own contracts rather than prototype simulations. Acceptance: typecheck, lint and complete coverage, independent review, then page/state device checks on supported appearances and platforms.
+
+
+## Workout set-control follow-up — 1 November 2026
+
+**Implemented; native acceptance Todo.** Coordinator owns workout set control and tests, with independent Luna review. Reuse a common set options control across repetition and timed rows, display distance units, retain existing validation and commands. Focused and full checks passed; inspect dark/light, narrow/large text, actual software keyboard, accessibility, iOS and physical devices before acceptance.
+
+
+## Workout screenshot alignment — 1 November 2026
+
+**Implemented; native acceptance in progress.** Coordinator owns set rows, shared button, status/elapsed and integration; Luna developer owned workout shell and screen tests; independent Luna reviewer checked implementation. Scope: `src/features/workouts/**`, shared Button/tests and affected status documents. Acceptance: preserve workout commands, set options and mixed-unit labels; match MVP hierarchy and completion states; pass typecheck, lint and coverage; review populated workout on Android/iOS, both appearances, narrow/large text, keyboard and accessibility. Android light-mode screenshot inspected; remaining device matrix is Todo.
+
+
+## Auth request investigation — 1 November 2026
+
+**In progress — coordinator.** Scope: auth screen and colocated tests; coordination/build documents. Removed eager sign-in/signup navigation before session verification and added a way to leave the waiting state. Acceptance: reproduce and resolve the reported generic request error, verify successful signup/login and provider-to-gate handoff on the current Android bundle, and run typecheck, lint and coverage. Existing request-error cause and native end-to-end acceptance remain open.
+
+
+## Train design alignment — 1 November 2026
+
+**Implemented — coordinator; native visual acceptance Todo.** Scope: `src/features/home/TrainScreen.tsx` and colocated tests; documentation in this tracker, agent status and build status. Match the MVP session card, routine cards and section actions while preserving server-backed lists, active recovery and error states. Acceptance: focused Train tests, typecheck, lint and full test/coverage gates; review on an authenticated Android and iOS device remains open.
+
+
 ## Authentication branding — 31 October 2026
 
 **Implemented — coordinator with asset and auth specialists; device acceptance Todo.** Apply the selected lime GRIND concept to auth and related screens, and configure launcher assets. Automated checks are recorded in build status. Rebuild native binaries and verify auth layouts, accessibility and launcher icons on supported devices.

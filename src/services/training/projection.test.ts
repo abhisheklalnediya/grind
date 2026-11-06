@@ -146,6 +146,33 @@ it("preserves unchanged completion, resets changed sets, and supports ordering/r
     )?.name,
   ).toBe("Pending");
 });
+it("preserves each exact set type and clears completion when its type changes", () => {
+  const setTypes = ["warmup", "working", "drop", "failure", "rest_pause"] as const;
+  for (const set_type of setTypes) {
+    const set = { ...makeSet(), set_type };
+    const withSet = run(populated(), {
+      type: "upsert_set",
+      exercise_id: exercise,
+      set,
+    });
+    expect(withSet.exercises[0]?.sets[0]?.set_type).toBe(set_type);
+    const completed = run(withSet, {
+      type: "complete_set",
+      exercise_id: exercise,
+      set_id: set.id,
+      completed: true,
+    });
+    expect(completed.exercises[0]?.sets[0]?.completed_at).not.toBeNull();
+    const nextType = setTypes.find((candidate) => candidate !== set_type) ?? "warmup";
+    const changed = run(completed, {
+      type: "upsert_set",
+      exercise_id: exercise,
+      set: { ...set, set_type: nextType },
+    });
+    expect(changed.exercises[0]?.sets[0]?.set_type).toBe(nextType);
+    expect(changed.exercises[0]?.sets[0]?.completed_at).toBeNull();
+  }
+});
 it("preserves the tracking type and clears completion after measurement edits", () => {
   const timed = projectCommand(
     makeSession(),

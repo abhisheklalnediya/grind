@@ -280,6 +280,84 @@ it("shows only completed matching rows and distinguishes warm-ups and bodyweight
   expect(screen.getAllByText(/Warm-up 1/)).toHaveLength(1);
   expect(screen.queryByText(/Working/)).toBeNull();
 });
+it("renders timed measurements with their entered distance unit and matches tracking type", async () => {
+  const { history } = setup();
+  const timedExercise = {
+    ...exercise,
+    tracking_type: "distance_duration" as const,
+  };
+  const row = {
+    id: trainingId(30),
+    exercise_id: exercise.id,
+    position: 0,
+    name: exercise.name,
+    load_mode: exercise.load_mode,
+    load_convention: exercise.load_convention,
+    tracking_type: "distance_duration" as const,
+    notes: "",
+    rest_seconds: 120,
+    sets: [
+      {
+        ...makeSet(),
+        duration_seconds: 125,
+        entered_distance: "1.25",
+        distance_unit: "mi" as const,
+        completed_at: "2026-10-27T12:00:00Z",
+      },
+    ],
+  };
+  const session = {
+    ...makeSession(),
+    status: "completed" as const,
+    finished_at: "2026-10-27T12:00:00Z",
+    exercises: [
+      { ...row, id: trainingId(31), tracking_type: "reps" as const },
+      row,
+    ],
+  };
+  history.mockResolvedValueOnce({ items: [session], next_cursor: null });
+  await render(wrap(<ExerciseHistory exercise={timedExercise} />));
+  expect(
+    await screen.findByText("Working 1: 125 seconds · 1.25 mi"),
+  ).toBeVisible();
+  expect(screen.queryByText(/reps/)).toBeNull();
+});
+it("renders duration-only history without a bodyweight or repetition label", async () => {
+  const { history } = setup();
+  const durationExercise = { ...exercise, tracking_type: "duration" as const };
+  const row = {
+    id: trainingId(32),
+    exercise_id: exercise.id,
+    position: 0,
+    name: exercise.name,
+    load_mode: exercise.load_mode,
+    load_convention: exercise.load_convention,
+    tracking_type: "duration" as const,
+    notes: "",
+    rest_seconds: 120,
+    sets: [
+      {
+        ...makeSet(),
+        duration_seconds: 45,
+        completed_at: "2026-10-27T12:00:00Z",
+      },
+    ],
+  };
+  history.mockResolvedValueOnce({
+    items: [
+      {
+        ...makeSession(),
+        status: "completed",
+        finished_at: "2026-10-27T12:00:00Z",
+        exercises: [row],
+      },
+    ],
+    next_cursor: null,
+  });
+  await render(wrap(<ExerciseHistory exercise={durationExercise} />));
+  expect(await screen.findByText("Working 1: 45 seconds")).toBeVisible();
+  expect(screen.queryByText(/Bodyweight|reps/)).toBeNull();
+});
 it("keeps selection visible but disabled while preferences are pending", async () => {
   setup();
   jest

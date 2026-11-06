@@ -1,28 +1,44 @@
-import type { TrainingRoutine } from "@/domain/training";
+import { setTypeLabels, type TrainingRoutine } from "@/domain/training";
 import { Copy } from "@/features/exercises/shared";
+import { Panel } from "@/components/Panel";
+import { Text } from "react-native";
+import { useTheme } from "@/theme/useTheme";
 
 type RoutineExercise = TrainingRoutine["exercises"][number];
 
 export function RoutineTargets({
   exercise,
   name,
+  position,
 }: {
   exercise: RoutineExercise;
   name: string;
+  position: number;
 }) {
+  const { colors } = useTheme();
   return (
-    <>
-      <Copy>{name}</Copy>
+    <Panel>
+      <Text style={{ color: colors.accentText, fontWeight: "800" }}>
+        {String(position + 1).padStart(2, "0")}
+      </Text>
+      <Text
+        accessibilityRole="header"
+        style={{ color: colors.text, fontSize: 18, fontWeight: "700" }}
+      >
+        {name}
+      </Text>
       <Copy>
-        {exercise.sets.length} {exercise.sets.length === 1 ? "set" : "sets"} · {exercise.rest_seconds}s rest
+        {exercise.sets.length} {exercise.sets.length === 1 ? "set" : "sets"} ·{" "}
+        {exercise.rest_seconds}s rest
         {exercise.notes ? ` · ${exercise.notes}` : ""}
       </Copy>
       {exercise.sets.map((set, index) => (
         <Copy key={set.id}>
-          {set.set_type === "warmup" ? "Warm-up" : "Working"} {setNumber(exercise, index)} · {target(exercise, set)}
+          {setTypeLabels[set.set_type]} {setNumber(exercise, index)} ·{" "}
+          {target(exercise, set)}
         </Copy>
       ))}
-    </>
+    </Panel>
   );
 }
 
@@ -39,20 +55,28 @@ function target(
   exercise: RoutineExercise,
   set: RoutineExercise["sets"][number],
 ) {
-  if (exercise.tracking_type === "duration" || exercise.tracking_type === "distance_duration") {
-    const duration = set.duration_seconds == null ? "Duration unspecified" : `${set.duration_seconds} sec`;
+  if (
+    exercise.tracking_type === "duration" ||
+    exercise.tracking_type === "distance_duration"
+  ) {
+    const duration =
+      set.duration_seconds == null
+        ? "Duration unspecified"
+        : `${set.duration_seconds} sec`;
     if (exercise.tracking_type === "duration") return duration;
-    const distance = set.entered_distance == null
-      ? "Distance unspecified"
-      : `${set.entered_distance} ${set.distance_unit ?? ""}`.trim();
+    const distance =
+      set.entered_distance == null
+        ? "Distance unspecified"
+        : `${set.entered_distance} ${set.distance_unit ?? ""}`.trim();
     return `${duration} · ${distance}`;
   }
   const mode = exercise.load_mode;
-  const load = mode === "bodyweight"
-    ? "Bodyweight"
-    : set.entered_load == null
-      ? `${mode === "assisted" ? "Assistance" : mode === "weighted_bodyweight" ? "Added weight" : "Weight"} unspecified`
-      : `${mode === "assisted" ? "Assistance" : mode === "weighted_bodyweight" ? "Added weight" : "Weight"} ${set.entered_load} ${set.entered_unit}`;
+  const load =
+    mode === "bodyweight"
+      ? "Bodyweight"
+      : set.entered_load == null
+        ? `${mode === "assisted" ? "Assistance" : mode === "weighted_bodyweight" ? "Added weight" : "Weight"} unspecified`
+        : `${mode === "assisted" ? "Assistance" : mode === "weighted_bodyweight" ? "Added weight" : "Weight"} ${set.entered_load} ${set.entered_unit}`;
   const reps = set.reps == null ? "reps unspecified" : `${set.reps} reps`;
   return `${load} · ${reps}`;
 }

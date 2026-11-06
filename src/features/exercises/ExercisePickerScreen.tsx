@@ -37,6 +37,7 @@ export function ExercisePickerScreen({
   const [search, setSearch] = useState("");
   const [muscle, setMuscle] = useState("");
   const [equipment, setEquipment] = useState("");
+  const [mine, setMine] = useState(false);
   const bundledBySourceId = useMemo(
     () => new Map(bundledExercises.map((item) => [item.id, item])),
     [],
@@ -70,7 +71,10 @@ export function ExercisePickerScreen({
   const normalizedEquipment = normalize(equipment);
   const visibleItems = (query.data ?? [])
     .filter(
-      (exercise) => !exercise.archived_at && isConfiguredExercise(exercise),
+      (exercise) =>
+        !exercise.archived_at &&
+        isConfiguredExercise(exercise) &&
+        (!mine || exercise.origin === "custom"),
     )
     .filter((exercise) => {
       const sourceId =
@@ -225,6 +229,33 @@ export function ExercisePickerScreen({
                   onChange={setEquipment}
                 />
               </View>
+              <View style={[styles.scopes, { borderColor: colors.border }]}>
+                {([false, true] as const).map((value) => (
+                  <Pressable
+                    key={String(value)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: mine === value }}
+                    onPress={() => setMine(value)}
+                    style={[
+                      styles.scope,
+                      mine === value && {
+                        borderBottomColor: colors.accentText,
+                        borderBottomWidth: 2,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={{
+                        color:
+                          mine === value ? colors.accentText : colors.secondary,
+                        fontWeight: "600",
+                      }}
+                    >
+                      {value ? "My exercises" : "All exercises"}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
               <View style={styles.count}>
                 <Text style={{ color: colors.secondary }}>
                   {visibleItems.length}{" "}
@@ -349,6 +380,17 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   filters: { flexDirection: "row", gap: 8, marginTop: 12 },
+  scopes: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    marginTop: 8,
+  },
+  scope: {
+    flex: 1,
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   count: {
     minHeight: 52,
     flexDirection: "row",

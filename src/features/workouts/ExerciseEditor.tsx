@@ -9,6 +9,7 @@ import {
   previousForSet,
 } from "@/domain/training";
 import { useTraining } from "@/features/training";
+import { useSupportedSetTypes } from "@/features/training/useSupportedSetTypes";
 import { useTheme } from "@/theme/useTheme";
 import { useTrainingDefaults } from "@/features/preferences";
 import { SetEditor } from "./SetEditor";
@@ -21,6 +22,7 @@ export function ExerciseEditor({
   exercise: TrainingSession["exercises"][number];
 }) {
   const training = useTraining();
+  const supportedTypes = useSupportedSetTypes();
   const defaults = useTrainingDefaults();
   const { colors, scope } = useTheme();
   const [error, setError] = useState("");
@@ -102,7 +104,7 @@ export function ExerciseEditor({
           {exercise.name}
         </Text>
         <Button
-          secondary
+          tertiary
           label="•••"
           selected={detailsOpen}
           accessibilityLabel={`Options for ${exercise.name}`}
@@ -231,6 +233,7 @@ export function ExerciseEditor({
               key={set.id}
               exercise={exercise}
               set={set}
+              supportedTypes={supportedTypes}
               previous={
                 prior
                   ? `${prior.duration_seconds ?? "—"} seconds${exercise.tracking_type === "distance_duration" ? ` · ${prior.entered_distance ?? "—"} ${prior.distance_unit ?? ""}` : ""}`
@@ -245,6 +248,8 @@ export function ExerciseEditor({
             key={set.id}
             exercise={exercise}
             set={set}
+            supportedTypes={supportedTypes}
+            showUnit={enteredUnits.size > 1}
             previous={
               prior
                 ? `${prior.entered_load ?? "Bodyweight"} ${prior.entered_load === null ? "" : prior.entered_unit} × ${prior.reps}`
@@ -264,8 +269,9 @@ export function ExerciseEditor({
         </>
       ) : null}
       <Button
-        secondary
-        label="Add set"
+        tertiary
+        label="＋ Add set"
+        accessibilityLabel="Add set"
         disabled={
           exercise.sets.length >= 100 ||
           defaults.pending ||
@@ -360,7 +366,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   headerSet: {
-    width: 32,
+    width: 48,
     textAlign: "center",
     fontSize: 9,
     letterSpacing: 0.4,
@@ -380,7 +386,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   headerDone: {
-    width: 102,
+    width: 50,
     textAlign: "center",
     fontSize: 9,
     letterSpacing: 0.4,

@@ -23,7 +23,7 @@ import {
   useRoutineDraft,
 } from "./index";
 import { TemplateExercise } from "./TemplateExercise";
-import type { RoutinePayload, TrainingRoutine } from "@/domain/training";
+import type { RoutinePayload, SetType, TrainingRoutine } from "@/domain/training";
 jest.mock("@/features/training", () => ({ useTraining: jest.fn() }));
 const mockListener = jest.fn();
 const mockDispatch = jest.fn();
@@ -48,9 +48,14 @@ const template: RoutinePayload["exercises"][number] = {
   rest_seconds: 120,
   sets: [],
 };
-function setup({ error = false, saveConflict = false } = {}) {
+function setup({
+  error = false,
+  saveConflict = false,
+  supportedTypes = ["warmup", "working"] as SetType[],
+} = {}) {
   const api = createTrainingApi({ rpc: jest.fn(), catalog: jest.fn() });
   jest.spyOn(api, "catalog").mockResolvedValue([catalog]);
+  jest.spyOn(api, "supportedSetTypes").mockResolvedValue(supportedTypes);
   const read = jest.spyOn(api, "routine");
   if (error) read.mockRejectedValue(new Error("offline"));
   else read.mockResolvedValue({ ...makeRoutine(), exercises: [template] });
@@ -113,7 +118,20 @@ it("retains a distance exercise tracking type in the routine draft", () => {
 });
 it("rejects an unconfigured exercise in a routine draft", () => {
   useRoutineDraft.getState().begin("a");
-  expect(() => useRoutineDraft.getState().add("a", [{ ...catalog, origin: "provider", is_configured: false, load_mode: null, load_convention: null, tracking_type: null }])).toThrow("not yet available");
+  expect(() =>
+    useRoutineDraft
+      .getState()
+      .add("a", [
+        {
+          ...catalog,
+          origin: "provider",
+          is_configured: false,
+          load_mode: null,
+          load_convention: null,
+          tracking_type: null,
+        },
+      ]),
+  ).toThrow("not yet available");
   expect(useRoutineDraft.getState().draft?.payload.exercises).toEqual([]);
 });
 it("edits a timed routine set and distance unit", async () => {
@@ -204,6 +222,14 @@ it("shows total and per-set targets across load modes and tracking types", async
         entered_unit: "kg",
         reps: null,
       },
+      ...(["drop", "failure", "rest_pause"] as const).map((set_type, index) => ({
+        id: trainingId(40 + index),
+        position: 2 + index,
+        set_type,
+        entered_load: null,
+        entered_unit: "kg" as const,
+        reps: 8,
+      })),
     ],
   };
   const variants: TrainingRoutine["exercises"] = [
@@ -212,50 +238,85 @@ it("shows total and per-set targets across load modes and tracking types", async
       ...template,
       id: trainingId(32),
       load_mode: "bodyweight",
-      sets: [{
-        id: trainingId(33), position: 0, set_type: "working",
-        entered_load: null, entered_unit: "kg", reps: 6,
-      }],
+      sets: [
+        {
+          id: trainingId(33),
+          position: 0,
+          set_type: "working",
+          entered_load: null,
+          entered_unit: "kg",
+          reps: 6,
+        },
+      ],
     },
     {
       ...template,
       id: trainingId(34),
       load_mode: "assisted",
-      sets: [{
-        id: trainingId(35), position: 0, set_type: "working",
-        entered_load: null, entered_unit: "lb", reps: 5,
-      }],
+      sets: [
+        {
+          id: trainingId(35),
+          position: 0,
+          set_type: "working",
+          entered_load: null,
+          entered_unit: "lb",
+          reps: 5,
+        },
+      ],
     },
     {
       ...template,
       id: trainingId(36),
       tracking_type: "duration",
-      sets: [{
-        id: trainingId(37), position: 0, set_type: "warmup",
-        entered_load: null, entered_unit: "kg", reps: null,
-        duration_seconds: null,
-      }],
+      sets: [
+        {
+          id: trainingId(37),
+          position: 0,
+          set_type: "warmup",
+          entered_load: null,
+          entered_unit: "kg",
+          reps: null,
+          duration_seconds: null,
+        },
+      ],
     },
     {
       ...template,
       id: trainingId(38),
       tracking_type: "distance_duration",
-      sets: [{
-        id: trainingId(39), position: 0, set_type: "working",
-        entered_load: null, entered_unit: "kg", reps: null,
-        duration_seconds: 600, entered_distance: "1.25", distance_unit: "mi",
-      }],
+      sets: [
+        {
+          id: trainingId(39),
+          position: 0,
+          set_type: "working",
+          entered_load: null,
+          entered_unit: "kg",
+          reps: null,
+          duration_seconds: 600,
+          entered_distance: "1.25",
+          distance_unit: "mi",
+        },
+      ],
     },
   ];
   read.mockResolvedValue({ ...base, exercises: variants });
   await mount(<RoutineDetailScreen id={trainingId(4)} />);
-  await screen.findByText("6 planned sets");
+  await screen.findByText("9 planned sets");
+  expect(screen.getByText("01")).toBeVisible();
+  expect(screen.getByText("05")).toBeVisible();
   expect(screen.getByText("Warm-up 1 · Weight 18.50 lb · 8 reps")).toBeTruthy();
-  expect(screen.getByText("Working 1 · Weight unspecified · reps unspecified")).toBeTruthy();
+  expect(
+    screen.getByText("Working 1 · Weight unspecified · reps unspecified"),
+  ).toBeTruthy();
   expect(screen.getByText("Working 1 · Bodyweight · 6 reps")).toBeTruthy();
-  expect(screen.getByText("Working 1 · Assistance unspecified · 5 reps")).toBeTruthy();
+  expect(
+    screen.getByText("Working 1 · Assistance unspecified · 5 reps"),
+  ).toBeTruthy();
   expect(screen.getByText("Warm-up 1 · Duration unspecified")).toBeTruthy();
   expect(screen.getByText("Working 1 · 600 sec · 1.25 mi")).toBeTruthy();
+  expect(screen.getByText("Drop 1 · Weight unspecified · 8 reps")).toBeTruthy();
+  expect(screen.getByText("Failure 1 · Weight unspecified · 8 reps")).toBeTruthy();
+  expect(screen.getByText("Rest-pause 1 · Weight unspecified · 8 reps")).toBeTruthy();
 });
 it("archives only after confirmation and retries failed reads", async () => {
   const { read, archive } = setup({ error: true });
@@ -353,6 +414,7 @@ it("loads an existing draft, edits notes/rest and sets, then retains it on confl
   expect(screen.queryByText("Review saved version")).toBeNull();
 });
 it("template controls change type, unit, null fields and remove sets", async () => {
+  setup({ supportedTypes: ["warmup", "working", "drop", "failure", "rest_pause"] });
   const onChange = jest.fn();
   const callbacks = { onRemove: jest.fn(), onUp: jest.fn(), onDown: jest.fn() };
   const set = {
@@ -363,7 +425,7 @@ it("template controls change type, unit, null fields and remove sets", async () 
     entered_unit: "kg" as const,
     reps: null,
   };
-  const view = await render(
+  await mount(
     <TemplateExercise
       exercise={{ ...template, sets: [set] }}
       name="Bench"
@@ -371,10 +433,17 @@ it("template controls change type, unit, null fields and remove sets", async () 
       {...callbacks}
     />,
   );
-  await fireEvent.press(screen.getByText("Working set"));
+  await fireEvent.press(screen.getByLabelText("Set 1: Set type: Working set"));
+  await fireEvent.press(screen.getByRole("button", { name: "Drop set" }));
   expect(onChange).toHaveBeenLastCalledWith(
     expect.objectContaining({
-      sets: [expect.objectContaining({ set_type: "warmup" })],
+      sets: [expect.objectContaining({
+        id: trainingId(8),
+        position: 0,
+        set_type: "drop",
+        entered_unit: "kg",
+        reps: null,
+      })],
     }),
   );
   await fireEvent.press(screen.getByText("Use lb"));
@@ -388,7 +457,8 @@ it("template controls change type, unit, null fields and remove sets", async () 
   await fireEvent.press(screen.getByText("Move Bench down"));
   await fireEvent.press(screen.getByText("Remove Bench"));
   expect(callbacks.onRemove).toHaveBeenCalled();
-  await view.rerender(
+  await cleanup();
+  await mount(
     <TemplateExercise
       exercise={{ ...template, load_mode: "bodyweight", sets: [set] }}
       name="Pull-up"
@@ -475,6 +545,7 @@ it("shows start failures and retries routine editor loading", async () => {
   await screen.findByText("Cannot start");
 });
 it("retains partial template input, removes a middle set and toggles warmup/unit back", async () => {
+  setup();
   const first = {
     id: trainingId(11),
     position: 0,
@@ -484,7 +555,7 @@ it("retains partial template input, removes a middle set and toggles warmup/unit
     reps: 4,
   };
   const onChange = jest.fn();
-  await render(
+  await mount(
     <TemplateExercise
       name="Row"
       exercise={{
@@ -497,10 +568,10 @@ it("retains partial template input, removes a middle set and toggles warmup/unit
       onRemove={jest.fn()}
     />,
   );
-  const warmup = screen.getAllByText("Warm-up set")[0];
   const unit = screen.getAllByText("View in kg")[0];
-  if (!warmup || !unit) throw new Error("Missing set controls");
-  await fireEvent.press(warmup);
+  if (!unit) throw new Error("Missing set controls");
+  await fireEvent.press(screen.getByLabelText("Set 1: Set type: Warm-up set"));
+  await fireEvent.press(screen.getByRole("button", { name: "Working set" }));
   await fireEvent.press(unit);
   await fireEvent.press(screen.getByText("Remove set 1"));
   expect(onChange).toHaveBeenLastCalledWith(
@@ -508,6 +579,49 @@ it("retains partial template input, removes a middle set and toggles warmup/unit
       sets: [expect.objectContaining({ id: trainingId(12), position: 0 })],
     }),
   );
+});
+it("gates new routine set types by server capability without rewriting stored values", async () => {
+  setup({ supportedTypes: ["warmup", "working", "drop"] });
+  const onChange = jest.fn();
+  const preserved = {
+    id: trainingId(19),
+    position: 0,
+    set_type: "failure" as const,
+    entered_load: "22.5",
+    entered_unit: "lb" as const,
+    reps: 6,
+  };
+  const working = {
+    ...preserved,
+    id: trainingId(20),
+    position: 1,
+    set_type: "working" as const,
+  };
+  await mount(
+    <TemplateExercise
+      name="Bench"
+      exercise={{ ...template, sets: [preserved, working] }}
+      onChange={onChange}
+      onUp={jest.fn()}
+      onDown={jest.fn()}
+      onRemove={jest.fn()}
+    />,
+  );
+  expect(onChange).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText("Set 1: Set type: Failure set"));
+  expect(screen.getByRole("button", { name: "Drop set" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Failure set" })).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Drop set" }));
+  expect(onChange).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      sets: [
+        expect.objectContaining({ ...preserved, set_type: "drop" }),
+        expect.objectContaining(working),
+      ],
+    }),
+  );
+  await fireEvent.press(screen.getByLabelText("Set 2: Set type: Working set"));
+  expect(screen.queryByRole("button", { name: "Failure set" })).toBeNull();
 });
 it("resumes an existing active workout without starting another session", async () => {
   const { api, start } = setup();
@@ -527,12 +641,22 @@ it("locks editing and exit during save, then restores the draft after failure", 
   let rejectSave: (error: Error) => void = () => {
     throw new Error("Save has not started");
   };
-  save.mockImplementation(() => new Promise((_, reject) => { rejectSave = reject; }));
+  save.mockImplementation(
+    () =>
+      new Promise((_, reject) => {
+        rejectSave = reject;
+      }),
+  );
   const alert = jest.spyOn(Alert, "alert");
   await mount(<RoutineEditorScreen />);
-  await fireEvent.changeText(screen.getByLabelText("Routine name"), "Keep my draft");
+  await fireEvent.changeText(
+    screen.getByLabelText("Routine name"),
+    "Keep my draft",
+  );
   await fireEvent.press(screen.getByText("Save routine"));
-  await screen.findByText("Saving routine… Please wait before editing or leaving.");
+  await screen.findByText(
+    "Saving routine… Please wait before editing or leaving.",
+  );
   expect(screen.queryByLabelText("Routine name")).toBeNull();
   expect(screen.queryByText("Add exercises")).toBeNull();
   expect(screen.queryByText("Cancel")).toBeNull();
@@ -543,7 +667,9 @@ it("locks editing and exit during save, then restores the draft after failure", 
   expect(alert).not.toHaveBeenCalled();
   await act(async () => rejectSave(new Error("Connection interrupted")));
   expect(await screen.findByText("Connection interrupted")).toBeTruthy();
-  expect(screen.getByLabelText("Routine name").props.value).toBe("Keep my draft");
+  expect(screen.getByLabelText("Routine name").props.value).toBe(
+    "Keep my draft",
+  );
   expect(useRoutineDraft.getState().draft?.dirty).toBe(true);
   await fireEvent.press(screen.getByText("Cancel"));
   expect(router.back).toHaveBeenCalledTimes(1);

@@ -118,6 +118,31 @@ it('routes recovery and completed setup accounts without mounting their wrong de
   await waitFor(() => expect(screen.getByText('Allowed page')).toBeVisible()); await view.unmount();
 });
 
+it("allows a signed-in account to request password recovery, then returns to Train on exit", async () => {
+  jest.mocked(joinGrind).mockResolvedValue(account);
+  jest.mocked(useSegments).mockReturnValue(["auth", "recovery"] as never);
+  jest.mocked(useAuth).mockReturnValue(signedIn);
+  const client = new QueryClient({
+    defaultOptions: { queries: { gcTime: Infinity, retry: false } },
+  });
+  const view = await render(
+    <QueryClientProvider client={client}>
+      <AuthGate><Text>Allowed page</Text></AuthGate>
+    </QueryClientProvider>,
+  );
+  await waitFor(() => expect(screen.getByText("Allowed page")).toBeVisible());
+  expect(router.replace).not.toHaveBeenCalled();
+  expect(joinGrind).not.toHaveBeenCalled();
+
+  jest.mocked(useSegments).mockReturnValue(["auth", "sign-in"] as never);
+  await view.rerender(
+    <QueryClientProvider client={client}>
+      <AuthGate><Text>Allowed page</Text></AuthGate>
+    </QueryClientProvider>,
+  );
+  await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/"));
+});
+
 it('retains membership errors behind a retry/sign-out gate instead of opening protected tabs', async () => {
   jest.mocked(joinGrind).mockRejectedValueOnce(Error('local offline')).mockResolvedValueOnce(account);
   const view = await gateAt(['(tabs)'], signedIn);

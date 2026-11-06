@@ -1,8 +1,17 @@
+import { Panel } from "@/components/Panel";
 import { LoadUnitControl } from "@/components/LoadUnitControl";
 import { useTrainingDefaults } from "@/features/preferences";
 import { Button } from "@/components/Button";
 import { Field, Copy } from "@/features/exercises/shared";
-import { loadFieldLabel, type RoutinePayload } from "@/domain/training";
+import { SetTypeSelector } from "@/components/SetTypeSelector";
+import { useSupportedSetTypes } from "@/features/training/useSupportedSetTypes";
+import {
+  loadFieldLabel,
+  setTypeLabels,
+  setTypeSchema,
+  setTypeShortLabel,
+  type RoutinePayload,
+} from "@/domain/training";
 import { randomUUID } from "expo-crypto";
 type Exercise = RoutinePayload["exercises"][number];
 export function TemplateExercise({
@@ -21,9 +30,12 @@ export function TemplateExercise({
   onDown: () => void;
 }) {
   const defaults = useTrainingDefaults();
+  const supportedTypes = useSupportedSetTypes();
   return (
-    <>
-      <Copy>{name}</Copy>
+    <Panel>
+      <Copy>
+        {String(exercise.position + 1).padStart(2, "0")} · {name}
+      </Copy>
       <Button secondary label={`Move ${name} up`} onPress={onUp} />
       <Button secondary label={`Move ${name} down`} onPress={onDown} />
       <Field
@@ -46,6 +58,12 @@ export function TemplateExercise({
           index={index}
           mode={exercise.load_mode}
           trackingType={exercise.tracking_type ?? "reps"}
+          setTypes={supportedTypes}
+          workingOrdinal={
+            exercise.sets
+              .slice(0, index + 1)
+              .filter((item) => item.set_type === "working").length
+          }
           onChange={(value) =>
             onChange({
               ...exercise,
@@ -92,7 +110,7 @@ export function TemplateExercise({
         }
       />
       <Button secondary label={`Remove ${name}`} onPress={onRemove} />
-    </>
+    </Panel>
   );
 }
 function TemplateSet({
@@ -100,6 +118,8 @@ function TemplateSet({
   index,
   mode,
   trackingType,
+  setTypes,
+  workingOrdinal,
   onChange,
   onRemove,
 }: {
@@ -107,20 +127,34 @@ function TemplateSet({
   index: number;
   mode: Exercise["load_mode"];
   trackingType: NonNullable<Exercise["tracking_type"]>;
+  setTypes: ReturnType<typeof useSupportedSetTypes>;
+  workingOrdinal: number;
   onChange: (set: Exercise["sets"][number]) => void;
   onRemove: () => void;
 }) {
+  const choices = setTypes.filter((type) => type !== "rest_pause");
+  const availableTypes =
+    set.set_type === "rest_pause" || choices.includes(set.set_type)
+      ? choices
+      : [...choices, set.set_type];
   return (
     <>
       <Copy>Set {index + 1}</Copy>
-      <Button
-        secondary
-        label={set.set_type === "working" ? "Working set" : "Warm-up set"}
-        onPress={() =>
-          onChange({
-            ...set,
-            set_type: set.set_type === "working" ? "warmup" : "working",
-          })
+      <SetTypeSelector
+        value={set.set_type}
+        currentOption={{
+          value: set.set_type,
+          label: `${setTypeLabels[set.set_type]} set`,
+          shortLabel: setTypeShortLabel(set.set_type, workingOrdinal),
+        }}
+        context={`Set ${index + 1}`}
+        options={availableTypes.map((type) => ({
+          value: type,
+          label: `${setTypeLabels[type]} set`,
+          shortLabel: setTypeShortLabel(type, workingOrdinal),
+        }))}
+        onSelect={(value) =>
+          onChange({ ...set, set_type: setTypeSchema.parse(value) })
         }
       />
       {trackingType !== "reps" ? (

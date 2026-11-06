@@ -3,6 +3,10 @@ import { Alert, Keyboard, Text, TextInput, View } from "react-native";
 import { Button } from "@/components/Button";
 import {
   isSetCompleteable,
+  setTypeLabels,
+  setTypeShortLabel,
+  setTypeSchema,
+  type SetType,
   type TrainingSession,
   type TrainingSet,
 } from "@/domain/training";
@@ -11,22 +15,24 @@ import { rawFieldKey } from "@/services/training/outboxState";
 import { useTheme } from "@/theme/useTheme";
 import { moved } from "./fields";
 import { styles } from "./setEditorStyles";
+import { SetTypeSelector } from "@/components/SetTypeSelector";
 
 type Exercise = TrainingSession["exercises"][number];
 export function TimedSetEditor({
   exercise,
   set,
   previous = "—",
+  supportedTypes = ["warmup", "working"],
 }: {
   exercise: Exercise;
   set: TrainingSet;
   previous?: string;
+  supportedTypes?: SetType[];
 }) {
   const training = useTraining();
   const { colors } = useTheme();
   const [error, setError] = useState("");
   const [options, setOptions] = useState(false);
-  const [focused, setFocused] = useState<"duration" | "distance" | null>(null);
   const distanceInput = useRef<TextInput>(null);
   const durationInput = useRef<TextInput>(null);
   const durationKey = rawFieldKey(exercise.id, set.id, "duration");
@@ -159,15 +165,33 @@ export function TimedSetEditor({
       ]}
     >
       <View style={[styles.loggingRow, styles.tableRow]}>
-        <Text
-          accessibilityLabel={`${context} · ${set.set_type}${set.completed_at ? " · Completed" : ""}`}
-          style={[
-            styles.setValue,
-            { color: colors.text, fontSize: 15, fontWeight: "700" },
-          ]}
-        >
-          {set.set_type === "warmup" ? "W" : workingOrdinal}
-        </Text>
+        <SetTypeSelector
+          context={context}
+          completed={Boolean(set.completed_at)}
+          value={set.set_type}
+          currentOption={{
+            value: set.set_type,
+            label: `${setTypeLabels[set.set_type]} set`,
+            shortLabel: setTypeShortLabel(set.set_type, 0),
+          }}
+          options={Array.from(
+            new Set([
+              ...supportedTypes.filter((type) => type !== "rest_pause"),
+              ...(set.set_type === "rest_pause" ? [] : [set.set_type]),
+            ]),
+          ).map((type) => ({
+            value: type,
+            label: `${setTypeLabels[type]} set`,
+            shortLabel: setTypeShortLabel(type, workingOrdinal),
+          }))}
+          onSelect={(value) => {
+            const type = setTypeSchema.safeParse(value);
+            if (type.success && type.data !== set.set_type)
+              void submit(false, set.distance_unit ?? "km", type.data);
+          }}
+          onMore={() => setOptions(!options)}
+          moreLabel={options ? "Hide set actions" : "More set actions"}
+        />
         <Text
           numberOfLines={2}
           style={[styles.previousValue, { color: colors.secondary }]}
@@ -183,48 +207,55 @@ export function TimedSetEditor({
             returnKeyType={
               exercise.tracking_type === "distance_duration" ? "next" : "done"
             }
-            onFocus={() => setFocused("duration")}
             onSubmitEditing={() => {
               if (exercise.tracking_type === "distance_duration")
                 distanceInput.current?.focus();
               else {
                 Keyboard.dismiss();
-                setFocused(null);
                 void submit();
               }
             }}
             onChangeText={(value) => update("duration", value)}
             onBlur={() => {
-              setFocused((current) =>
-                current === "duration" ? null : current,
-              );
               void submit();
             }}
             style={[
               styles.input,
-              { color: colors.text, borderColor: colors.border, width: "100%" },
+              {
+                color: colors.text,
+                borderColor: colors.border,
+                backgroundColor: set.completed_at
+                  ? colors.disabledSurface
+                  : colors.background,
+                width: "100%",
+              },
             ]}
           />
         </View>
         {exercise.tracking_type === "distance_duration" && (
           <View style={styles.timedInput}>
+            <Text
+              style={{
+                color: colors.secondary,
+                fontSize: 10,
+                textAlign: "center",
+              }}
+            >
+              {set.distance_unit ?? "km"}
+            </Text>
             <TextInput
               ref={distanceInput}
               accessibilityLabel={`${context} distance`}
+              accessibilityHint={`Distance in ${set.distance_unit ?? "km"}`}
               value={distance}
               keyboardType="decimal-pad"
               returnKeyType="done"
-              onFocus={() => setFocused("distance")}
               onSubmitEditing={() => {
                 Keyboard.dismiss();
-                setFocused(null);
                 void submit();
               }}
               onChangeText={(value) => update("distance", value)}
               onBlur={() => {
-                setFocused((current) =>
-                  current === "distance" ? null : current,
-                );
                 void submit();
               }}
               style={[
@@ -232,6 +263,9 @@ export function TimedSetEditor({
                 {
                   color: colors.text,
                   borderColor: colors.border,
+                  backgroundColor: set.completed_at
+                    ? colors.disabledSurface
+                    : colors.background,
                   width: "100%",
                 },
               ]}
@@ -240,35 +274,15 @@ export function TimedSetEditor({
         )}
         <Button
           label={set.completed_at ? "✓" : "○"}
+          secondary={!set.completed_at}
           selected={Boolean(set.completed_at)}
           accessibilityLabel={`${context}: ${set.completed_at ? "Mark incomplete" : "Complete set"}`}
           onPress={() => {
             Keyboard.dismiss();
-            setFocused(null);
             void submit(true);
           }}
         />
       </View>
-      {focused && (
-        <View style={styles.tools}>
-          <Button
-            secondary
-            label="Done editing set"
-            accessibilityLabel={`${context}: Done editing set`}
-            onPress={() => {
-              Keyboard.dismiss();
-              setFocused(null);
-              void submit();
-            }}
-          />
-        </View>
-      )}
-      <Button
-        secondary
-        label={options ? "Hide set options" : "Set options"}
-        accessibilityLabel={`${context}: ${options ? "Hide set options" : "Set options"}`}
-        onPress={() => setOptions(!options)}
-      />
       {options && (
         <>
           {exercise.tracking_type === "distance_duration" && (
@@ -296,18 +310,6 @@ export function TimedSetEditor({
               ) : null}
             </>
           )}
-          <Button
-            secondary
-            label={set.set_type === "working" ? "Make warm-up" : "Make working"}
-            accessibilityLabel={`${context}: ${set.set_type === "working" ? "Make warm-up" : "Make working"}`}
-            onPress={() => {
-              void submit(
-                false,
-                set.distance_unit ?? "km",
-                set.set_type === "working" ? "warmup" : "working",
-              );
-            }}
-          />
           <Button
             secondary
             label="Move set up"

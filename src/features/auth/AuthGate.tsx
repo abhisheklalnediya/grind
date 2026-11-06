@@ -15,10 +15,15 @@ export function AuthGate({ children }: PropsWithChildren) {
   const segments: string[] = useSegments();
   const inAuth = segments[0] === "auth";
   const callback = inAuth && segments[1] === "callback";
+  const recoveryRequest = inAuth && segments[1] === "recovery";
   const membership = useQuery({
     queryKey: ["grind-account", auth.session?.user.id],
     queryFn: joinGrind,
-    enabled: Boolean(auth.session) && !auth.recovery && !callback,
+    enabled:
+      Boolean(auth.session) &&
+      !auth.recovery &&
+      !callback &&
+      !recoveryRequest,
     retry: false,
   });
   const needsSignIn =
@@ -34,13 +39,13 @@ export function AuthGate({ children }: PropsWithChildren) {
       !auth.recovery &&
       membership.data &&
       !membership.data.setup_completed_at &&
-      !(inAuth && segments[1] === "setup"),
+      !(inAuth && (segments[1] === "setup" || recoveryRequest)),
   );
   const needsTrain = Boolean(
     auth.session &&
       !auth.recovery &&
       membership.data?.setup_completed_at &&
-      inAuth,
+      inAuth && !recoveryRequest,
   );
   useEffect(() => {
     if (auth.initializing || auth.error || callback) return;
@@ -57,6 +62,7 @@ export function AuthGate({ children }: PropsWithChildren) {
     auth.recovery,
     inAuth,
     callback,
+    recoveryRequest,
     membership.data,
     needsSignIn,
     needsRecovery,
@@ -72,14 +78,24 @@ export function AuthGate({ children }: PropsWithChildren) {
     );
   if (
     auth.initializing ||
-    (auth.session && !auth.recovery && !callback && membership.isPending)
+    (auth.session &&
+      !auth.recovery &&
+      !callback &&
+      !recoveryRequest &&
+      membership.isPending)
   )
     return (
       <Screen>
         <AuthBrandHeader title="Opening Grind…" />
       </Screen>
     );
-  if (auth.session && membership.isError && !auth.recovery && !callback)
+  if (
+    auth.session &&
+    membership.isError &&
+    !auth.recovery &&
+    !callback &&
+    !recoveryRequest
+  )
     return (
       <Screen>
         <AuthBrandHeader

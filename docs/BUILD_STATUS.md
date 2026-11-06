@@ -1,5 +1,62 @@
 # GRIND — maintained build and implementation status
 
+## 6 November — repository and milestone cleanup
+
+Current integration checks passed: Node 24.11.1 typecheck, strict lint, Jest coverage (69 suites/382 tests; 96.97% statements, 92.65% branches, 95.64% functions, 97.8% lines), 10 backend harness tests, 30 catalog tests, prototype JavaScript syntax and whitespace checks. Jest emitted a React `act(...)` warning from a virtualized-list test despite passing; it remains a test-hygiene follow-up. Relative Markdown link targets were checked. An independent reviewer sampled the existing UI/auth/recovery/set-type and migration changes without finding a confirmed blocker; the review was not exhaustive and did not establish native or hosted acceptance. See [milestones](IMPLEMENTATION_MILESTONES.md) for the current plan.
+
+## 6 November — launch readiness and sign-in investigation
+
+Current working tree: Node 24.11.1 typecheck, zero-warning lint and coverage passed (69 suites/382 tests). Android API 36.1 emulator started with the existing development client and Metro on port 8087. An old restored process displayed the generic sign-in error; the emulator had validated network/DNS and the backend host responded to a credential-free probe. These checks do not identify the cause. After restarting the app and loading the current Metro bundle, the user confirmed sign-in worked and the authenticated Train screen with Resume was observed. Development-only sign-in failure diagnostics now log only allowlisted error name/code and numeric HTTP status; no provider messages, credentials or user identifiers. Their sanitized behavior is unit-tested; a real failed request with the new diagnostics has not been observed. No hosted data was changed. Complete authenticated workout/recovery journey, M4/M5, catalog acceptance, native/device checks and M7 remain open; development-client startup is not release-build acceptance.
+
+## Earlier checkpoints — historical evidence
+
+Dated records below describe their respective checkpoints. For current roadmap and outstanding work, use [milestones](IMPLEMENTATION_MILESTONES.md), [tasks](planning/TASKS.md) and the latest evidence above; older backend and remote descriptions may have been superseded.
+
+### 3 November — confirmed set-type choices
+
+User chose Drop and Failure as the additional types. The app and updated capability RPC expose Warm-up, Working, Drop and Failure; legacy `rest_pause` rows remain readable and writable without appearing as a new choice. Both forward migrations are applied on the GRIND local stack; both rollback-only SQL tests pass there. Hosted dry run lists both migrations; hosted schema/data remain unchanged. Typecheck, lint, tests, coverage and diff whitespace check pass (68 suites, 381 tests; 96.96% statements, 92.61% branches, 95.64% functions, 97.79% lines). Native selector, software keyboard and accessibility acceptance remain Todo.
+
+
+## 3 November — set-entry and set types
+
+Typecheck, lint, tests, coverage and diff whitespace check passed (68 suites, 379 tests; 96.95% statements, 92.66% branches, 95.62% functions, 97.79% lines). Forward migration `20261103120000_grind_set_types.sql` was tested in a rollback-only disposable transaction, applied on GRIND’s local standalone stack, and its rollback-only SQL suite passed there. Hosted dry run identified only this migration; hosted data/schema were not changed. Older servers safely expose only warm-up/working via capability fallback. Android emulator displayed the new trigger; normal software keyboard, selector interactions, iOS and physical-device/accessibility acceptance remain Todo.
+
+
+## 1 November — MVP remediation and M4/M5 proposal
+
+Typecheck, lint, tests, coverage and diff whitespace check passed (65 suites, 363 tests; 96.56% statements, 92.03% branches, 95.06% functions, 97.25% lines). Exercise details share accessible Overview/History controls in software; historical detail displays the saved timestamp in its recorded timezone. Android emulator populated repetition workout was also observed in dark mode. Native screen-reader, remaining state/device matrix, and physical iOS/Android timer checks remain Todo. Local Docker is available; no database or hosted operation was performed in this slice. See [MVP checklist](planning/MVP_CHECKLIST.md) and [M4/M5 proposal](planning/MVP_COMPLETION_PROPOSAL.md).
+
+
+## 1 November — MVP checklist and exercise-history fix
+
+Typecheck, lint, full coverage and diff whitespace check passed (64 suites, 361 tests; 96.55% statements, 92.02% branches, 95.04% functions, 97.24% lines). Tests cover timed/distance history, tracking-type matching, previous-performance labels and linked RepDB history handoff. These are automated checks; native exercise-detail/history acceptance remains Todo. See the [MVP checklist](planning/MVP_CHECKLIST.md).
+
+
+## 1 November — MVP page-by-page alignment
+
+Typecheck, lint, coverage and diff whitespace check passed (64 suites, 356 tests; 96.55% statements, 92.22% branches, 95.04% functions, 97.24% lines). Android emulator visually inspected Train, History empty, Exercises library, RepDB exercise detail and Settings in light mode; this does not verify all native pages, states or platforms. Detailed per-page source/design disposition and open work: [review record](reports/reviews/2026-11-01-mvp-page-alignment.md).
+
+
+## 1 November — workout set-control follow-up
+
+Typecheck, lint, coverage and diff whitespace check passed (64 suites, 353 tests; 96.52% statements, 92.51% branches, 94.98% functions, 97.21% lines). Tests cover shared set options, expanded state and distance-unit display. Android input focus was observed with a hardware-keyboard accessory, not a normal software keyboard; dark, 320dp, large-text, assistive technology, iOS and physical-device visual checks remain open.
+
+
+## 1 November — workout screenshot alignment
+
+Typecheck, lint, coverage and diff whitespace check passed (63 suites, 351 tests; 96.52% statements, 92.49% branches, 94.98% functions, 97.21% lines). Android emulator screenshot visually checked the populated light-mode repetition workout. It is not acceptance for keyboard, screen readers, large text, narrow layouts, dark mode, timed/distance rows, iOS or physical devices. The elapsed clock reflects the existing session start, not an estimate of active lifting time.
+
+
+## 1 November — auth investigation
+
+Typecheck, lint and coverage passed (63 suites, 346 tests) after the sign-in/signup handoff change. Focused tests exercise request and waiting states; they do not prove the complete verified-session-to-setup/Train handoff. Android emulator reloaded the current bundle; a real signup/login retry and the cause of the reported generic error remain open.
+
+
+## 1 November — Train design alignment
+
+Typecheck, lint and full Jest coverage pass (63 suites, 346 tests; 96.55% statements, 92.37% branches, 95.09% functions, 97.25% lines). The Android emulator launched the app at sign-in; the authenticated Train screen and its visual/accessibility behavior were not inspected on device. iOS and physical-device acceptance remain Todo.
+
+
 ## 1 November 2026 — RepDB hosted delivery decision and sync preparation
 
 User confirmed that the catalog is delivered only inside authenticated, member-scoped GRIND functionality, not as a public/reusable API; project docs remove the former separate-clarification hold for this app-bound use. Local archive dry runs validate 701 records, 1,217 images, schema version 3 and archive SHA-256 `afa162bf10bb23cadd9c3588be6ab84e56691fa328abcefabb4371cdeb47cb16`. All nine local/hosted migrations matched and linked dry run was up to date. Added guarded publisher `scripts/catalog/publish_hosted.py` and published the archive to GRIND. Hosted aggregates and an authenticated-role catalog projection query verify 701 active records, 204 configured/selectable (Barbell 76, Smith Machine 19, Dumbbell 88, EZ Curl Bar 21), 497 unconfigured, 701 approved source records/links and no other configured equipment. `authenticated` can execute both catalog projection and search functions; `anon` and `authenticated` cannot access `grind_private`. Independent review found and fixed a missing archive-hash guard before handoff; publisher now refuses any archive except the released SHA-256. Typecheck/lint pass; Jest 63 suites/344 tests; coverage 96.63% statements, 92.35% branches, 95.33% functions, 97.34% lines; all 30 catalog Python tests pass. Exercise images remain in bundled app assets; none were uploaded to Storage. An app-driven API request and native device verification remain open. See [exercise task](planning/TASKS.md) and [catalog plan](EXERCISE_CATALOG_PLAN.md).

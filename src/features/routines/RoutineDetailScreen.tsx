@@ -74,12 +74,14 @@ export function RoutineDetailScreen({ id }: { id: string }) {
             {query.data.exercises.reduce(
               (total, exercise) => total + exercise.sets.length,
               0,
-            )} planned sets
+            )}{" "}
+            planned sets
           </Copy>
           {query.data.exercises.map((exercise, index) => (
             <RoutineTargets
               key={exercise.id}
               exercise={exercise}
+              position={index}
               name={
                 catalog.data?.find((item) => item.id === exercise.exercise_id)
                   ?.name ?? `Exercise ${index + 1}`

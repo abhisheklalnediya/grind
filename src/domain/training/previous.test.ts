@@ -63,3 +63,25 @@ it("retains previous timed and distance measurements", () => {
     distance_unit: "mi",
   });
 });
+it("matches previous performance only for the same exact set type and ordinal", () => {
+  const setTypes = ["warmup", "working", "drop", "failure", "rest_pause"] as const;
+  const previous = previousSchema.parse({
+    session_id: id,
+    finished_at: "2026-10-27T12:00:00Z",
+    sets: setTypes.map((set_type, ordinal) => ({
+      set_type,
+      ordinal: 0,
+      entered_load: String((ordinal + 1) * 10),
+      entered_unit: "kg",
+      reps: 8,
+    })),
+  });
+  for (const [ordinal, setType] of setTypes.entries()) {
+    const otherType = setTypes.find((candidate) => candidate !== setType) ?? "warmup";
+    expect(previousForSet(previous, setType, 0)?.entered_load).toBe(
+      String((ordinal + 1) * 10),
+    );
+    expect(previousForSet(previous, setType, 1)).toBeNull();
+    expect(previousForSet(previous, otherType, 0)?.set_type).toBe(otherType);
+  }
+});

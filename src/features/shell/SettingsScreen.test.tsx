@@ -1,6 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { Linking } from "react-native";
 import type { Session, User } from "@supabase/supabase-js";
+import { router } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   act,
@@ -95,6 +96,17 @@ it("keeps RepDB attribution available when preferences fail to load", async () =
   await fireEvent.press(screen.getByRole("link", { name: "Exercise data by RepDB, opens website" }));
   expect(open).toHaveBeenCalledWith("https://repdb.co");
   open.mockRestore();
+});
+it("opens Grind password recovery with the signed-in account email", async () => {
+  const push = jest.spyOn(router, "push").mockImplementation(() => {});
+  const { Wrapper } = harness();
+  await render(<SettingsScreen />, { wrapper: Wrapper });
+  await fireEvent.press(screen.getByRole("button", { name: "Reset password" }));
+  expect(push).toHaveBeenCalledWith({
+    pathname: "/auth/recovery",
+    params: { email: "alex@example.test" },
+  });
+  push.mockRestore();
 });
 it("keeps training drafts across appearance changes and failed saves, and only announces acknowledged success", async () => {
   const { Wrapper } = harness();

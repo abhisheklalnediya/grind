@@ -39,55 +39,15 @@ export function WorkoutScreen() {
       >
         <View style={styles.topBar}>
           <Button
-            secondary
-            label="Back"
+            tertiary
+            muted
+            label="← Back"
             accessibilityLabel="Minimize workout"
             onPress={() =>
               router.canGoBack() ? router.back() : router.replace("/(tabs)")
             }
           />
-          <View style={styles.title}>
-            {editingName ? (
-              <TextInput
-                accessibilityLabel="Workout name"
-                value={name.value}
-                maxLength={80}
-                onChangeText={name.change}
-                onBlur={() => {
-                  if (name.latest.current.trim())
-                    void training
-                      .command({
-                        type: "rename_workout",
-                        name: name.latest.current.trim(),
-                      })
-                      .catch(() =>
-                        setError(
-                          "Workout name was not saved. Retry changes above.",
-                        ),
-                      );
-                }}
-                style={[
-                  styles.nameInput,
-                  { color: colors.text, borderColor: colors.border },
-                ]}
-              />
-            ) : (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Edit workout name, ${name.value || "Workout"}`}
-                onPress={() => setEditingName(true)}
-                style={styles.namePressable}
-              >
-                <Text
-                  accessibilityRole="header"
-                  numberOfLines={1}
-                  style={[styles.nameText, { color: colors.text }]}
-                >
-                  {name.value || "Workout"}
-                </Text>
-              </Pressable>
-            )}
-          </View>
+          <View style={styles.topBarSpacer} />
           {training.session?.status === "active" && (
             <Button
               label="Finish"
@@ -95,9 +55,52 @@ export function WorkoutScreen() {
             />
           )}
         </View>
+        <View style={styles.workoutHeading}>
+          {editingName ? (
+            <TextInput
+              accessibilityLabel="Workout name"
+              value={name.value}
+              maxLength={80}
+              onChangeText={name.change}
+              onBlur={() => {
+                if (name.latest.current.trim())
+                  void training
+                    .command({
+                      type: "rename_workout",
+                      name: name.latest.current.trim(),
+                    })
+                    .catch(() =>
+                      setError(
+                        "Workout name was not saved. Retry changes above.",
+                      ),
+                    );
+              }}
+              style={[
+                styles.nameInput,
+                { color: colors.text, borderColor: colors.border },
+              ]}
+            />
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Edit workout name, ${name.value || "Workout"}`}
+              onPress={() => setEditingName(true)}
+              style={styles.namePressable}
+            >
+              <Text
+                accessibilityRole="header"
+                numberOfLines={2}
+                style={[styles.nameText, { color: colors.text }]}
+              >
+                {name.value || "Workout"}
+              </Text>
+            </Pressable>
+          )}
+        </View>
         <RecoveryControls elapsedStartedAt={training.session?.started_at} />
         <ScrollView
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           contentContainerStyle={styles.content}
         >
           {error ? (
@@ -146,9 +149,10 @@ export function WorkoutScreen() {
                   onPress={() => router.push("/exercise-picker?target=workout")}
                 />
               ) : null}
-              <Button
-                secondary
-                label="Discard workout"
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Discard workout"
+                style={styles.discardAction}
                 onPress={() =>
                   Alert.alert(
                     "Discard workout?",
@@ -172,7 +176,11 @@ export function WorkoutScreen() {
                     ],
                   )
                 }
-              />
+              >
+                <Text style={[styles.discardText, { color: colors.error }]}>
+                  Discard workout
+                </Text>
+              </Pressable>
             </>
           )}
         </ScrollView>
@@ -191,8 +199,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  title: { flex: 1, minWidth: 0, justifyContent: "center" },
-  nameText: { fontSize: 18, fontWeight: "700" },
+  topBarSpacer: { flex: 1 },
+  workoutHeading: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
+  nameText: { fontSize: 28, lineHeight: 34, fontWeight: "800" },
   namePressable: { minHeight: 48, justifyContent: "center" },
   nameInput: {
     minHeight: 48,
@@ -202,4 +211,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   empty: { gap: 12, padding: 20, borderWidth: 1, borderRadius: 12 },
+  discardAction: {
+    minHeight: 48,
+    alignSelf: "center",
+    paddingHorizontal: 16,
+    justifyContent: "center",
+  },
+  discardText: { fontSize: 15, fontWeight: "600" },
 });

@@ -1,5 +1,17 @@
 # GRIND local foundation setup
 
+## Set-type migration verification — 3 November 2026
+
+The local GRIND stack has `20261103120000_grind_set_types.sql` and `20261103130000_grind_set_type_choices.sql` applied; the hosted target has neither. A hosted dry run listed both migrations. Older application builds cannot parse the new set types, so coordinate any hosted rollout with compatible clients. Recheck local and hosted migration histories before any deployment. For the rollback-only local SQL test, run from the repository root against the GRIND-owned local container:
+
+```sh
+docker exec -i supabase_db_grind_standalone_local psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/grind_set_types.sql
+docker exec -i supabase_db_grind_standalone_local psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/grind_set_type_choices.sql
+```
+
+The SQL test inserts fictional data inside a transaction and rolls it back. Do not point it at hosted data.
+
+
 25 October 2026. M0/M1 in progress; see [agent status](AGENT_STATUS.md) for checks actually completed. Native timer/physical-device acceptance is not yet complete.
 
 ## Runtime
@@ -36,7 +48,7 @@ The harness writes only public local endpoint/anon-key configuration to ignored 
 
 GRIND's standalone project is `mgyzzipsqmsabptrfchw`; the ignored `.env.local` contains its public URL/key. Root `supabase/config.toml` uses a separate local project ID and ports 55520–55527. For local clean replay, run `SUPABASE_TELEMETRY_DISABLED=1 supabase start` and `SUPABASE_TELEMETRY_DISABLED=1 supabase db reset --local`; this touches only the new GRIND local stack. The nine transactional SQL suites pass through psql; see [supabase/README.md](../supabase/README.md) for the runner.
 
-Hosted deployment to `mgyzzipsqmsabptrfchw` is complete. The nine GRIND migrations were applied after a dry run, selected GRIND account data was transferred and compared, and `grind://auth/callback` plus the `grind` API schema are configured. The app accepts this project origin and its public publishable key through the environment variables below; never use a service-role key. Authenticated sign-in, recovery, RLS and physical-device callback behavior remain to be verified. See [current M8 evidence](../BUILD_STATUS.md) and [standalone Supabase setup](../supabase/README.md).
+Hosted deployment to `mgyzzipsqmsabptrfchw` is complete. The initial nine GRIND migrations were applied after a dry run, selected GRIND account data was transferred and compared, and `grind://auth/callback` plus the `grind` API schema are configured. The app accepts this project origin and its public publishable key through the environment variables below; never use a service-role key. Android emulator sign-in was confirmed; recovery, RLS and physical-device callback behavior remain to be verified. See [current M8 evidence](BUILD_STATUS.md) and [standalone Supabase setup](../supabase/README.md).
 
 The transferred GRIND account must sign in again because Auth sessions are not copied. The 701 RepDB records were excluded from that initial transfer. Per the user's 1 November 2026 decision, catalog delivery through authenticated, member-scoped GRIND app functionality is approved as in-app use; it must not be exposed as a public/reusable API, raw dataset export, public storage listing or source mirror. The catalog must still pass the pinned-source, attribution, measurement, migration-history and release checks before hosted publication.
 
@@ -106,7 +118,7 @@ Given a local checkout of the canonical RepDB repository and an independently re
 
 ### Bundled exercise catalog
 
-The app bundles the licensed English data and static image registry at `assets/exercises/repdb` for local previews/imagery, with license and attribution. If updating the bundle, validate the source, review its terms and regenerate the registry with `python3 scripts/catalog/generate_bundle.py assets/exercises/repdb`; restart Metro afterwards. Missing bundle files cause the build to fail rather than silently shipping an empty library. The checkout has no configured remote; review the license's dataset redistribution restriction before publishing the repository or its assets. The original downloaded archive under ignored `Data/` is not needed for a build. Server exercise identities and configured selection are hosted in GRIND; see the 1 November release evidence.
+The app bundles the licensed English data and static image registry at `assets/exercises/repdb` for local previews/imagery, with license and attribution. If updating the bundle, validate the source, review its terms and regenerate the registry with `python3 scripts/catalog/generate_bundle.py assets/exercises/repdb`; restart Metro afterwards. Missing bundle files cause the build to fail rather than silently shipping an empty library. A remote is configured; review the license's dataset redistribution restriction and repository visibility before any further publication. The original downloaded archive under ignored `Data/` is not needed for a build. Server exercise identities and configured selection are hosted in GRIND; see the 1 November release evidence.
 
 ### RepDB local review tooling
 

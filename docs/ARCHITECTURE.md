@@ -80,7 +80,7 @@ Use UUID primary keys, UTC `timestamptz`, database constraints, explicit orderin
 | `routine_sets` | Template exercise, order, set type, target load/unit, target reps |
 | `workout_sessions` | Owner, source routine, routine-name snapshot, status, start/finish times, timezone, revision |
 | `workout_exercises` | Session, exercise ID, order, name/category/load-convention snapshots, notes, rest override |
-| `workout_sets` | Workout exercise, order, warm-up/working type, entered load/unit, canonical kg load, reps, completion time |
+| `workout_sets` | Workout exercise, order, set type (warm-up, working, drop or failure; legacy rest-pause data remains readable), entered load/unit, canonical kg load, reps, completion time |
 | `workout_command_receipts` | Owner + operation ID, command/payload identity and result for safe retries |
 
 Use one exercise table for seeded and custom exercises, distinguished by nullable owner; avoid separate history logic for each. Exercise retirement hides it from new selection while preserving references and snapshots. Do not hard-delete definitions used in history.

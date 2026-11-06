@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
-import type { TrainingExercise, TrainingSession } from "@/domain/training";
+import { setTypeLabels, type TrainingExercise, type TrainingSession } from "@/domain/training";
 import { Button } from "@/components/Button";
 import { Heading } from "@/components/Heading";
 import { useTraining } from "@/features/training";
@@ -17,6 +17,7 @@ export function ExerciseHistory({ exercise }: { exercise: TrainingExercise }) {
       exercise.id,
       exercise.load_mode,
       exercise.load_convention,
+      exercise.tracking_type ?? "reps",
     ],
     initialPageParam: null as Cursor,
     queryFn: ({ pageParam }) => {
@@ -33,7 +34,9 @@ export function ExerciseHistory({ exercise }: { exercise: TrainingExercise }) {
       (row) =>
         row.exercise_id === exercise.id &&
         row.load_mode === exercise.load_mode &&
-        row.load_convention === exercise.load_convention,
+        row.load_convention === exercise.load_convention &&
+        (row.tracking_type ?? "reps") ===
+          (exercise.tracking_type ?? "reps"),
     );
     return rows.length ? [{ session, rows }] : [];
   });
@@ -121,18 +124,41 @@ function ExerciseHistoryRow({
       />
       {rows.flatMap((row) =>
         row.sets
-          .filter((set) => set.completed_at)
-          .map((set) => (
+          .map((set, index) => ({ set, ordinal: setOrdinal(row.sets, index) }))
+          .filter(({ set }) => set.completed_at)
+          .map(({ set, ordinal }) => (
             <Copy key={set.id}>
-              {set.set_type === "warmup" ? "Warm-up" : "Working"}{" "}
-              {set.position + 1}:{" "}
-              {set.entered_load === null
-                ? "Bodyweight"
-                : `${set.entered_load} ${set.entered_unit}`}{" "}
-              × {set.reps} reps
+              {setTypeLabels[set.set_type]} {ordinal}:{" "}
+              {row.tracking_type === "duration" ||
+              row.tracking_type === "distance_duration" ? (
+                <>
+                  {set.duration_seconds ?? "—"} seconds
+                  {row.tracking_type === "distance_duration"
+                    ? ` · ${set.entered_distance ?? "—"} ${set.distance_unit ?? ""}`
+                    : ""}
+                </>
+              ) : (
+                <>
+                  {set.entered_load === null
+                    ? "Bodyweight"
+                    : `${set.entered_load} ${set.entered_unit}`}{" "}
+                  × {set.reps} reps
+                </>
+              )}
             </Copy>
           )),
       )}
     </>
   );
+}
+
+function setOrdinal(
+  sets: TrainingSession["exercises"][number]["sets"],
+  index: number,
+) {
+  const current = sets[index];
+  if (!current) return index + 1;
+  return sets
+    .slice(0, index + 1)
+    .filter((set) => set.set_type === current.set_type).length;
 }

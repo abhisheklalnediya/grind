@@ -25,28 +25,6 @@ export function SetOptions({
   const context = `${exercise.name} set ${index + 1}`;
   return (
     <View style={styles.tools}>
-      <Button
-        secondary
-        label={set.set_type === "working" ? "Make warm-up" : "Make working"}
-        accessibilityLabel={`${context}: ${set.set_type === "working" ? "Make warm-up" : "Make working"}`}
-        onPress={() => {
-          const input = editedSet(
-            set,
-            exercise.load_mode,
-            latest().load,
-            latest().reps,
-          );
-          if (input)
-            void send({
-              type: "upsert_set",
-              exercise_id: exercise.id,
-              set: {
-                ...input,
-                set_type: set.set_type === "working" ? "warmup" : "working",
-              },
-            });
-        }}
-      />
       {exercise.load_mode !== "bodyweight" && (
         <LoadUnitControl
           accessibilityContext={context}

@@ -108,6 +108,33 @@ it("validates full session/routine/catalog/page graphs and strips server-only ex
     exerciseSchema.safeParse({ ...definition, origin: "grind" }).success,
   ).toBe(false);
 });
+it("accepts all exact set types in legacy stored workout and routine rows", () => {
+  const setTypes = ["warmup", "working", "drop", "failure", "rest_pause"] as const;
+  for (const set_type of setTypes) {
+    const routine = routinePayloadSchema.parse({
+      name: "Strength",
+      exercises: [{ ...template, sets: [{ ...set, set_type }] }],
+    });
+    expect(routine.exercises[0]?.sets[0]?.set_type).toBe(set_type);
+    const stored = sessionSchema.parse({
+      ...session,
+      exercises: [{
+        ...workoutExercise,
+        sets: [{ ...set, set_type, completed_at: null }],
+      }],
+    });
+    expect(stored.exercises[0]?.sets[0]?.set_type).toBe(set_type);
+  }
+  expect(
+    sessionSchema.safeParse({
+      ...session,
+      exercises: [{
+        ...workoutExercise,
+        sets: [{ ...set, set_type: "warm-up", completed_at: null }],
+      }],
+    }).success,
+  ).toBe(false);
+});
 it("rejects extra mutation authority, invalid ranges and invalid completed values", () => {
   expect(
     customExercisePayloadSchema.safeParse({ ...custom, owner_id: id }).success,

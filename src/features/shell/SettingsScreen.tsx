@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { router } from "expo-router";
 import { Linking, StyleSheet, Text, View } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Screen } from "@/components/Screen";
@@ -175,6 +176,18 @@ function SettingsContent({
       >
         Exercise data by RepDB (repdb.co)
       </Text>
+      <Text style={styles.label}>Account</Text>
+      <Button
+        label="Reset password"
+        secondary
+        disabled={pending}
+        onPress={() =>
+          router.push({
+            pathname: "/auth/recovery",
+            params: email ? { email } : {},
+          })
+        }
+      />
       <Text style={styles.label}>You’ll sign out of your Grind account.</Text>
       <Button
         label="Sign out of Grind"

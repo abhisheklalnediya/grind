@@ -9,6 +9,8 @@ Read [build status](BUILD_STATUS.md) for current checks and blockers, [agent sta
 | BUILD_STATUS.md | Maintained current build health, check results, artifacts, defects and acceptance gaps |
 | AGENT_STATUS.md | Milestone-level completed checks, gaps and blockers |
 | planning/TASKS.md | Live task assignments, task states, allowed paths and acceptance |
+| planning/MVP_CHECKLIST.md | Page/state acceptance checklist and next checks, linked to owning evidence |
+| planning/MVP_COMPLETION_PROPOSAL.md | Reviewable M4/M5 implementation contracts and decision points |
 | engineering/REACT_NATIVE_STANDARDS.md | Mandatory module, testing, accessibility and quality policy |
 | engineering/TEST_COVERAGE.md | Named module-to-test mapping and measured compliance gaps |
 | MAINTENANCE.md | Dependency/native/database/security/documentation procedures and adaptation boundary |

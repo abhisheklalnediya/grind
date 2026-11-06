@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { toCanonicalKg, type TrainingSession } from "@/domain/training";
+import { setTypeLabels, toCanonicalKg, type TrainingSession } from "@/domain/training";
 import { useTheme } from "@/theme/useTheme";
 export function SessionDetails({ session }: { session: TrainingSession }) {
   const { colors } = useTheme();
@@ -51,9 +51,9 @@ export function SessionDetails({ session }: { session: TrainingSession }) {
             {exercise.load_convention}
             {exercise.notes ? ` · ${exercise.notes}` : ""}
           </Text>
-          {exercise.sets.map((set) => (
+          {exercise.sets.map((set, index) => (
             <Text key={set.id} style={{ color: colors.text }}>
-              {set.set_type}:{" "}
+              {setTypeLabels[set.set_type]} {setOrdinal(exercise.sets, index)}:{" "}
               {exercise.tracking_type && exercise.tracking_type !== "reps" ? (
                 <>
                   {set.duration_seconds ?? "—"} seconds
@@ -76,6 +76,17 @@ export function SessionDetails({ session }: { session: TrainingSession }) {
       ))}
     </View>
   );
+}
+
+function setOrdinal(
+  sets: TrainingSession["exercises"][number]["sets"],
+  index: number,
+) {
+  const current = sets[index];
+  if (!current) return index + 1;
+  return sets
+    .slice(0, index + 1)
+    .filter((set) => set.set_type === current.set_type).length;
 }
 
 const styles = StyleSheet.create({ group: { gap: 12 }, row: { gap: 8 } });

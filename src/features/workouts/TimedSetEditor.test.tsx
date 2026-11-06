@@ -94,3 +94,58 @@ it("allows undoing a completed timed set while preserving invalid draft values",
     "bad",
   );
 });
+
+it("shows the distance unit and opens per-set options from the set number", async () => {
+  const view = await render(
+    <TimedSetEditor
+      exercise={exercise}
+      set={{ ...timedSet, distance_unit: "mi" }}
+    />,
+  );
+  expect(view.getByText("mi")).toBeVisible();
+  await fireEvent.press(view.getByRole("button", { name: "Run set 1: Set type: Working set" }));
+  await fireEvent.press(view.getByRole("button", { name: "More set actions" }));
+  expect(
+    view.getByRole("button", { name: "Run set 1 distance unit" }),
+  ).toBeVisible();
+  expect(
+    view.getByRole("button", { name: "Run set 1: Set type: Working set" }),
+  ).toBeTruthy();
+  await fireEvent.press(view.getByRole("button", { name: "Run set 1: Set type: Working set" }));
+  await fireEvent.press(view.getByRole("button", { name: "Hide set actions" }));
+  expect(view.queryByRole("button", { name: "Run set 1 distance unit" })).toBeNull();
+});
+
+it("selects supported drop type and rejects type changes with invalid raw measurements", async () => {
+  const view = await render(
+    <TimedSetEditor
+      exercise={exercise}
+      set={timedSet}
+      supportedTypes={["warmup", "working", "drop"]}
+    />,
+  );
+  await fireEvent.press(view.getByRole("button", { name: "Run set 1: Set type: Working set" }));
+  await fireEvent.press(view.getByRole("button", { name: "Drop set" }));
+  expect(mockCommand).toHaveBeenCalledWith(
+    expect.objectContaining({
+      type: "upsert_set",
+      set: expect.objectContaining({ set_type: "drop" }),
+    }),
+  );
+
+  mockCommand.mockClear();
+  mockTraining.raw = { [`${exercise.id}:${timedSet.id}:duration`]: "12.5" };
+  const invalid = await render(
+    <TimedSetEditor
+      exercise={exercise}
+      set={timedSet}
+      supportedTypes={["warmup", "working", "drop"]}
+    />,
+  );
+  await fireEvent.press(invalid.getByRole("button", { name: "Run set 1: Set type: Working set" }));
+  await fireEvent.press(invalid.getByRole("button", { name: "Drop set" }));
+  expect(invalid.getByRole("alert")).toHaveTextContent(
+    "Duration must be a whole number from 1 to 86400 seconds.",
+  );
+  expect(mockCommand).not.toHaveBeenCalled();
+});

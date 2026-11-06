@@ -24,7 +24,13 @@ export const distanceSchema = z
 export type TrackingType = z.infer<typeof trackingTypeSchema>;
 export type DistanceUnit = z.infer<typeof distanceUnitSchema>;
 export const unitSchema = z.enum(["kg", "lb"]);
-export const setTypeSchema = z.enum(["warmup", "working"]);
+export const setTypeSchema = z.enum([
+  "warmup",
+  "working",
+  "drop",
+  "failure",
+  "rest_pause",
+]);
 export const idSchema = z.uuid();
 export const nameSchema = z.string().trim().min(1).max(80);
 export const notesSchema = z.string().max(2000);

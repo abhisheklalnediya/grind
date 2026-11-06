@@ -99,3 +99,23 @@ it("accepts measured commands and rejects invalid measurement values", () => {
     }).success,
   ).toBe(true);
 });
+it("accepts each exact set type through the upsert command contract", () => {
+  const setTypes = ["warmup", "working", "drop", "failure", "rest_pause"] as const;
+  for (const set_type of setTypes) {
+    const result = workoutCommandSchema.safeParse({
+      type: "upsert_set",
+      exercise_id: id,
+      set: {
+        id,
+        position: 0,
+        set_type,
+        entered_load: "20",
+        entered_unit: "kg",
+        reps: 8,
+      },
+    });
+    expect(result.success).toBe(true);
+    if (result.success && result.data.type === "upsert_set")
+      expect(result.data.set.set_type).toBe(set_type);
+  }
+});

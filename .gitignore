@@ -9,6 +9,7 @@ node_modules/
 .expo/
 dist/
 coverage/
+.vscode/
 ios/
 android/
 *.tsbuildinfo

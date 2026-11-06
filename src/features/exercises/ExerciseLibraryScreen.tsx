@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { isConfiguredExercise } from "@/domain/training";
+import type { TrainingExercise } from "@/domain/training";
 import { useTheme } from "@/theme/useTheme";
 import {
   bundledExercises,
@@ -37,6 +38,8 @@ export function ExerciseLibraryScreen() {
     exercise: LocalExercise;
     available: boolean;
     loggingUnavailable: boolean;
+    loadConvention: string | null;
+    serverExercise: TrainingExercise | null;
   } | null>(null);
   const muscles = useMemo(
     () =>
@@ -80,6 +83,8 @@ export function ExerciseLibraryScreen() {
         exercise={selected.exercise}
         available={selected.available}
         loggingUnavailable={selected.loggingUnavailable}
+        loadConvention={selected.loadConvention}
+        serverExercise={selected.serverExercise}
         onBack={() => setSelected(null)}
       />
     );
@@ -110,6 +115,8 @@ export function ExerciseLibraryScreen() {
                     loggingUnavailable: Boolean(
                       item.server && !isConfiguredExercise(item.server),
                     ),
+                    loadConvention: item.server?.load_convention ?? null,
+                    serverExercise: item.server ?? null,
                   })
                 }
               />

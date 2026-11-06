@@ -6,6 +6,7 @@ import { Button } from "@/components/Button";
 import { useTheme } from "@/theme/useTheme";
 import type { ThemeColors } from "@/theme/tokens";
 import { authService } from "./authService";
+import { logSignInFailure } from "./authDiagnostics";
 import { AuthBrandHeader } from "./AuthBrandHeader";
 import { AuthFields } from "./AuthFields";
 import {
@@ -21,11 +22,14 @@ export function AuthScreen({ mode }: { mode: Mode }) {
   const { colors } = useTheme();
   const styles = makeStyles(colors);
   const params = useLocalSearchParams<{ email?: string | string[] }>();
-  const initialEmail = Array.isArray(params.email) ? params.email[0] : params.email;
+  const initialEmail = Array.isArray(params.email)
+    ? params.email[0]
+    : params.email;
   const [email, setEmail] = useState(initialEmail ?? "");
   const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);
   const [pending, setPending] = useState(false);
+  const [awaitingSession, setAwaitingSession] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -41,13 +45,15 @@ export function AuthScreen({ mode }: { mode: Mode }) {
   }, []);
 
   const submit = async () => {
-    if (submitting.current) return;
+    if (submitting.current || awaitingSession) return;
     const parsedEmail = emailSchema.safeParse(email.trim());
     const parsedPassword =
       mode === "signin"
         ? signInSchema.shape.password.safeParse(password)
         : credentialsSchema.shape.password.safeParse(password);
-    const nextEmailError = parsedEmail.success ? "" : "Enter a valid email address.";
+    const nextEmailError = parsedEmail.success
+      ? ""
+      : "Enter a valid email address.";
     const nextPasswordError =
       mode === "recovery"
         ? ""
@@ -60,7 +66,10 @@ export function AuthScreen({ mode }: { mode: Mode }) {
     setPasswordError(nextPasswordError);
     setError("");
     setMessage("");
-    if (!parsedEmail.success || (mode !== "recovery" && !parsedPassword.success))
+    if (
+      !parsedEmail.success ||
+      (mode !== "recovery" && !parsedPassword.success)
+    )
       return;
 
     submitting.current = true;
@@ -74,16 +83,17 @@ export function AuthScreen({ mode }: { mode: Mode }) {
       } else if (mode === "signup") {
         const data = await authService.signUp(address, password);
         if (!mounted.current) return;
-        if (data.session) router.replace("/");
+        if (data.session) setAwaitingSession(true);
         else
           setMessage(
             "You’re not signed in yet. Try signing in or request a password reset.",
           );
       } else {
         await authService.signIn(address, password);
-        if (mounted.current) router.replace("/");
+        if (mounted.current) setAwaitingSession(true);
       }
     } catch (err) {
+      if (mode === "signin") logSignInFailure(err);
       if (mounted.current) setError(getAuthError(err));
     } finally {
       submitting.current = false;
@@ -120,13 +130,25 @@ export function AuthScreen({ mode }: { mode: Mode }) {
               : "Reset your Grind account password."
         }
       />
+      {awaitingSession ? (
+        <Text accessibilityLiveRegion="polite" style={styles.label}>
+          Opening your account…
+        </Text>
+      ) : null}
+      {awaitingSession ? (
+        <Button
+          label="Try again"
+          secondary
+          onPress={() => setAwaitingSession(false)}
+        />
+      ) : null}
       <AuthFields
         mode={mode}
         email={email}
         password={password}
         emailError={emailError}
         passwordError={passwordError}
-        pending={pending}
+        pending={pending || awaitingSession}
         visible={visible}
         onEmailChange={changeEmail}
         onPasswordChange={changePassword}
@@ -137,7 +159,7 @@ export function AuthScreen({ mode }: { mode: Mode }) {
         <Button
           label="Forgot password?"
           secondary
-          disabled={pending}
+          disabled={pending || awaitingSession}
           onPress={() => transferEmail("/auth/recovery")}
         />
       ) : null}
@@ -156,18 +178,22 @@ export function AuthScreen({ mode }: { mode: Mode }) {
           <Button
             label="Try signing in"
             secondary
-            onPress={() => router.replace({ pathname: "/auth/sign-in", params: { email } })}
+            onPress={() =>
+              router.replace({ pathname: "/auth/sign-in", params: { email } })
+            }
           />
           <Button
             label="Request password reset"
             secondary
-            onPress={() => router.replace({ pathname: "/auth/recovery", params: { email } })}
+            onPress={() =>
+              router.replace({ pathname: "/auth/recovery", params: { email } })
+            }
           />
         </View>
       ) : null}
       <Button
         label={
-          pending
+          pending || awaitingSession
             ? "Please wait…"
             : mode === "signin"
               ? "Sign in"
@@ -175,22 +201,27 @@ export function AuthScreen({ mode }: { mode: Mode }) {
                 ? "Create account"
                 : "Send reset link"
         }
-        disabled={pending}
+        disabled={pending || awaitingSession}
         onPress={() => void submit()}
       />
       {mode === "signin" ? (
         <Button
           label="Create account"
           secondary
-          disabled={pending}
+          disabled={pending || awaitingSession}
           onPress={() => transferEmail("/auth/sign-up")}
         />
       ) : mode !== "signup" || !message ? (
         <Button
           label="Back to sign in"
           secondary
-          disabled={pending}
-          onPress={() => router.replace({ pathname: "/auth/sign-in", params: email ? { email } : {} })}
+          disabled={pending || awaitingSession}
+          onPress={() =>
+            router.replace({
+              pathname: "/auth/sign-in",
+              params: email ? { email } : {},
+            })
+          }
         />
       ) : null}
       {mode === "recovery" ? (
