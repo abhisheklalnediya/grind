@@ -14,6 +14,22 @@
 
 The [milestone roadmap](../IMPLEMENTATION_MILESTONES.md) gives the ordered plan. Current check results and blockers are in [build status](../BUILD_STATUS.md); page-level acceptance is in the [MVP checklist](MVP_CHECKLIST.md).
 
+## Repository, architecture and test review — 6 November 2026
+
+**Owner: unassigned; all tasks Todo unless noted.** These are bounded handoffs, not authorization to deploy or expand product scope. The full evidence and review limits are in the [review report](../reports/reviews/2026-11-06-repository-architecture-tests.md). Preserve account isolation, existing workouts, bounded drafts, server acknowledgement and all coverage gates.
+
+| Priority / task | Allowed scope and dependencies | Acceptance and verification |
+| --- | --- | --- |
+| High — workout, Auth and recovery acceptance | Device tester; app flows and GRIND-only test environment; existing Android workout must be preserved. Requires suitable iOS/physical devices and an approved test target. | Document Auth → routine/workout → sets → finish → History → restart, interrupted writes/retry and account isolation; run both platforms and record devices, OS, failures and evidence. No hosted fixture writes without authorization. |
+| High — native rest lifecycle | Native owner after M4 contract review; notification adapters, targeted tests and configuration. | Test completion, replacement/cancellation, permission denial, locked/background operation and restart on physical Android/iOS. Record unsupported cases; run focused tests and native builds. |
+| High — CI backend and catalog coverage | CI/backend owner; `.github/workflows/**`, GRIND-only disposable harness/tests and affected docs. Depends on an approved isolated CI approach. | Run catalog Python tests in CI and add a reproducible GRIND-only local SQL/RLS/RPC and Auth/API job where feasible; audit cross-user read/write and RPC denial. No hosted secrets or production writes; prove clean setup and test failures fail the job. |
+| Medium — enforce critical branch gates | Test owner; `jest.config.cjs`, relevant auth/security/validation/timer tests and coverage mapping. | Audit critical executable modules including auth diagnostics, add explicit 100% branch thresholds where required and meaningful boundary tests; `npm run test:coverage` passes without exclusions or lowered thresholds. |
+| Medium — async test warnings | Test owner; affected exercise/history/workout tests and shared test utilities. | Fix observed virtualized-list and History `act(...)` warnings at their asynchronous source; preserve assertions, run affected suites and full coverage without suppressing console errors. |
+| Medium — focused component decomposition | UI owner; `src/features/workouts/RecoveryControls*`, extracted components/tests and affected docs. | Separate timer/status and modal concerns behind current public behavior; cover conflicts, timer actions, accessibility and cleanup with focused tests, then typecheck/lint/coverage. |
+| Medium — outbox maintainability | Training owner; `src/services/training/outbox*`, provider integration tests and affected docs. Depends on reviewed decomposition preserving the serialized controller contract. | Identify safe seams before changing the documented cohesion exception; preserve replay, revisions, terminal receipts, recovery, race and 100% critical branch tests. Run focused training tests and full gates. |
+| Medium — catalog distribution and release | Coordinator; license/remote visibility review and affected GRIND release documentation; no external publication. | Establish repository visibility and redistribution rights for tracked RepDB assets; document an approved provisioning/distribution approach before any push or public release. |
+| Low — update test coverage map | Documentation owner; `docs/engineering/TEST_COVERAGE.md` and links. | Clearly supersede shared-backend CI references with the GRIND-owned harness and distinguish recorded SQL, API, device and hosted evidence; verify links and `git diff --check`. |
+
 ## Earlier task handoffs — historical
 
 Entries below preserve scope and evidence at the time of each handoff. Their individual state labels may have been superseded by later entries or the current priorities above; they are not new authorization.

@@ -1,5 +1,9 @@
 # GRIND — maintained build and implementation status
 
+## 6 November — test and architecture review
+
+Current checkout `d65204a` passed Node 24.11.1 typecheck, zero-warning lint, Jest coverage (69 suites/382 tests; 96.97% statements, 92.65% branches, 95.64% functions, 97.8% lines), 10 backend harness-safety tests and 30 catalog tests. Jest emitted `act(...)` warnings associated with virtualized-list and History updates; investigate as tracked in [tasks](planning/TASKS.md). No SQL replay, hosted test, native/device journey or release build was run in this review. Independent review was sampled, not exhaustive. See the [review report](reports/reviews/2026-11-06-repository-architecture-tests.md).
+
 ## 6 November — repository and milestone cleanup
 
 Current integration checks passed: Node 24.11.1 typecheck, strict lint, Jest coverage (69 suites/382 tests; 96.97% statements, 92.65% branches, 95.64% functions, 97.8% lines), 10 backend harness tests, 30 catalog tests, prototype JavaScript syntax and whitespace checks. Jest emitted a React `act(...)` warning from a virtualized-list test despite passing; it remains a test-hygiene follow-up. Relative Markdown link targets were checked. An independent reviewer sampled the existing UI/auth/recovery/set-type and migration changes without finding a confirmed blocker; the review was not exhaustive and did not establish native or hosted acceptance. See [milestones](IMPLEMENTATION_MILESTONES.md) for the current plan.
